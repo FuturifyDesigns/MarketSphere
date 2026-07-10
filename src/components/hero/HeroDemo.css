@@ -1,0 +1,112 @@
+.hero-demo {
+  width: 100%;
+  max-width: 340px;
+}
+
+.hero-demo__frame {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(201, 162, 75, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.hero-demo__bar {
+  display: flex;
+  gap: 5px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.hero-demo__bar span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hero-demo__content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 180px;
+  position: relative;
+}
+
+.hero-demo__search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: rgba(250, 248, 244, 0.7);
+  overflow: hidden;
+}
+
+.hero-demo__search span {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 1px solid var(--color-gold);
+}
+
+.hero-demo__card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(232, 220, 196, 0.1);
+  border: 1px solid rgba(201, 162, 75, 0.15);
+  border-radius: 8px;
+}
+
+.hero-demo__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-gold);
+  color: var(--color-night);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.hero-demo__card strong {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-day);
+}
+
+.hero-demo__card small {
+  font-size: 0.6875rem;
+  color: rgba(250, 248, 244, 0.5);
+}
+
+.hero-demo__cta {
+  align-self: flex-start;
+  padding: 0.5rem 1.25rem;
+  background: var(--color-gold);
+  color: var(--color-night);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+.hero-demo__check {
+  position: absolute;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #6dd58c;
+  font-size: 0.75rem;
+  font-weight: 500;
+}

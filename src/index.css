@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter+Tight:wght@400;500;600&display=swap');
+
+:root {
+  --color-day: #FAF8F4;
+  --color-night: #0E1116;
+  --color-gold: #C9A24B;
+  --color-sand: #E8DCC4;
+  --color-bronze: #4A3F2F;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-ui: 'Inter Tight', system-ui, sans-serif;
+
+  --sky-progress: 0;
+
+  --bg-primary: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), var(--color-night));
+  --text-primary: color-mix(in srgb, var(--color-bronze) calc((1 - var(--sky-progress)) * 100%), var(--color-day));
+  --text-secondary: color-mix(in srgb, rgba(74, 63, 47, 0.7) calc((1 - var(--sky-progress)) * 100%), rgba(250, 248, 244, 0.6));
+  --card-bg: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), rgba(255, 255, 255, 0.04));
+  --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.15));
+  --card-shadow: 0 2px 12px color-mix(in srgb, rgba(74, 63, 47, 0.06) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.2));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.1s, color 0.1s;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.main {
+  min-height: 100vh;
+}
+
+/* Sections with day/night narrative */
+.section--day { background: var(--color-day); color: var(--color-bronze); }
+.section--mid { background: color-mix(in srgb, var(--color-day) 60%, var(--color-sand)); color: var(--color-bronze); }
+.section--warm { background: var(--color-sand); color: var(--color-bronze); }
+.section--dusk { background: color-mix(in srgb, var(--color-sand) 40%, #2a2318); color: var(--color-day); }
+.section--night { background: var(--color-night); color: var(--color-day); }
+
+.section {
+  padding: 5rem 0;
+}
+
+.section--sand {
+  background: var(--color-sand);
+}
+
+.section-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 2rem;
+}
+
+.section-header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+
+.section-header p {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.section-header--light h2 {
+  color: var(--color-day);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-gold);
+  margin-bottom: 0.75rem;
+}
+
+.lead {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 600px;
+}
+
+.page-hero {
+  padding: 7rem 0 3rem;
+}
+
+.page-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--card-border);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+a {
+  color: var(--color-gold);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}

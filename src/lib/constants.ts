@@ -1,0 +1,114 @@
+export const COMPANY = {
+  name: 'Market Sphere Group (Pty) Ltd',
+  shortName: 'MarketSphere',
+  tagline: 'Master Your Field for Relevance',
+  registration: 'UIN BW00000887185',
+  mission: 'Master Your Field for Relevance',
+  vision:
+    'To be a formidable hub for providing timely solutions to the needs of clients, youths and meet Government on the national vision in the development of the country.',
+  overview:
+    'Market Sphere Group (Pty) Ltd is a privately owned company providing professional and socio-economic services and solutions in areas including Entrepreneurship Development, basic music education, Real estate consultancy, career development, academic tuitions, youth empowerment projects and mentorship, platform for mass marketing, and basic farming practice.',
+  headOffice: 'Gaborone, Botswana',
+  operationalArea: 'Botswana and SADC',
+  businessType: 'Service provider and entrepreneurship developments',
+  companyType: 'A private limited company',
+  address:
+    '10102 MAFULO House, next to Old Prison Headquarters, Taung Broadhurst, Gaborone, Botswana',
+  email: 'imcalledsammy@gmail.com',
+  phones: ['+267 74013060', '+267 72470917'],
+  coreValues: [
+    'Botho',
+    'Professionalism',
+    'Customer satisfaction',
+    'Innovation',
+    'Excellence',
+    'Empowerment',
+    'Reliability',
+    'Sustainable growth / Unemployment reduction',
+  ],
+  areasOfInterest: [
+    'Entrepreneurship training',
+    'Career development',
+    'Basic IT services',
+    'Real estate consulting',
+    'Youth empowerment projects and mentorship',
+    'Music education',
+    'Academic tuitions',
+    'Platform mass marketing',
+    'Basic farming practices',
+  ],
+} as const
+
+export const SERVICES = [
+  {
+    title: 'Youth Empowerment',
+    description:
+      'We identify different youth centered and community projects that will harness the potentials of youths and young professionals in different parts of the country.',
+    icon: 'users',
+  },
+  {
+    title: 'Academic Tuition',
+    description:
+      'We have flexible packages for out of school and school going folks to better upgrade their grades.',
+    icon: 'graduation-cap',
+  },
+  {
+    title: 'Platform Marketing',
+    description:
+      'We have at our disposal a couple of powerful apps that makes advertisements worthwhile and easy getting fast and broader mileage.',
+    icon: 'megaphone',
+  },
+  {
+    title: 'Real Estate Consultancy',
+    description:
+      'We are quite acclimatized to the real estate industry in different areas of the country and we have a resolve to help customers achieve their property needs around the country from time to time.',
+    icon: 'building',
+  },
+  {
+    title: 'Entrepreneurship Development',
+    description:
+      'We through our networks will provide a number of different opportunities that will foster the spirit of entrepreneurship in the population in the ultimate goal to reducing unemployment and total Government dependency.',
+    icon: 'lightbulb',
+  },
+] as const
+
+export const FAQ_ITEMS = [
+  {
+    question: 'What is MarketSphere?',
+    answer:
+      'MarketSphere is an online marketplace platform by Market Sphere Group (Pty) Ltd that connects customers with verified service providers across Botswana. Browse, search, and enquire about services from trusted professionals.',
+  },
+  {
+    question: 'How do I find a service provider?',
+    answer:
+      'Use the Browse Providers page to search by category or location. View provider profiles, read descriptions, and submit an enquiry directly through the platform.',
+  },
+  {
+    question: 'How do I become a service provider?',
+    answer:
+      'Register as a Service Provider, complete your business profile with logo, services, and contact details. Your application will be reviewed by our team before going live.',
+  },
+  {
+    question: 'Is payment handled on the platform?',
+    answer:
+      'No. MarketSphere facilitates connections and enquiries only. Any payment arrangements happen directly between you and the service provider.',
+  },
+  {
+    question: 'Where is Market Sphere Group located?',
+    answer:
+      'Our head office is in Gaborone, Botswana, at 10102 MAFULO House, Taung Broadhurst. We operate across Botswana with plans to expand into SADC markets.',
+  },
+  {
+    question: 'How long does provider approval take?',
+    answer:
+      'We review all provider applications to ensure quality and trust. Approval typically takes 1–3 business days after you submit a complete profile.',
+  },
+] as const
+
+export const COLORS = {
+  day: '#FAF8F4',
+  night: '#0E1116',
+  gold: '#C9A24B',
+  sand: '#E8DCC4',
+  bronze: '#4A3F2F',
+} as const
