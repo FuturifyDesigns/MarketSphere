@@ -5,8 +5,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  visibility: hidden;
-  opacity: 0;
+  opacity: 1;
+  visibility: visible;
   pointer-events: all;
 }
 
@@ -28,7 +28,7 @@
   pointer-events: none;
 }
 
-.site-intro__content {
+.site-intro__panel {
   position: relative;
   z-index: 2;
   display: flex;
@@ -119,27 +119,6 @@
   color: var(--color-gold);
 }
 
-.site-intro__curtain {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 52%;
-  background: #0e1116;
-  z-index: 3;
-}
-
-.site-intro__curtain-top {
-  top: 0;
-}
-
-.site-intro__curtain-bottom {
-  bottom: 0;
-}
-
 body.intro-active {
   overflow: hidden;
-}
-
-body.intro-active .layout {
-  visibility: hidden;
 }

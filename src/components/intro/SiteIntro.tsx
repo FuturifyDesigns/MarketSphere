@@ -6,49 +6,89 @@ import {
   hasSeenIntro,
   markIntroSeen,
   prefersReducedMotion,
+  resetIntroActiveClass,
 } from '../../lib/intro'
 import './SiteIntro.css'
 
+const INTRO_FAILSAFE_MS = 3800
+
 export function SiteIntro() {
-  const [visible, setVisible] = useState(() => !hasSeenIntro())
+  const [done, setDone] = useState(() => hasSeenIntro())
   const rootRef = useRef<HTMLDivElement>(null)
+  const finishedRef = useRef(false)
 
   useEffect(() => {
-    if (!visible) {
+    resetIntroActiveClass()
+
+    const finish = () => {
+      if (finishedRef.current) return
+      finishedRef.current = true
+      markIntroSeen()
+      resetIntroActiveClass()
       dispatchIntroComplete()
+      setDone(true)
+    }
+
+    if (done || prefersReducedMotion()) {
+      finish()
       return
     }
 
-    const finish = () => {
-      markIntroSeen()
-      document.body.classList.remove('intro-active')
-      dispatchIntroComplete()
-      setVisible(false)
-    }
-
-    if (prefersReducedMotion()) {
+    const root = rootRef.current
+    if (!root) {
       finish()
       return
     }
 
     document.body.classList.add('intro-active')
-    const root = rootRef.current
-    if (!root) return
+    const failsafe = window.setTimeout(finish, INTRO_FAILSAFE_MS)
 
     const ctx = gsap.context(() => {
+      gsap.set(root, { opacity: 1, visibility: 'visible' })
+
       const tl = gsap.timeline({
         defaults: { ease: 'power3.out' },
-        onComplete: finish,
+        onComplete: () => {
+          window.clearTimeout(failsafe)
+          finish()
+        },
       })
 
-      tl.set(root, { autoAlpha: 1 })
-        .from('.site-intro__glow', { opacity: 0, scale: 0.6, duration: 1 })
-        .from('.site-intro__logo-wrap', { scale: 0.5, opacity: 0, duration: 0.9, ease: 'back.out(1.4)' }, '-=0.7')
-        .from('.site-intro__ring', { scale: 0.7, opacity: 0, duration: 0.7 }, '-=0.6')
-        .from('.site-intro__brand', { y: 48, opacity: 0, duration: 0.8, ease: 'power4.out' }, '-=0.35')
-        .from('.site-intro__line', { scaleX: 0, duration: 0.65, ease: 'power2.inOut' }, '-=0.25')
-        .from('.site-intro__tagline', { y: 20, opacity: 0, duration: 0.55 }, '-=0.15')
-        .to('.site-intro__progress-bar', { scaleX: 1, duration: 1.4, ease: 'power1.inOut' }, '-=0.1')
+      tl.fromTo(
+        '.site-intro__glow',
+        { opacity: 0, scale: 0.7 },
+        { opacity: 1, scale: 1, duration: 0.8 },
+      )
+        .fromTo(
+          '.site-intro__logo-wrap',
+          { scale: 0.55, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.85, ease: 'back.out(1.5)' },
+          '-=0.5',
+        )
+        .fromTo(
+          '.site-intro__brand',
+          { y: 36, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.75, ease: 'power4.out' },
+          '-=0.35',
+        )
+        .fromTo(
+          '.site-intro__line',
+          { scaleX: 0, opacity: 0 },
+          { scaleX: 1, opacity: 1, duration: 0.55, ease: 'power2.inOut' },
+          '-=0.25',
+        )
+        .fromTo(
+          '.site-intro__tagline',
+          { y: 14, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5 },
+          '-=0.15',
+        )
+        .fromTo(
+          '.site-intro__progress-bar',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 1.1, ease: 'power1.inOut' },
+          '-=0.1',
+        )
 
       const counter = root.querySelector('.site-intro__counter')
       if (counter) {
@@ -57,7 +97,7 @@ export function SiteIntro() {
           counterState,
           {
             val: 100,
-            duration: 1.4,
+            duration: 1.1,
             ease: 'power1.inOut',
             onUpdate: () => {
               counter.textContent = String(Math.round(counterState.val))
@@ -67,25 +107,24 @@ export function SiteIntro() {
         )
       }
 
-      tl.to('.site-intro__content', { opacity: 0, y: -24, duration: 0.45, ease: 'power2.in' }, '+=0.15')
-        .to('.site-intro__curtain-top', { yPercent: -100, duration: 1, ease: 'power4.inOut' }, '-=0.1')
-        .to('.site-intro__curtain-bottom', { yPercent: 100, duration: 1, ease: 'power4.inOut' }, '<')
-        .to(root, { autoAlpha: 0, duration: 0.2 }, '-=0.15')
+      tl.to('.site-intro__panel', { opacity: 0, y: -20, duration: 0.4, ease: 'power2.in' }, '+=0.1')
+        .to(root, { opacity: 0, duration: 0.45, ease: 'power2.inOut' }, '-=0.1')
     }, root)
 
     return () => {
+      window.clearTimeout(failsafe)
       ctx.revert()
-      document.body.classList.remove('intro-active')
+      resetIntroActiveClass()
     }
-  }, [visible])
+  }, [done])
 
-  if (!visible) return null
+  if (done) return null
 
   return (
     <div className="site-intro" ref={rootRef} aria-hidden="true">
       <div className="site-intro__bg" />
       <div className="site-intro__glow" />
-      <div className="site-intro__content">
+      <div className="site-intro__panel">
         <div className="site-intro__logo-wrap">
           <div className="site-intro__ring" />
           <img
@@ -102,8 +141,6 @@ export function SiteIntro() {
         </div>
         <span className="site-intro__counter">0</span>
       </div>
-      <div className="site-intro__curtain site-intro__curtain-top" />
-      <div className="site-intro__curtain site-intro__curtain-bottom" />
     </div>
   )
 }

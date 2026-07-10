@@ -14,8 +14,10 @@ export function useAuthPageEnter(pageRef: RefObject<HTMLElement | null>) {
     }
 
     const removeIntroListener = onIntroComplete(start)
+    const failsafe = window.setTimeout(start, 4200)
 
     return () => {
+      window.clearTimeout(failsafe)
       removeIntroListener()
       cleanupEnter()
     }

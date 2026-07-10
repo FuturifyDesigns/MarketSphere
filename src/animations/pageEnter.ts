@@ -17,32 +17,37 @@ const SCROLL_REVEAL_SELECTORS = '.page-reveal, .about-reveal'
 
 export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
   if (prefersReducedMotion()) {
-    gsap.set(root, { opacity: 1, y: 0, clearProps: 'all' })
+    gsap.set(root, { opacity: 1, y: 0, clearProps: 'transform,opacity' })
     return () => {}
   }
 
   const ctx = gsap.context(() => {
-    gsap.set(root, { opacity: 1 })
+    gsap.set(root, { opacity: 1, visibility: 'visible' })
 
-    const pageTl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    const pageTl = gsap.timeline({
+      defaults: { ease: 'power3.out' },
+      onComplete: () => ScrollTrigger.refresh(),
+    })
 
     pageTl.fromTo(
       root,
       { opacity: 0, y: isHome ? 12 : 28 },
-      { opacity: 1, y: 0, duration: isHome ? 0.5 : 0.7 },
+      { opacity: 1, y: 0, duration: isHome ? 0.55 : 0.75, clearProps: 'transform' },
     )
 
     if (!isHome) {
       const heroItems = root.querySelectorAll(HERO_CHILD_SELECTORS)
       if (heroItems.length) {
-        pageTl.from(
+        pageTl.fromTo(
           heroItems,
+          { y: 36, opacity: 0 },
           {
-            y: 36,
-            opacity: 0,
+            y: 0,
+            opacity: 1,
             duration: 0.85,
             stagger: 0.09,
             ease: 'power4.out',
+            clearProps: 'transform,opacity',
           },
           0.12,
         )
@@ -52,15 +57,17 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
         '.about-hero__card, .services-hero__stats, .contact-quick, .faq-hero__card',
       )
       if (heroAside.length) {
-        pageTl.from(
+        pageTl.fromTo(
           heroAside,
+          { y: 28, opacity: 0, scale: 0.98 },
           {
-            y: 28,
-            opacity: 0,
-            scale: 0.98,
+            y: 0,
+            opacity: 1,
+            scale: 1,
             duration: 0.8,
             stagger: 0.1,
             ease: 'power3.out',
+            clearProps: 'transform,opacity',
           },
           0.28,
         )
@@ -68,33 +75,44 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
     }
 
     gsap.utils.toArray<HTMLElement>(root.querySelectorAll(SCROLL_REVEAL_SELECTORS)).forEach((el) => {
-      gsap.from(el, {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 88%',
-          once: true,
+      gsap.fromTo(
+        el,
+        { y: 40, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 88%',
+            once: true,
+          },
         },
-      })
+      )
     })
 
-    const sections = !isHome ? root.querySelectorAll('.section:not(:first-of-type)') : []
-    sections.forEach((section) => {
-      gsap.from(section, {
-        y: 24,
-        opacity: 0,
-        duration: 0.65,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 92%',
-          once: true,
-        },
+    if (!isHome) {
+      root.querySelectorAll('.section:not(:first-of-type)').forEach((section) => {
+        gsap.fromTo(
+          section,
+          { y: 24, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.65,
+            ease: 'power2.out',
+            clearProps: 'transform,opacity',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 92%',
+              once: true,
+            },
+          },
+        )
       })
-    })
+    }
   }, root)
 
   return () => ctx.revert()
@@ -107,16 +125,21 @@ export function runAuthPageEnter(root: HTMLElement) {
     gsap.fromTo(
       root,
       { opacity: 0, y: 32, scale: 0.98 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out' },
+      { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out', clearProps: 'transform,opacity' },
     )
-    gsap.from(root.querySelectorAll('.auth-card > *'), {
-      y: 24,
-      opacity: 0,
-      duration: 0.7,
-      stagger: 0.08,
-      ease: 'power4.out',
-      delay: 0.15,
-    })
+    gsap.fromTo(
+      root.querySelectorAll('.auth-card > *'),
+      { y: 24, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.7,
+        stagger: 0.08,
+        ease: 'power4.out',
+        delay: 0.15,
+        clearProps: 'transform,opacity',
+      },
+    )
   }, root)
 
   return () => ctx.revert()

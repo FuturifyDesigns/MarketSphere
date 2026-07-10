@@ -55,118 +55,134 @@ export function Home() {
     if (!root) return
 
     let ctx: gsap.Context | undefined
+    let started = false
 
     const initAnimations = () => {
+      if (started) return
+      started = true
+
       ctx = gsap.context(() => {
-      // Day → night sky scrub
-      ScrollTrigger.create({
-        trigger: root,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 0.8,
-        onUpdate: (self) => {
-          const p = self.progress
-          document.documentElement.style.setProperty('--sky-progress', String(p))
-          document.documentElement.setAttribute('data-theme', p > 0.55 ? 'night' : 'day')
-        },
-      })
-
-      // Hero entrance
-      const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } })
-      heroTl
-        .from('.hero__line', { y: 80, opacity: 0, duration: 1.1, stagger: 0.12 })
-        .from('.hero__sub', { y: 30, opacity: 0, duration: 0.8 }, '-=0.5')
-        .from('.hero__actions', { y: 20, opacity: 0, duration: 0.7 }, '-=0.4')
-        .from('.hero__visual', { scale: 0.92, opacity: 0, duration: 1 }, '-=0.8')
-        .from('.hero__scroll-hint', { opacity: 0, duration: 0.6 }, '-=0.3')
-
-      // Pinned hero parallax
-      if (heroRef.current) {
-        gsap.to('.hero__content', {
-          y: -60,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 1,
+        // Day → night sky scrub
+        ScrollTrigger.create({
+          trigger: root,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.8,
+          onUpdate: (self) => {
+            const p = self.progress
+            document.documentElement.style.setProperty('--sky-progress', String(p))
+            document.documentElement.setAttribute('data-theme', p > 0.55 ? 'night' : 'day')
           },
         })
-        gsap.to('.hero__visual', {
-          y: -40,
-          scale: 0.95,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 1,
-          },
+
+        const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } })
+        heroTl
+          .fromTo('.hero__line', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, stagger: 0.12, clearProps: 'transform,opacity' })
+          .fromTo('.hero__sub', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, clearProps: 'transform,opacity' }, '-=0.5')
+          .fromTo('.hero__actions', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, clearProps: 'transform,opacity' }, '-=0.4')
+          .fromTo('.hero__visual', { scale: 0.92, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, clearProps: 'transform,opacity' }, '-=0.8')
+          .fromTo('.hero__scroll-hint', { opacity: 0 }, { opacity: 1, duration: 0.6, clearProps: 'opacity' }, '-=0.3')
+
+        if (heroRef.current) {
+          gsap.to('.hero__content', {
+            y: -60,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: heroRef.current,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: 1,
+            },
+          })
+          gsap.to('.hero__visual', {
+            y: -40,
+            scale: 0.95,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: heroRef.current,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: 1,
+            },
+          })
+        }
+
+        gsap.utils.toArray<HTMLElement>('.reveal-item').forEach((el) => {
+          gsap.fromTo(
+            el,
+            { y: 40, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.9,
+              ease: 'power3.out',
+              clearProps: 'transform,opacity',
+              scrollTrigger: {
+                trigger: el,
+                start: 'top 88%',
+                once: true,
+              },
+            },
+          )
         })
-      }
 
-      // Reveal on scroll
-      gsap.utils.toArray<HTMLElement>('.reveal-item').forEach((el) => {
-        gsap.from(el, {
-          y: 40,
-          opacity: 0,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 88%',
-            once: true,
+        gsap.fromTo(
+          '.stat-card',
+          { y: 50, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'power3.out',
+            clearProps: 'transform,opacity',
+            scrollTrigger: {
+              trigger: '.stats-row',
+              start: 'top 80%',
+              once: true,
+            },
           },
-        })
-      })
+        )
 
-      // Stats counter feel
-      gsap.from('.stat-card', {
-        y: 50,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.stats-row',
-          start: 'top 80%',
-        },
-      })
+        const track = servicesTrackRef.current
+        const pin = servicesPinRef.current
+        if (track && pin) {
+          const getScroll = () => track.scrollWidth - window.innerWidth + 100
+          gsap.to(track, {
+            x: () => -getScroll(),
+            ease: 'none',
+            scrollTrigger: {
+              trigger: pin,
+              pin: true,
+              scrub: 1,
+              start: 'top top',
+              end: () => `+=${getScroll()}`,
+              invalidateOnRefresh: true,
+            },
+          })
+        }
 
-      // Horizontal services scroll (Lusion-style)
-      const track = servicesTrackRef.current
-      const pin = servicesPinRef.current
-      if (track && pin) {
-        const getScroll = () => track.scrollWidth - window.innerWidth + 100
-        gsap.to(track, {
-          x: () => -getScroll(),
-          ease: 'none',
-          scrollTrigger: {
-            trigger: pin,
-            pin: true,
-            scrub: 1,
-            start: 'top top',
-            end: () => `+=${getScroll()}`,
-            invalidateOnRefresh: true,
+        ScrollTrigger.batch('.testimonial-card', {
+          onEnter: (batch) => {
+            gsap.fromTo(
+              batch,
+              { y: 40, opacity: 0 },
+              { y: 0, opacity: 1, stagger: 0.12, duration: 0.7, ease: 'power3.out', clearProps: 'transform,opacity' },
+            )
           },
+          start: 'top 90%',
+          once: true,
         })
-      }
 
-      // Testimonial cards stagger
-      ScrollTrigger.batch('.testimonial-card', {
-        onEnter: (batch) => {
-          gsap.from(batch, { y: 40, opacity: 0, stagger: 0.12, duration: 0.7, ease: 'power3.out' })
-        },
-        start: 'top 90%',
-      })
-    }, root)
-
-      ScrollTrigger.refresh()
+        ScrollTrigger.refresh()
+      }, root)
     }
 
     const removeIntroListener = onIntroComplete(initAnimations)
+    const failsafe = window.setTimeout(initAnimations, 4200)
 
     return () => {
+      window.clearTimeout(failsafe)
       removeIntroListener()
       ctx?.revert()
       document.documentElement.style.setProperty('--sky-progress', '0')
