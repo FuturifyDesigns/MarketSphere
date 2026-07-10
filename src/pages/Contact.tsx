@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Mail, MapPin, Phone } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
@@ -8,7 +8,7 @@ import './Contact.css'
 export function Contact() {
   const [submitted, setSubmitted] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     setSubmitted(true)
   }

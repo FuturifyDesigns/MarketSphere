@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import { Heart, Mail, MapPin, Phone } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -53,7 +53,7 @@ export function ProviderProfile() {
     }
   }
 
-  const submitEnquiry = async (e: React.FormEvent) => {
+  const submitEnquiry = async (e: FormEvent) => {
     e.preventDefault()
     if (!user || !id) return
     await supabase.from('enquiries').insert({

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type RefObject } from 'react'
 import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -27,7 +27,7 @@ export function useLenis() {
   }, [])
 }
 
-export function useScrollSky(containerRef: React.RefObject<HTMLElement | null>) {
+export function useScrollSky(containerRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const el = containerRef.current
     if (!el) return

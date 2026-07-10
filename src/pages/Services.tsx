@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
+import type { ReactNode } from 'react'
 import { Building, GraduationCap, Lightbulb, Megaphone, Users } from 'lucide-react'
 import { SERVICES } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import './Services.css'
 
-const ICONS: Record<string, React.ReactNode> = {
+const ICONS: Record<string, ReactNode> = {
   users: <Users size={24} />,
   'graduation-cap': <GraduationCap size={24} />,
   megaphone: <Megaphone size={24} />,

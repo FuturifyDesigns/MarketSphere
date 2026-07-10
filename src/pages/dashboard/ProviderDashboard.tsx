@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { Inbox, Settings } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase, uploadFile } from '../../lib/supabase'
@@ -73,7 +73,7 @@ export function ProviderDashboard() {
     refreshProfile()
   }
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !provider) return
     const url = await uploadFile('provider-logos', `${provider.id}/logo`, file)
