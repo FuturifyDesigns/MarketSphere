@@ -4,16 +4,16 @@
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 0.75rem 0;
-  background: rgba(250, 248, 244, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(74, 63, 47, 0.08);
-  transition: background 0.4s, border-color 0.4s;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
 }
 
-[data-theme='night'] .navbar {
-  background: rgba(14, 17, 22, 0.9);
-  border-bottom-color: rgba(201, 162, 75, 0.12);
+.navbar--scrolled {
+  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .navbar__inner {
@@ -21,6 +21,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
+  width: 100%;
 }
 
 .navbar__brand {
@@ -29,13 +30,15 @@
   gap: 0.625rem;
   text-decoration: none;
   color: inherit;
+  flex-shrink: 0;
 }
 
 .navbar__logo {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   object-fit: cover;
+  box-shadow: 0 2px 12px rgba(201, 162, 75, 0.25);
 }
 
 .navbar__name {
@@ -45,32 +48,58 @@
   letter-spacing: -0.02em;
 }
 
-.navbar__nav {
+.navbar__pill {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.125rem;
+  background: color-mix(in srgb, var(--card-bg) 80%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 0.25rem;
+  backdrop-filter: blur(8px);
 }
 
 .navbar__link {
   font-family: var(--font-ui);
   font-size: 0.8125rem;
   font-weight: 500;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.875rem;
   text-decoration: none;
   color: var(--text-secondary);
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   transition: color 0.2s, background 0.2s;
 }
 
-.navbar__link:hover,
+.navbar__link:hover {
+  color: var(--text-primary);
+}
+
 .navbar__link--active {
-  color: var(--color-gold);
+  color: var(--color-night);
+  background: var(--color-gold);
+}
+
+[data-theme='night'] .navbar__link--active {
+  color: var(--color-night);
 }
 
 .navbar__actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.navbar__dash {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.5rem;
+}
+
+.navbar__dash:hover {
+  color: var(--color-gold);
 }
 
 .navbar__signout {
@@ -103,17 +132,14 @@
 
   .navbar__nav {
     position: fixed;
-    top: 60px;
+    top: var(--nav-height);
     left: 0;
     right: 0;
-    flex-direction: column;
-    background: var(--bg-primary);
     padding: 1rem;
-    border-bottom: 1px solid rgba(74, 63, 47, 0.1);
     transform: translateY(-120%);
     opacity: 0;
     pointer-events: none;
-    transition: all 0.3s ease;
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .navbar__nav--open {
@@ -122,12 +148,21 @@
     pointer-events: auto;
   }
 
-  .navbar__link {
+  .navbar__pill {
+    flex-direction: column;
+    border-radius: var(--radius-md);
     width: 100%;
-    padding: 0.75rem 1rem;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    padding: 0.5rem;
   }
 
-  .navbar__dashboard {
+  .navbar__link {
+    width: 100%;
+    padding: 0.875rem 1rem;
+  }
+
+  .navbar__dash {
     display: none;
   }
 }

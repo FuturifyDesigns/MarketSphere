@@ -1,23 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter+Tight:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter+Tight:wght@400;500;600;700&display=swap');
 
 :root {
   --color-day: #FAF8F4;
   --color-night: #0E1116;
   --color-gold: #C9A24B;
+  --color-gold-light: #E8D5A0;
   --color-sand: #E8DCC4;
   --color-bronze: #4A3F2F;
+  --color-bronze-muted: #6B5D4A;
 
   --font-display: 'Fraunces', Georgia, serif;
   --font-ui: 'Inter Tight', system-ui, sans-serif;
 
   --sky-progress: 0;
+  --nav-height: 72px;
 
   --bg-primary: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), var(--color-night));
   --text-primary: color-mix(in srgb, var(--color-bronze) calc((1 - var(--sky-progress)) * 100%), var(--color-day));
-  --text-secondary: color-mix(in srgb, rgba(74, 63, 47, 0.7) calc((1 - var(--sky-progress)) * 100%), rgba(250, 248, 244, 0.6));
-  --card-bg: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), rgba(255, 255, 255, 0.04));
-  --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.15));
-  --card-shadow: 0 2px 12px color-mix(in srgb, rgba(74, 63, 47, 0.06) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.2));
+  --text-secondary: color-mix(in srgb, var(--color-bronze-muted) calc((1 - var(--sky-progress)) * 100%), rgba(250, 248, 244, 0.55));
+  --card-bg: color-mix(in srgb, #ffffff calc((1 - var(--sky-progress)) * 55%), rgba(255, 255, 255, 0.05));
+  --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.18));
+  --card-shadow: 0 4px 24px color-mix(in srgb, rgba(74, 63, 47, 0.08) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.35));
+  --border-subtle: color-mix(in srgb, rgba(74, 63, 47, 0.12) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.12));
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 100px;
 }
 
 *,
@@ -32,6 +41,14 @@ html {
   scroll-behavior: auto;
 }
 
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
 body {
   font-family: var(--font-ui);
   font-size: 16px;
@@ -39,7 +56,7 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   -webkit-font-smoothing: antialiased;
-  transition: background 0.1s, color 0.1s;
+  overflow-x: hidden;
 }
 
 #root {
@@ -48,87 +65,144 @@ body {
 
 .container {
   width: 100%;
-  max-width: 1140px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.container--wide {
+  max-width: 1400px;
 }
 
 .main {
   min-height: 100vh;
 }
 
-/* Sections with day/night narrative */
-.section--day { background: var(--color-day); color: var(--color-bronze); }
-.section--mid { background: color-mix(in srgb, var(--color-day) 60%, var(--color-sand)); color: var(--color-bronze); }
-.section--warm { background: var(--color-sand); color: var(--color-bronze); }
-.section--dusk { background: color-mix(in srgb, var(--color-sand) 40%, #2a2318); color: var(--color-day); }
-.section--night { background: var(--color-night); color: var(--color-day); }
-
 .section {
-  padding: 5rem 0;
+  padding: clamp(4rem, 10vw, 7rem) 0;
+  position: relative;
 }
 
-.section--sand {
-  background: var(--color-sand);
-}
+.section--day { color: var(--color-bronze); }
+.section--night { color: var(--color-day); }
 
 .section-header {
+  max-width: 720px;
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+}
+
+.section-header--center {
   text-align: center;
-  max-width: 640px;
-  margin: 0 auto 2rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .section-header h2 {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  line-height: 1.2;
-  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
 }
 
 .section-header p {
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
+  line-height: 1.7;
   color: var(--text-secondary);
-  line-height: 1.6;
 }
 
 .section-header--light h2 {
   color: var(--color-day);
 }
 
-.section-title {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  margin-bottom: 0.5rem;
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-gold);
+  margin-bottom: 1rem;
+}
+
+.section-label::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--color-gold);
 }
 
 .eyebrow {
   display: inline-block;
   font-family: var(--font-ui);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: var(--color-gold);
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .lead {
-  font-size: 1.0625rem;
-  line-height: 1.7;
+  font-size: clamp(1rem, 2vw, 1.1875rem);
+  line-height: 1.75;
   color: var(--text-secondary);
-  max-width: 600px;
+  max-width: 56ch;
 }
 
+.display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+
+.display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.text-gold { color: var(--color-gold); }
+.text-italic { font-style: italic; }
+
 .page-hero {
-  padding: 7rem 0 3rem;
+  padding: calc(var(--nav-height) + 3rem) 0 clamp(3rem, 8vw, 5rem);
+  position: relative;
 }
 
 .page-hero h1 {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  margin-bottom: 1rem;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.25rem;
+}
+
+/* Branch-style cards */
+.bento-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(12px);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--color-gold) 12%, transparent);
+}
+
+.reveal-item {
+  opacity: 0;
+  transform: translateY(40px);
 }
 
 .loading-screen {
@@ -158,4 +232,11 @@ a {
 img {
   max-width: 100%;
   height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item {
+    opacity: 1;
+    transform: none;
+  }
 }

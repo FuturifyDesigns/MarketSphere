@@ -1,50 +1,59 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect } from 'react'
 import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+let lenisInstance: Lenis | null = null
+
+export function getLenis() {
+  return lenisInstance
+}
+
 export function useLenis() {
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.4,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
+      touchMultiplier: 1.5,
     })
+    lenisInstance = lenis
 
     lenis.on('scroll', ScrollTrigger.update)
 
-    const raf = (time: number) => {
-      lenis.raf(time)
-      requestAnimationFrame(raf)
-    }
-    requestAnimationFrame(raf)
+    ScrollTrigger.scrollerProxy(document.documentElement, {
+      scrollTop(value) {
+        if (arguments.length) {
+          lenis.scrollTo(value as number, { immediate: true })
+        }
+        return lenis.scroll
+      },
+      getBoundingClientRect() {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        }
+      },
+      pinType: document.documentElement.style.transform ? 'transform' : 'fixed',
+    })
+
+    const onRefresh = () => lenis.resize()
+    ScrollTrigger.addEventListener('refresh', onRefresh)
+    ScrollTrigger.refresh()
+
+    const tick = (time: number) => lenis.raf(time * 1000)
+    gsap.ticker.add(tick)
+    gsap.ticker.lagSmoothing(0)
 
     return () => {
+      gsap.ticker.remove(tick)
+      ScrollTrigger.removeEventListener('refresh', onRefresh)
       lenis.destroy()
+      lenisInstance = null
     }
   }, [])
-}
-
-export function useScrollSky(containerRef: RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-
-    const ctx = gsap.context(() => {
-      gsap.to(document.documentElement, {
-        scrollTrigger: {
-          trigger: el,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 1,
-        },
-        '--sky-progress': 1,
-        ease: 'none',
-      })
-    }, el)
-
-    return () => ctx.revert()
-  }, [containerRef])
 }
