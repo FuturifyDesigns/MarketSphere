@@ -15,18 +15,42 @@
   --sky-progress: 0;
   --nav-height: 72px;
 
-  --bg-primary: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), var(--color-night));
-  --text-primary: color-mix(in srgb, var(--color-bronze) calc((1 - var(--sky-progress)) * 100%), var(--color-day));
-  --text-secondary: color-mix(in srgb, var(--color-bronze-muted) calc((1 - var(--sky-progress)) * 100%), rgba(250, 248, 244, 0.55));
-  --card-bg: color-mix(in srgb, #ffffff calc((1 - var(--sky-progress)) * 55%), rgba(255, 255, 255, 0.05));
-  --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.18));
-  --card-shadow: 0 4px 24px color-mix(in srgb, rgba(74, 63, 47, 0.08) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.35));
-  --border-subtle: color-mix(in srgb, rgba(74, 63, 47, 0.12) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.12));
+  --text-primary: #2E2720;
+  --text-secondary: #4A4034;
+  --text-muted: #6B5D4A;
+  --bg-primary: var(--color-day);
+  --card-bg: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(74, 63, 47, 0.12);
+  --card-shadow: 0 4px 24px rgba(74, 63, 47, 0.08);
+  --border-subtle: rgba(74, 63, 47, 0.14);
 
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-pill: 100px;
+}
+
+html[data-theme='day'],
+html:not([data-theme]) {
+  --text-primary: #2E2720;
+  --text-secondary: #4A4034;
+  --text-muted: #6B5D4A;
+  --bg-primary: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), var(--color-night));
+  --card-bg: color-mix(in srgb, rgba(255, 255, 255, 0.96) calc((1 - var(--sky-progress)) * 100%), rgba(255, 255, 255, 0.1));
+  --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.14) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.22));
+  --card-shadow: 0 4px 24px color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.4));
+  --border-subtle: color-mix(in srgb, rgba(74, 63, 47, 0.14) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.16));
+}
+
+html[data-theme='night'] {
+  --text-primary: #FAF8F4;
+  --text-secondary: rgba(250, 248, 244, 0.82);
+  --text-muted: rgba(250, 248, 244, 0.62);
+  --bg-primary: color-mix(in srgb, var(--color-day) calc((1 - var(--sky-progress)) * 100%), var(--color-night));
+  --card-bg: color-mix(in srgb, rgba(255, 255, 255, 0.96) calc((1 - var(--sky-progress)) * 100%), rgba(255, 255, 255, 0.1));
+  --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.14) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.22));
+  --card-shadow: 0 4px 24px color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.4));
+  --border-subtle: color-mix(in srgb, rgba(74, 63, 47, 0.14) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.16));
 }
 
 *,
@@ -57,6 +81,25 @@ body {
   background: var(--bg-primary);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+}
+
+.page {
+  position: relative;
+}
+
+.page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -5%, rgba(201, 162, 75, 0.1) 0%, transparent 55%),
+    var(--bg-primary);
 }
 
 #root {
@@ -103,6 +146,7 @@ body {
   line-height: 1.08;
   letter-spacing: -0.03em;
   margin-bottom: 1rem;
+  color: var(--text-primary);
 }
 
 .section-header p {
@@ -182,6 +226,11 @@ body {
   line-height: 1.05;
   letter-spacing: -0.03em;
   margin-bottom: 1.25rem;
+  color: var(--text-primary);
+}
+
+.page-hero .lead {
+  color: var(--text-secondary);
 }
 
 /* Branch-style cards */
@@ -201,8 +250,7 @@ body {
 }
 
 .reveal-item {
-  opacity: 0;
-  transform: translateY(40px);
+  will-change: transform, opacity;
 }
 
 .loading-screen {
@@ -234,8 +282,39 @@ img {
   height: auto;
 }
 
+.section--accent {
+  background: color-mix(in srgb, var(--color-gold) 6%, var(--bg-primary));
+  border-block: 1px solid var(--border-subtle);
+}
+
+.cta-panel {
+  text-align: center;
+  padding: clamp(2.5rem, 6vw, 4rem);
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--color-gold) 25%, transparent);
+}
+
+.cta-panel h2 {
+  margin-bottom: 0.75rem;
+}
+
+.cta-panel p {
+  font-size: 1.0625rem;
+  color: var(--text-secondary);
+  margin: 0 auto 2rem;
+  max-width: 48ch;
+}
+
+.cta-panel__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal-item {
+  .reveal-item,
+  .page-reveal {
     opacity: 1;
     transform: none;
   }

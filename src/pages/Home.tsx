@@ -79,8 +79,7 @@ export function Home() {
       // Pinned hero parallax
       if (heroRef.current) {
         gsap.to('.hero__content', {
-          y: -80,
-          opacity: 0.3,
+          y: -60,
           ease: 'none',
           scrollTrigger: {
             trigger: heroRef.current,
@@ -104,15 +103,15 @@ export function Home() {
 
       // Reveal on scroll
       gsap.utils.toArray<HTMLElement>('.reveal-item').forEach((el) => {
-        gsap.to(el, {
-          y: 0,
-          opacity: 1,
+        gsap.from(el, {
+          y: 40,
+          opacity: 0,
           duration: 0.9,
           ease: 'power3.out',
           scrollTrigger: {
             trigger: el,
             start: 'top 88%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         })
       })
@@ -158,7 +157,11 @@ export function Home() {
       })
     }, root)
 
-    return () => ctx.revert()
+    return () => {
+      ctx.revert()
+      document.documentElement.style.setProperty('--sky-progress', '0')
+      document.documentElement.setAttribute('data-theme', 'day')
+    }
   }, [])
 
   const fallbackTestimonials: Testimonial[] = [

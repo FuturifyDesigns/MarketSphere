@@ -7,8 +7,8 @@
 .input-group label {
   font-family: var(--font-ui);
   font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .input-group input,
@@ -17,10 +17,10 @@
   font-family: var(--font-ui);
   font-size: 0.875rem;
   padding: 0.75rem 1rem;
-  border: 1px solid rgba(74, 63, 47, 0.15);
-  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   background: var(--color-day);
-  color: var(--color-bronze);
+  color: var(--text-primary);
   transition: border-color 0.2s;
 }
 

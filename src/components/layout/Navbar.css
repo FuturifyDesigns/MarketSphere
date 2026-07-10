@@ -74,6 +74,14 @@
   color: var(--text-primary);
 }
 
+[data-theme='night'] .navbar__link {
+  color: rgba(250, 248, 244, 0.72);
+}
+
+[data-theme='night'] .navbar__link:hover {
+  color: var(--color-day);
+}
+
 .navbar__link--active {
   color: var(--color-night);
   background: var(--color-gold);
