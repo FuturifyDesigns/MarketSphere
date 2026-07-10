@@ -1,7 +1,7 @@
-import { Outlet } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Navbar } from './Navbar'
 import { Footer } from './Footer'
+import { PageTransition } from './PageTransition'
 import { useLenis } from '../../hooks/useLenis'
 import { usePageTheme } from '../../hooks/usePageTheme'
 
@@ -19,7 +19,7 @@ export function Layout() {
     <div className="layout">
       <Navbar />
       <main className="main">
-        <Outlet />
+        <PageTransition />
       </main>
       <Footer />
     </div>

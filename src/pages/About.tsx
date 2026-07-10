@@ -1,52 +1,15 @@
-import { useRef, useEffect } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import './About.css'
 
-gsap.registerPlugin(ScrollTrigger)
-
 export function About() {
-  const pageRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = pageRef.current
-    if (!el) return
-
-    const ctx = gsap.context(() => {
-      gsap.from('.about-hero__content > *', {
-        y: 50,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: 'power4.out',
-      })
-
-      gsap.utils.toArray<HTMLElement>('.about-reveal').forEach((item) => {
-        gsap.from(item, {
-          y: 40,
-          opacity: 0,
-          duration: 0.8,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: item,
-            start: 'top 85%',
-          },
-        })
-      })
-    }, el)
-
-    return () => ctx.revert()
-  }, [])
-
   return (
-    <div className="page about-page" ref={pageRef}>
+    <div className="page about-page">
       <section className="about-hero">
         <div className="container about-hero__inner">
-          <div className="about-hero__content">
+          <div className="about-hero__content page-enter-hero">
             <span className="section-label">About Us</span>
             <h1 className="display-xl">
               Building Botswana's<br />
@@ -57,7 +20,7 @@ export function About() {
               Work With Us <ArrowRight size={16} />
             </Button>
           </div>
-          <div className="about-hero__card bento-card">
+          <div className="about-hero__card bento-card about-reveal">
             <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="about-hero__logo" />
             <h3>{COMPANY.name}</h3>
             <dl className="about-hero__meta">

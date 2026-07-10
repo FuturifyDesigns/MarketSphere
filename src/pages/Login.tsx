@@ -1,12 +1,15 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './Auth.css'
 
 export function Login() {
+  const pageRef = useRef<HTMLDivElement>(null)
+  useAuthPageEnter(pageRef)
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -36,7 +39,7 @@ export function Login() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" ref={pageRef}>
       <div className="auth-card">
         <Link to="/" className="auth-logo">
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />

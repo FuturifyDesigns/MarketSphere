@@ -1,13 +1,8 @@
-import { useRef, useEffect, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { ArrowRight, Building, GraduationCap, Lightbulb, Megaphone, Users } from 'lucide-react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SERVICES } from '../lib/constants'
 import { Button } from '../components/ui/Button'
-import { usePageReveal } from '../hooks/usePageReveal'
 import './Services.css'
-
-gsap.registerPlugin(ScrollTrigger)
 
 const ICONS: Record<string, ReactNode> = {
   users: <Users size={26} />,
@@ -18,31 +13,11 @@ const ICONS: Record<string, ReactNode> = {
 }
 
 export function Services() {
-  const pageRef = useRef<HTMLDivElement>(null)
-  usePageReveal(pageRef)
-
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const ctx = gsap.context(() => {
-      gsap.from('.services-hero__content > *', {
-        y: 44,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: 'power4.out',
-      })
-    }, root)
-
-    return () => ctx.revert()
-  }, [])
-
   return (
-    <div className="page services-page" ref={pageRef}>
+    <div className="page services-page">
       <section className="services-hero">
         <div className="container services-hero__inner">
-          <div className="services-hero__content">
+          <div className="services-hero__content page-enter-hero">
             <span className="section-label">Our Services</span>
             <h1 className="display-xl">
               Professional solutions<br />

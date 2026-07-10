@@ -48,7 +48,7 @@ export function Browse() {
   return (
     <div className="page browse-page">
       <section className="page-hero">
-        <div className="container">
+        <div className="container page-enter-hero">
           <span className="eyebrow">Find Providers</span>
           <h1>Search verified service providers</h1>
           <p className="lead">

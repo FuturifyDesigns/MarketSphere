@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { SiteIntro } from './components/intro/SiteIntro'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { Home } from './pages/Home'
@@ -18,6 +19,7 @@ import { AdminDashboard } from './pages/dashboard/AdminDashboard'
 export default function App() {
   return (
     <AuthProvider>
+      <SiteIntro />
       <HashRouter>
         <Routes>
           <Route element={<Layout />}>

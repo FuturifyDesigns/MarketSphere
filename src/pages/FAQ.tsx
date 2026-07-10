@@ -1,39 +1,18 @@
-import { useRef, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ChevronDown, ArrowRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import gsap from 'gsap'
 import { FAQ_ITEMS } from '../lib/constants'
 import { Button } from '../components/ui/Button'
-import { usePageReveal } from '../hooks/usePageReveal'
 import './FAQ.css'
 
 export function FAQ() {
-  const pageRef = useRef<HTMLDivElement>(null)
   const [openIndex, setOpenIndex] = useState<number | null>(0)
-  usePageReveal(pageRef)
-
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const ctx = gsap.context(() => {
-      gsap.from('.faq-hero__content > *', {
-        y: 44,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: 'power4.out',
-      })
-    }, root)
-
-    return () => ctx.revert()
-  }, [])
 
   return (
-    <div className="page faq-page" ref={pageRef}>
+    <div className="page faq-page">
       <section className="faq-hero">
         <div className="container faq-hero__inner">
-          <div className="faq-hero__content">
+          <div className="faq-hero__content page-enter-hero">
             <span className="section-label">FAQ</span>
             <h1 className="display-xl">
               Questions?<br />

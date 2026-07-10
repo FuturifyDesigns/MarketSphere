@@ -1,11 +1,14 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './Auth.css'
 
 export function Register() {
+  const pageRef = useRef<HTMLDivElement>(null)
+  useAuthPageEnter(pageRef)
   const { signUp } = useAuth()
   const [searchParams] = useSearchParams()
   const defaultRole = searchParams.get('role') === 'provider' ? 'provider' : 'customer'
@@ -39,7 +42,7 @@ export function Register() {
 
   if (success) {
     return (
-      <div className="auth-page">
+      <div className="auth-page" ref={pageRef}>
         <div className="auth-card">
           <h1>Check your email</h1>
           <p className="auth-subtitle">
@@ -53,7 +56,7 @@ export function Register() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" ref={pageRef}>
       <div className="auth-card auth-card--wide">
         <Link to="/" className="auth-logo">
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />

@@ -1,33 +1,12 @@
-import { useRef, useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Mail, MapPin, Phone, Clock, ArrowRight } from 'lucide-react'
-import gsap from 'gsap'
 import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { usePageReveal } from '../hooks/usePageReveal'
 import './Contact.css'
 
 export function Contact() {
-  const pageRef = useRef<HTMLDivElement>(null)
   const [submitted, setSubmitted] = useState(false)
-  usePageReveal(pageRef)
-
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const ctx = gsap.context(() => {
-      gsap.from('.contact-hero__content > *', {
-        y: 44,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: 'power4.out',
-      })
-    }, root)
-
-    return () => ctx.revert()
-  }, [])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -35,10 +14,10 @@ export function Contact() {
   }
 
   return (
-    <div className="page contact-page" ref={pageRef}>
+    <div className="page contact-page">
       <section className="contact-hero">
         <div className="container contact-hero__inner">
-          <div className="contact-hero__content">
+          <div className="contact-hero__content page-enter-hero">
             <span className="section-label">Get in Touch</span>
             <h1 className="display-xl">
               Let's start a<br />

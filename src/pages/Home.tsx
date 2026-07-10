@@ -10,6 +10,7 @@ import { ProviderCard } from '../components/ui/ProviderCard'
 import { Button } from '../components/ui/Button'
 import { COMPANY, SERVICES } from '../lib/constants'
 import { supabase } from '../lib/supabase'
+import { onIntroComplete } from '../lib/intro'
 import type { Provider, Testimonial } from '../lib/types'
 import './Home.css'
 
@@ -53,7 +54,10 @@ export function Home() {
     const root = rootRef.current
     if (!root) return
 
-    const ctx = gsap.context(() => {
+    let ctx: gsap.Context | undefined
+
+    const initAnimations = () => {
+      ctx = gsap.context(() => {
       // Day → night sky scrub
       ScrollTrigger.create({
         trigger: root,
@@ -157,8 +161,14 @@ export function Home() {
       })
     }, root)
 
+      ScrollTrigger.refresh()
+    }
+
+    const removeIntroListener = onIntroComplete(initAnimations)
+
     return () => {
-      ctx.revert()
+      removeIntroListener()
+      ctx?.revert()
       document.documentElement.style.setProperty('--sky-progress', '0')
       document.documentElement.setAttribute('data-theme', 'day')
     }
