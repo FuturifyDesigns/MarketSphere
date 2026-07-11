@@ -182,7 +182,10 @@ export function Home() {
       <section className="hero" ref={heroRef}>
         <div className="container hero__inner">
           <div className="hero__content">
-            <span className="section-label hero__label">Welcome to {COMPANY.shortName}</span>
+            <div className="hero__welcome" aria-label={`Welcome to ${COMPANY.shortName}`}>
+              <span className="hero__welcome-eyebrow">Welcome to</span>
+              <span className="hero__welcome-brand">{COMPANY.shortName}</span>
+            </div>
             <h1 className="display-xl hero__title">
               <span className="hero__line">Connect with</span>
               <span className="hero__line text-gold text-italic">trusted providers</span>

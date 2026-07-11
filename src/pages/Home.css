@@ -17,6 +17,65 @@
   padding-block: clamp(1rem, 3vw, 2rem);
 }
 
+.hero__welcome {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
+  padding-left: 1.35rem;
+  max-width: 22ch;
+}
+
+.hero__welcome::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  bottom: 0.1em;
+  width: 3px;
+  border-radius: 100px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-gold) 70%, white) 35%,
+    var(--color-gold) 50%,
+    color-mix(in srgb, var(--color-gold) 70%, white) 65%,
+    transparent 100%
+  );
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+
+.hero__welcome-eyebrow {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3.2vw, 2.1rem);
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+}
+
+.hero__welcome-brand {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.8vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.03em;
+  background: linear-gradient(
+    120deg,
+    #a67c2e 0%,
+    var(--color-gold) 38%,
+    #f0d78c 62%,
+    var(--color-gold) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 12px 40px color-mix(in srgb, var(--color-gold) 22%, transparent);
+  filter: drop-shadow(0 4px 20px color-mix(in srgb, var(--color-gold) 18%, transparent));
+}
+
 .hero .display-xl {
   font-size: clamp(2.25rem, 5.5vw, 4.25rem);
 }
