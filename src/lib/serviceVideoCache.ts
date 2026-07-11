@@ -23,6 +23,24 @@ function cdnUrl(path: string) {
   return `${CDN_BASE}${path}`
 }
 
+function waitForCanPlayThrough(video: HTMLVideoElement, timeoutMs = 15000) {
+  return new Promise<void>((resolve) => {
+    const finish = () => {
+      window.clearTimeout(timer)
+      resolve()
+    }
+
+    if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+      finish()
+      return
+    }
+
+    const timer = window.setTimeout(finish, timeoutMs)
+    video.addEventListener('canplaythrough', finish, { once: true })
+    video.addEventListener('error', finish, { once: true })
+  })
+}
+
 async function fetchToBlob(path: string): Promise<string | null> {
   for (const url of [localUrl(path), cdnUrl(path)]) {
     try {
@@ -37,7 +55,7 @@ async function fetchToBlob(path: string): Promise<string | null> {
   return null
 }
 
-function warmDecoder(src: string) {
+async function warmDecoder(path: string, src: string) {
   const video = document.createElement('video')
   video.muted = true
   video.defaultMuted = true
@@ -51,26 +69,32 @@ function warmDecoder(src: string) {
   document.body.appendChild(video)
   video.load()
   void video.play().catch(() => {})
+  await waitForCanPlayThrough(video)
+  readyByVideo.set(path, true)
+  notify()
 }
 
-/** Start downloading + decoding all service videos immediately. */
+async function preloadOne(path: string) {
+  const blobUrl = await fetchToBlob(path)
+  if (blobUrl) {
+    blobByVideo.set(path, blobUrl)
+    await warmDecoder(path, blobUrl)
+    return
+  }
+
+  await warmDecoder(path, localUrl(path))
+}
+
+/** Start downloading + decoding all service videos immediately (slide order first). */
 export function preloadServiceVideos() {
   if (preloadPromise) return preloadPromise
 
   preloadStarted = true
-  preloadPromise = Promise.all(
-    SERVICES.map(async (service) => {
-      const blobUrl = await fetchToBlob(service.video)
-      if (blobUrl) {
-        blobByVideo.set(service.video, blobUrl)
-        warmDecoder(blobUrl)
-      } else {
-        warmDecoder(localUrl(service.video))
-      }
-      readyByVideo.set(service.video, true)
-      notify()
-    }),
-  ).then(() => undefined)
+  preloadPromise = (async () => {
+    for (const service of SERVICES) {
+      await preloadOne(service.video)
+    }
+  })()
 
   return preloadPromise
 }

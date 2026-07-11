@@ -41,7 +41,10 @@ export function ServiceSlideMedia({ video, image, title, index }: ServiceSlideMe
       if (el.paused) void el.play().catch(() => {})
     }
 
-    play()
+    if (isServiceVideoReady(video)) play()
+
+    void preloadServiceVideos().then(play)
+
     el.addEventListener('loadeddata', play)
     el.addEventListener('canplay', play)
     el.addEventListener('canplaythrough', play)
@@ -51,7 +54,7 @@ export function ServiceSlideMedia({ video, image, title, index }: ServiceSlideMe
       el.removeEventListener('canplay', play)
       el.removeEventListener('canplaythrough', play)
     }
-  }, [src, useImage])
+  }, [src, useImage, video])
 
   if (useImage) {
     return (
