@@ -24,12 +24,13 @@ export function AuthGate() {
       <div className="auth-gate__bg auth-gate__bg--signin auth-theme-bg--signin" aria-hidden="true" />
       <div className="auth-gate__bg auth-gate__bg--signup auth-theme-bg--signup" aria-hidden="true" />
 
-      <div className="auth-gate__card">
-        <Link to="/" className="auth-gate__card-brand">
+      <div className="auth-gate__stack">
+        <Link to="/" className="auth-gate__brand">
           <img src={`${base}logo.png`} alt="" />
           <span>{COMPANY.shortName}</span>
         </Link>
 
+        <div className="auth-gate__card">
         <div className="auth-gate__divider" aria-hidden="true" />
 
         <button
@@ -73,6 +74,7 @@ export function AuthGate() {
             </span>
           </div>
         </button>
+        </div>
       </div>
 
       <p className="auth-gate__footer">
