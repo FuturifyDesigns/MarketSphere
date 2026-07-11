@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, UserPlus, ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
@@ -11,8 +11,13 @@ export function AuthGate() {
   const navigate = useNavigate()
   useAuthPageEnter(pageRef)
 
+  const gateStyle = {
+    '--auth-cover-signin': `url(${import.meta.env.BASE_URL}auth/sign-in.png)`,
+    '--auth-cover-signup': `url(${import.meta.env.BASE_URL}auth/sign-up.png)`,
+  } as CSSProperties
+
   return (
-    <div className="auth-gate" ref={pageRef}>
+    <div className="auth-gate" ref={pageRef} style={gateStyle}>
       <div className="auth-gate__bg auth-gate__bg--base auth-theme-bg--base" aria-hidden="true" />
       <div className="auth-gate__bg auth-gate__bg--signin auth-theme-bg--signin" aria-hidden="true" />
       <div className="auth-gate__bg auth-gate__bg--signup auth-theme-bg--signup" aria-hidden="true" />
@@ -30,6 +35,8 @@ export function AuthGate() {
           className="auth-gate__half auth-gate__half--signin"
           onClick={() => navigate('/login')}
         >
+          <span className="auth-gate__half-cover auth-gate__half-cover--signin" aria-hidden="true" />
+          <span className="auth-gate__half-overlay" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
             <LogIn size={28} strokeWidth={1.5} />
             <span className="auth-gate__label">Sign In</span>
@@ -49,6 +56,8 @@ export function AuthGate() {
           className="auth-gate__half auth-gate__half--signup"
           onClick={() => navigate('/register')}
         >
+          <span className="auth-gate__half-cover auth-gate__half-cover--signup" aria-hidden="true" />
+          <span className="auth-gate__half-overlay" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
             <UserPlus size={28} strokeWidth={1.5} />
             <span className="auth-gate__label">Sign Up</span>
