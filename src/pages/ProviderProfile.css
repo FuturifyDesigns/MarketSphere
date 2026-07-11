@@ -221,3 +221,8 @@
     justify-content: center;
   }
 }
+
+.upload-error {
+  font-size: 0.8125rem;
+  color: #c44;
+}
