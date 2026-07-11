@@ -12,7 +12,9 @@ export function AuthGate() {
 
   return (
     <div className="auth-gate" ref={pageRef}>
-      <div className="auth-gate__bg" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--base" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--signin" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--signup" aria-hidden="true" />
 
       <Link to="/" className="auth-gate__home">
         <img src={`${import.meta.env.BASE_URL}logo.png`} alt={COMPANY.shortName} />
@@ -27,8 +29,6 @@ export function AuthGate() {
           className="auth-gate__half auth-gate__half--signin"
           onClick={() => navigate('/login')}
         >
-          <span className="auth-gate__half-bg" aria-hidden="true" />
-          <span className="auth-gate__half-shine" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
             <LogIn size={28} strokeWidth={1.5} />
             <span className="auth-gate__label">Sign In</span>
@@ -48,8 +48,6 @@ export function AuthGate() {
           className="auth-gate__half auth-gate__half--signup"
           onClick={() => navigate('/register')}
         >
-          <span className="auth-gate__half-bg" aria-hidden="true" />
-          <span className="auth-gate__half-shine" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
             <UserPlus size={28} strokeWidth={1.5} />
             <span className="auth-gate__label">Sign Up</span>
