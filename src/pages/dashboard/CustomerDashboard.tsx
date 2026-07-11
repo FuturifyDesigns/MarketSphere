@@ -4,6 +4,7 @@ import { Heart, MessageSquare } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { ProviderCard } from '../../components/ui/ProviderCard'
+import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import type { Enquiry, Provider } from '../../lib/types'
 import './Dashboard.css'
 
@@ -44,6 +45,8 @@ export function CustomerDashboard() {
         </div>
 
         <div className="dashboard-grid">
+          <AccountProfileCard />
+
           <section className="dashboard-section">
             <h2><MessageSquare size={18} /> My Enquiries</h2>
             {enquiries.length > 0 ? (

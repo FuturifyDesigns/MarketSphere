@@ -250,3 +250,70 @@
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
+
+.dashboard-profile-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 640px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+.gallery-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-item button {
+  width: 100%;
+  padding: 0.375rem;
+  font-size: 0.6875rem;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.upload-error,
+.contact-form__error {
+  font-size: 0.8125rem;
+  color: #c44;
+}
+
+.admin-row__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-row__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.admin-row__avatar--placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 0.8125rem;
+  color: var(--color-gold);
+  background: rgba(201, 162, 75, 0.12);
+}

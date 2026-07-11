@@ -1,7 +1,9 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { Inbox, Settings } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { supabase, uploadFile } from '../../lib/supabase'
+import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFile } from '../../lib/supabase'
+import { prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
+import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import type { Category, Enquiry, Provider, ProviderService } from '../../lib/types'
@@ -22,6 +24,9 @@ export function ProviderDashboard() {
   })
   const [newService, setNewService] = useState({ title: '', description: '', category_id: '' })
   const [saving, setSaving] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -75,12 +80,65 @@ export function ProviderDashboard() {
 
   const handleLogoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file || !provider) return
-    const url = await uploadFile('provider-logos', `${provider.id}/logo`, file)
-    if (url) {
+
+    setUploadError('')
+    setUploadingLogo(true)
+
+    try {
+      const prepared = await prepareLogoImage(file)
+      const url = await uploadPreparedFile('provider-logos', `${provider.id}/logo`, prepared)
+      if (!url) throw new Error('Logo upload failed')
+
       await supabase.from('providers').update({ logo_url: url }).eq('id', provider.id)
       setProvider({ ...provider, logo_url: url })
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Logo upload failed')
+    } finally {
+      setUploadingLogo(false)
     }
+  }
+
+  const handleGalleryUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !provider) return
+
+    const currentCount = provider.gallery_urls?.length || 0
+    if (currentCount >= UPLOAD_LIMITS.gallery.maxCount) {
+      setUploadError(`Gallery limit is ${UPLOAD_LIMITS.gallery.maxCount} images.`)
+      return
+    }
+
+    setUploadError('')
+    setUploadingGallery(true)
+
+    try {
+      const prepared = await prepareGalleryImage(file)
+      const path = `${provider.id}/${prepared.name}`
+      const url = await uploadPreparedFile('provider-gallery', path, prepared)
+      if (!url) throw new Error('Gallery upload failed')
+
+      const gallery_urls = [...(provider.gallery_urls || []), url]
+      await supabase.from('providers').update({ gallery_urls }).eq('id', provider.id)
+      setProvider({ ...provider, gallery_urls })
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Gallery upload failed')
+    } finally {
+      setUploadingGallery(false)
+    }
+  }
+
+  const removeGalleryImage = async (url: string) => {
+    if (!provider) return
+
+    const path = storagePathFromPublicUrl('provider-gallery', url)
+    if (path) await removeStorageFile('provider-gallery', path)
+
+    const gallery_urls = (provider.gallery_urls || []).filter((item) => item !== url)
+    await supabase.from('providers').update({ gallery_urls }).eq('id', provider.id)
+    setProvider({ ...provider, gallery_urls })
   }
 
   const addService = async () => {
@@ -110,6 +168,7 @@ export function ProviderDashboard() {
   }
 
   const statusLabel = provider?.status || 'not_created'
+  const galleryCount = provider?.gallery_urls?.length || 0
 
   return (
     <div className="dashboard">
@@ -137,29 +196,66 @@ export function ProviderDashboard() {
         </div>
 
         {tab === 'profile' && (
-          <div className="dashboard-form">
-            {provider?.logo_url && (
-              <img src={provider.logo_url} alt="" className="dashboard-logo-preview" />
-            )}
-            <div className="input-group">
-              <label>Business Logo</label>
-              <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={!provider} />
-              {!provider && <small>Save your profile first to upload a logo</small>}
+          <div className="dashboard-profile-layout">
+            <AccountProfileCard />
+            <div className="dashboard-form">
+              {provider?.logo_url && (
+                <img src={provider.logo_url} alt="" className="dashboard-logo-preview" />
+              )}
+              <div className="input-group">
+                <label>Business Logo</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleLogoUpload}
+                  disabled={!provider || uploadingLogo}
+                />
+                {!provider && <small>Save your profile first to upload a logo</small>}
+                {uploadingLogo && <small>Compressing and uploading logo…</small>}
+              </div>
+
+              <div className="input-group gallery-upload">
+                <label>Gallery ({galleryCount}/{UPLOAD_LIMITS.gallery.maxCount})</label>
+                {galleryCount > 0 && (
+                  <div className="gallery-grid">
+                    {(provider?.gallery_urls || []).map((url) => (
+                      <div key={url} className="gallery-item">
+                        <img src={url} alt="" />
+                        <button type="button" onClick={() => removeGalleryImage(url)}>Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {provider && galleryCount < UPLOAD_LIMITS.gallery.maxCount && (
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleGalleryUpload}
+                    disabled={uploadingGallery}
+                  />
+                )}
+                {!provider && <small>Save your profile first to upload gallery photos</small>}
+                {uploadingGallery && <small>Compressing and uploading photo…</small>}
+                <small>Images are compressed automatically to stay within free storage limits.</small>
+              </div>
+
+              {uploadError && <p className="upload-error">{uploadError}</p>}
+
+              <Input label="Business Name" value={form.business_name} onChange={(e) => setForm({ ...form, business_name: e.target.value })} required />
+              <div className="input-group">
+                <label htmlFor="desc">Description</label>
+                <textarea id="desc" className="input-field" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} />
+              </div>
+              <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+              <Input label="Contact Email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
+              <Input label="Contact Phone" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+              <Button onClick={saveProfile} disabled={saving}>
+                {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
+              </Button>
+              {statusLabel === 'pending' && (
+                <p className="dashboard-note">Your profile is pending admin approval.</p>
+              )}
             </div>
-            <Input label="Business Name" value={form.business_name} onChange={(e) => setForm({ ...form, business_name: e.target.value })} required />
-            <div className="input-group">
-              <label htmlFor="desc">Description</label>
-              <textarea id="desc" className="input-field" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} />
-            </div>
-            <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-            <Input label="Contact Email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
-            <Input label="Contact Phone" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
-            <Button onClick={saveProfile} disabled={saving}>
-              {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
-            </Button>
-            {statusLabel === 'pending' && (
-              <p className="dashboard-note">Your profile is pending admin approval.</p>
-            )}
           </div>
         )}
 

@@ -74,3 +74,15 @@ export interface Favorite {
   created_at: string
   providers?: Provider
 }
+
+export type ContactMessageStatus = 'new' | 'read' | 'replied' | 'closed'
+
+export interface ContactMessage {
+  id: string
+  full_name: string
+  email: string
+  phone: string | null
+  message: string
+  status: ContactMessageStatus
+  created_at: string
+}

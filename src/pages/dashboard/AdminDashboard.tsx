@@ -1,30 +1,33 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, Check, FolderOpen, Users, X } from 'lucide-react'
+import { BarChart3, Check, FolderOpen, Mail, Users, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import type { Category, Profile, Provider, Testimonial } from '../../lib/types'
+import type { Category, ContactMessage, Profile, Provider, Testimonial } from '../../lib/types'
 import './Dashboard.css'
 
 export function AdminDashboard() {
-  const [stats, setStats] = useState({ users: 0, providers: 0, pending: 0, enquiries: 0 })
+  const [stats, setStats] = useState({ users: 0, providers: 0, pending: 0, enquiries: 0, contacts: 0 })
   const [pendingProviders, setPendingProviders] = useState<Provider[]>([])
   const [allProviders, setAllProviders] = useState<Provider[]>([])
   const [users, setUsers] = useState<Profile[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
-  const [tab, setTab] = useState<'overview' | 'providers' | 'users' | 'categories' | 'testimonials'>('overview')
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
+  const [tab, setTab] = useState<'overview' | 'providers' | 'users' | 'categories' | 'testimonials' | 'contacts'>('overview')
   const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '' })
   const [newTestimonial, setNewTestimonial] = useState({ client_name: '', content: '', service_type: '' })
 
   const loadData = async () => {
-    const [usersRes, providersRes, pendingRes, enquiriesRes, catsRes, testRes] = await Promise.all([
+    const [usersRes, providersRes, pendingRes, enquiriesRes, catsRes, testRes, contactsRes] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('providers').select('*'),
       supabase.from('providers').select('*').eq('status', 'pending'),
       supabase.from('enquiries').select('id', { count: 'exact' }),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
+      supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
     ])
 
     setStats({
@@ -32,12 +35,14 @@ export function AdminDashboard() {
       providers: providersRes.data?.filter((p) => p.status === 'approved').length || 0,
       pending: pendingRes.data?.length || 0,
       enquiries: enquiriesRes.count || 0,
+      contacts: contactsRes.data?.filter((m) => m.status === 'new').length || 0,
     })
     setPendingProviders(pendingRes.data || [])
     setAllProviders(providersRes.data || [])
     setUsers(usersRes.data || [])
     setCategories(catsRes.data || [])
     setTestimonials(testRes.data || [])
+    setContactMessages(contactsRes.data || [])
   }
 
   useEffect(() => { loadData() }, [])
@@ -72,6 +77,11 @@ export function AdminDashboard() {
     loadData()
   }
 
+  const updateContactStatus = async (id: string, status: ContactMessage['status']) => {
+    await supabase.from('contact_messages').update({ status }).eq('id', id)
+    loadData()
+  }
+
   return (
     <div className="dashboard dashboard--admin">
       <div className="container">
@@ -81,19 +91,22 @@ export function AdminDashboard() {
         </div>
 
         <div className="dashboard-tabs">
-          {(['overview', 'providers', 'users', 'categories', 'testimonials'] as const).map((t) => (
+          {(['overview', 'providers', 'users', 'contacts', 'categories', 'testimonials'] as const).map((t) => (
             <button key={t} className={tab === t ? 'tab--active' : ''} onClick={() => setTab(t)}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'contacts' ? `Contacts${stats.contacts > 0 ? ` (${stats.contacts})` : ''}` : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
 
         {tab === 'overview' && (
-          <div className="stats-grid">
+          <div className="dashboard-profile-layout">
+            <AccountProfileCard />
+            <div className="stats-grid">
             <div className="stat-card"><Users size={20} /><strong>{stats.users}</strong><span>Total Users</span></div>
             <div className="stat-card"><Check size={20} /><strong>{stats.providers}</strong><span>Approved Providers</span></div>
             <div className="stat-card"><BarChart3 size={20} /><strong>{stats.pending}</strong><span>Pending Approval</span></div>
             <div className="stat-card"><FolderOpen size={20} /><strong>{stats.enquiries}</strong><span>Total Enquiries</span></div>
+            </div>
           </div>
         )}
 
@@ -145,13 +158,48 @@ export function AdminDashboard() {
           <div className="admin-list">
             {users.map((u) => (
               <div key={u.id} className="admin-row">
-                <div>
-                  <strong>{u.full_name || 'Unnamed'}</strong>
-                  <span>{u.email}</span>
+                <div className="admin-row__identity">
+                  {u.avatar_url ? (
+                    <img src={u.avatar_url} alt="" className="admin-row__avatar" />
+                  ) : (
+                    <div className="admin-row__avatar admin-row__avatar--placeholder" aria-hidden="true">
+                      {(u.full_name || u.email).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <strong>{u.full_name || 'Unnamed'}</strong>
+                    <span>{u.email}</span>
+                  </div>
                 </div>
                 <span className="status-badge">{u.role}</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {tab === 'contacts' && (
+          <div className="enquiry-list">
+            {contactMessages.length > 0 ? contactMessages.map((m) => (
+              <div key={m.id} className="enquiry-detail">
+                <div className="enquiry-detail__header">
+                  <strong>{m.full_name}</strong>
+                  <span className={`status-badge status-badge--${m.status}`}>{m.status}</span>
+                </div>
+                <p className="enquiry-detail__from">
+                  <Mail size={14} /> {m.email}
+                  {m.phone && <> · {m.phone}</>}
+                </p>
+                <p className="enquiry-detail__msg">{m.message}</p>
+                {m.status === 'new' && (
+                  <div className="enquiry-actions">
+                    <Button size="sm" onClick={() => updateContactStatus(m.id, 'read')}>Mark Read</Button>
+                    <Button size="sm" variant="secondary" onClick={() => updateContactStatus(m.id, 'replied')}>Mark Replied</Button>
+                  </div>
+                )}
+              </div>
+            )) : (
+              <p className="dashboard-empty">No contact messages yet.</p>
+            )}
           </div>
         )}
 

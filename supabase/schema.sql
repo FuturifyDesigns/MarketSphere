@@ -217,6 +217,32 @@ create policy "Admins manage site content"
     exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
+-- Contact form messages
+create table if not exists public.contact_messages (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  email text not null,
+  phone text,
+  message text not null,
+  status text not null default 'new' check (status in ('new', 'read', 'replied', 'closed')),
+  created_at timestamptz default now()
+);
+
+alter table public.contact_messages enable row level security;
+
+create policy "Anyone can submit contact messages"
+  on public.contact_messages for insert with check (true);
+
+create policy "Admins read contact messages"
+  on public.contact_messages for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+create policy "Admins update contact messages"
+  on public.contact_messages for update using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
 -- Storage buckets (run in Supabase dashboard or via API)
 -- Create buckets: provider-logos, provider-gallery, avatars (all public read)
 

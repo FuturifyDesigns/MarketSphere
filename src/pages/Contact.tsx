@@ -1,15 +1,39 @@
 import { useState, type FormEvent } from 'react'
 import { Mail, MapPin, Phone, Clock, ArrowRight, MessageSquare, Building2, Send } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
+import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import './Contact.css'
 
 export function Contact() {
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const form = e.currentTarget
+    const data = new FormData(form)
+
+    const { error: insertError } = await supabase.from('contact_messages').insert({
+      full_name: String(data.get('name') || '').trim(),
+      email: String(data.get('email') || '').trim(),
+      phone: String(data.get('phone') || '').trim() || null,
+      message: String(data.get('message') || '').trim(),
+    })
+
+    setLoading(false)
+
+    if (insertError) {
+      setError('Could not send your message. Please try again or email us directly.')
+      return
+    }
+
+    form.reset()
     setSubmitted(true)
   }
 
@@ -140,9 +164,10 @@ export function Contact() {
                     <textarea id="message" name="message" className="input-field" required rows={5} placeholder="How can we help you?" />
                   </div>
                 </div>
-                <Button type="submit" size="lg">
-                  Send Message <ArrowRight size={16} />
+                <Button type="submit" size="lg" disabled={loading}>
+                  {loading ? 'Sending…' : 'Send Message'} <ArrowRight size={16} />
                 </Button>
+                {error && <p className="contact-form__error">{error}</p>}
               </form>
             )}
           </div>

@@ -17,8 +17,17 @@ export async function uploadFile(
   path: string,
   file: File
 ): Promise<string | null> {
+  return uploadPreparedFile(bucket, path, file)
+}
+
+export async function uploadPreparedFile(
+  bucket: string,
+  path: string,
+  file: File,
+): Promise<string | null> {
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     upsert: true,
+    contentType: file.type,
   })
   if (error) {
     console.error('Upload error:', error)
@@ -26,4 +35,20 @@ export async function uploadFile(
   }
   const { data } = supabase.storage.from(bucket).getPublicUrl(path)
   return data.publicUrl
+}
+
+export async function removeStorageFile(bucket: string, path: string): Promise<boolean> {
+  const { error } = await supabase.storage.from(bucket).remove([path])
+  if (error) {
+    console.error('Delete error:', error)
+    return false
+  }
+  return true
+}
+
+export function storagePathFromPublicUrl(bucket: string, publicUrl: string): string | null {
+  const marker = `/storage/v1/object/public/${bucket}/`
+  const index = publicUrl.indexOf(marker)
+  if (index === -1) return null
+  return decodeURIComponent(publicUrl.slice(index + marker.length))
 }
