@@ -27,6 +27,8 @@ export function AuthGate() {
           className="auth-gate__half auth-gate__half--signin"
           onClick={() => navigate('/login')}
         >
+          <span className="auth-gate__half-bg" aria-hidden="true" />
+          <span className="auth-gate__half-shine" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
             <LogIn size={28} strokeWidth={1.5} />
             <span className="auth-gate__label">Sign In</span>
@@ -46,6 +48,8 @@ export function AuthGate() {
           className="auth-gate__half auth-gate__half--signup"
           onClick={() => navigate('/register')}
         >
+          <span className="auth-gate__half-bg" aria-hidden="true" />
+          <span className="auth-gate__half-shine" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
             <UserPlus size={28} strokeWidth={1.5} />
             <span className="auth-gate__label">Sign Up</span>
