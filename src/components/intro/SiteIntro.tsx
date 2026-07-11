@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { COMPANY } from '../../lib/constants'
-import { BrandLogo } from '../ui/BrandLogo'
 import {
   dispatchIntroComplete,
   hasSeenIntro,
@@ -128,7 +127,11 @@ export function SiteIntro() {
       <div className="site-intro__panel">
         <div className="site-intro__logo-wrap">
           <div className="site-intro__ring" />
-          <BrandLogo className="site-intro__logo" />
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt=""
+            className="site-intro__logo"
+          />
         </div>
         <h1 className="site-intro__brand">{COMPANY.shortName}</h1>
         <div className="site-intro__line" />

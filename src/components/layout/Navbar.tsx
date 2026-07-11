@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { Button } from '../ui/Button'
-import { BrandLogo } from '../ui/BrandLogo'
 import './Navbar.css'
 
 const NAV_LINKS = [
@@ -37,7 +36,7 @@ export function Navbar() {
     <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
       <div className="navbar__inner container">
         <Link to="/" className="navbar__brand" onClick={() => setOpen(false)}>
-          <BrandLogo className="navbar__logo" alt="MarketSphere" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MarketSphere" className="navbar__logo" />
           <span className="navbar__name">MarketSphere</span>
         </Link>
 

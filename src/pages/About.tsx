@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
-import { BrandLogo } from '../components/ui/BrandLogo'
 import { AboutCompanyTree } from '../components/about/AboutCompanyTree'
 import { initAboutTreeAnimation } from '../animations/aboutTreeReveal'
 import { onIntroComplete } from '../lib/intro'
@@ -48,7 +47,7 @@ export function About() {
             </Button>
           </div>
           <div className="about-hero__card bento-card about-reveal">
-            <BrandLogo className="about-hero__logo" />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="about-hero__logo" />
             <h3>{COMPANY.name}</h3>
             <dl className="about-hero__meta">
               <div><dt>Registration</dt><dd>{COMPANY.registration}</dd></div>

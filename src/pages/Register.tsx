@@ -2,7 +2,6 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
-import { BrandLogo } from '../components/ui/BrandLogo'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './Auth.css'
@@ -60,7 +59,7 @@ export function Register() {
     <div className="auth-page" ref={pageRef}>
       <div className="auth-card auth-card--wide">
         <Link to="/" className="auth-logo">
-          <BrandLogo />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
         </Link>
         <h1>Create your account</h1>
         <p className="auth-subtitle">Join MarketSphere as a customer or service provider</p>

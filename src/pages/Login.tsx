@@ -2,7 +2,6 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { BrandLogo } from '../components/ui/BrandLogo'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
@@ -43,7 +42,7 @@ export function Login() {
     <div className="auth-page" ref={pageRef}>
       <div className="auth-card">
         <Link to="/" className="auth-logo">
-          <BrandLogo />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
         </Link>
         <h1>Welcome back</h1>
         <p className="auth-subtitle">Sign in to your MarketSphere account</p>
