@@ -19,6 +19,59 @@
 .auth-gate__bg--base {
   z-index: 0;
   opacity: 1;
+  background:
+    linear-gradient(145deg, #eef3fb 0%, #f8f4eb 48%, #eef3fb 100%);
+  overflow: hidden;
+}
+
+.auth-gate__bg--base::before,
+.auth-gate__bg--base::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  opacity: 0.65;
+  animation: auth-gate-orb 18s ease-in-out infinite alternate;
+}
+
+.auth-gate__bg--base::before {
+  width: min(72vw, 520px);
+  height: min(72vw, 520px);
+  top: -12%;
+  left: -8%;
+  background: rgba(59, 130, 246, 0.42);
+}
+
+.auth-gate__bg--base::after {
+  width: min(72vw, 520px);
+  height: min(72vw, 520px);
+  bottom: -14%;
+  right: -10%;
+  background: rgba(201, 162, 75, 0.4);
+  animation-delay: -9s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes auth-gate-orb {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, 5%) scale(1.1);
+  }
+  100% {
+    transform: translate(-5%, 7%) scale(1.06);
+  }
+}
+
+@keyframes auth-icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
 }
 
 .auth-gate__bg--signin {
@@ -72,14 +125,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 1rem;
   text-decoration: none;
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 0.9375rem;
-  letter-spacing: 0.05em;
+  font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.9;
+  opacity: 0.92;
   transition: opacity 0.2s;
 }
 
@@ -88,10 +141,10 @@
 }
 
 .auth-gate__brand img {
-  width: 40px;
-  height: 40px;
+  width: clamp(48px, 8vw, 56px);
+  height: clamp(48px, 8vw, 56px);
   object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(201, 162, 75, 0.25));
+  filter: drop-shadow(0 4px 14px rgba(201, 162, 75, 0.28));
 }
 
 .auth-gate__card {
@@ -244,26 +297,40 @@
   text-align: right;
 }
 
-.auth-gate__half--signin .auth-gate__panel--default svg {
+.auth-gate__icon {
+  flex-shrink: 0;
+  animation: auth-icon-float 3.4s ease-in-out infinite;
+}
+
+.auth-gate__icon--signin {
   color: #3b82f6;
-  transition: transform 0.35s ease;
+  animation-delay: 0s;
 }
 
-.auth-gate__half--signup .auth-gate__panel--default svg {
+.auth-gate__icon--signup {
   color: var(--color-gold);
-  transition: transform 0.35s ease;
+  animation-delay: 0.5s;
+  animation-duration: 3.9s;
 }
 
-.auth-gate__half:hover .auth-gate__panel--default svg {
-  transform: scale(1.08);
+.auth-gate__half:hover .auth-gate__icon,
+.auth-gate__half:focus-visible .auth-gate__icon {
+  animation-play-state: paused;
 }
 
 .auth-gate__label {
   font-family: var(--font-display);
-  font-size: 1.125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-primary);
+}
+
+.auth-gate__label--signin {
+  font-size: 1.125rem;
+}
+
+.auth-gate__label--signup {
+  font-size: clamp(1.3rem, 3vw, 1.5rem);
 }
 
 .auth-gate__eyebrow {
@@ -328,12 +395,22 @@
   }
 
   .auth-gate__brand {
-    font-size: 0.8125rem;
+    font-size: 1rem;
+    gap: 0.75rem;
   }
 
   .auth-gate__brand img {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .auth-gate__label--signup {
+    font-size: 1.2rem;
+  }
+
+  .auth-gate__icon--signup {
+    width: 36px;
+    height: 36px;
   }
 
   .auth-gate__panel--hover {
@@ -346,6 +423,14 @@
 
   .auth-gate__panel--hover p {
     font-size: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-gate__bg--base::before,
+  .auth-gate__bg--base::after,
+  .auth-gate__icon {
+    animation: none;
   }
 }
 

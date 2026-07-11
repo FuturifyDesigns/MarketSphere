@@ -128,27 +128,33 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
 export function runAuthPageEnter(root: HTMLElement) {
   if (prefersReducedMotion()) return () => {}
 
+  const isGate = root.classList.contains('auth-gate')
+
   const ctx = gsap.context(() => {
-    gsap.fromTo(
-      root,
-      { opacity: 0, y: 32, scale: 0.98 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out', clearProps: 'transform,opacity' },
-    )
+    if (!isGate) {
+      gsap.fromTo(
+        root,
+        { opacity: 0, y: 32, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out', clearProps: 'transform,opacity' },
+      )
+    } else {
+      gsap.set(root, { opacity: 1, clearProps: 'transform,opacity' })
+    }
 
     const targets = root.querySelectorAll(
-      '.auth-card > *, .auth-gate__card, .auth-gate__home, .auth-shell__aside, .auth-shell__form-wrap',
+      '.auth-card > *, .auth-gate__stack, .auth-gate__card, .auth-shell__aside, .auth-shell__form-wrap',
     )
     if (targets.length) {
       gsap.fromTo(
         targets,
-        { y: 24, opacity: 0 },
+        { y: isGate ? 16 : 24, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.7,
+          duration: isGate ? 0.55 : 0.7,
           stagger: 0.08,
           ease: 'power4.out',
-          delay: 0.15,
+          delay: isGate ? 0.05 : 0.15,
           clearProps: 'transform,opacity',
         },
       )

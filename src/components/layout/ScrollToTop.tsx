@@ -9,7 +9,12 @@ export function ScrollToTop() {
 
   useLayoutEffect(() => {
     resetScrollOnRouteChange()
-    scheduleScrollRefresh()
+
+    const isAuthRoute =
+      pathname === '/get-started' || pathname === '/login' || pathname === '/register'
+    if (!isAuthRoute) {
+      scheduleScrollRefresh()
+    }
   }, [pathname])
 
   return null

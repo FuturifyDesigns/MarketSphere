@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from 'react'
 import { runAuthPageEnter } from '../animations/pageEnter'
-import { onIntroComplete } from '../lib/intro'
+import { isIntroComplete, onIntroComplete } from '../lib/intro'
 
 export function useAuthPageEnter(pageRef: RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -8,16 +8,19 @@ export function useAuthPageEnter(pageRef: RefObject<HTMLElement | null>) {
     if (!root) return
 
     let cleanupEnter = () => {}
+    let started = false
 
     const start = () => {
+      if (started) return
+      started = true
       cleanupEnter = runAuthPageEnter(root)
     }
 
     const removeIntroListener = onIntroComplete(start)
-    const failsafe = window.setTimeout(start, 4200)
+    const failsafe = isIntroComplete() ? undefined : window.setTimeout(start, 4200)
 
     return () => {
-      window.clearTimeout(failsafe)
+      if (failsafe !== undefined) window.clearTimeout(failsafe)
       removeIntroListener()
       cleanupEnter()
     }

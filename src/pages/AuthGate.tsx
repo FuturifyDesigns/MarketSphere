@@ -20,7 +20,7 @@ export function AuthGate() {
 
   return (
     <div className="auth-gate" ref={pageRef} style={gateStyle}>
-      <div className="auth-gate__bg auth-gate__bg--base auth-theme-bg--base" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--base" aria-hidden="true" />
       <div className="auth-gate__bg auth-gate__bg--signin auth-theme-bg--signin" aria-hidden="true" />
       <div className="auth-gate__bg auth-gate__bg--signup auth-theme-bg--signup" aria-hidden="true" />
 
@@ -41,8 +41,8 @@ export function AuthGate() {
         >
           <span className="auth-gate__half-overlay" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
-            <LogIn size={28} strokeWidth={1.5} />
-            <span className="auth-gate__label">Sign In</span>
+            <LogIn className="auth-gate__icon auth-gate__icon--signin" size={32} strokeWidth={1.5} />
+            <span className="auth-gate__label auth-gate__label--signin">Sign In</span>
           </div>
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Welcome back</span>
@@ -62,8 +62,8 @@ export function AuthGate() {
         >
           <span className="auth-gate__half-overlay" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--default">
-            <UserPlus size={28} strokeWidth={1.5} />
-            <span className="auth-gate__label">Sign Up</span>
+            <UserPlus className="auth-gate__icon auth-gate__icon--signup" size={40} strokeWidth={1.5} />
+            <span className="auth-gate__label auth-gate__label--signup">Sign Up</span>
           </div>
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Join us</span>
