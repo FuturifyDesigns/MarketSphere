@@ -14,6 +14,7 @@ export function AuthGate() {
   useAuthPageEnter(pageRef)
 
   const gateStyle = {
+    '--auth-cover': `url(${base}auth/auth-cover.png)`,
     '--auth-cover-signin': `url(${base}auth/sign-in.png)`,
     '--auth-cover-signup': `url(${base}auth/sign-up.png)`,
   } as CSSProperties
@@ -30,6 +31,7 @@ export function AuthGate() {
       </Link>
 
       <div className="auth-gate__card">
+        <div className="auth-gate__card-cover" aria-hidden="true" />
         <div className="auth-gate__divider" aria-hidden="true" />
 
         <button
@@ -38,11 +40,6 @@ export function AuthGate() {
           aria-label="Sign in to your account"
           onClick={() => navigate('/login')}
         >
-          <img
-            className="auth-gate__half-cover"
-            src={`${base}auth/sign-in.png`}
-            alt=""
-          />
           <span className="auth-gate__half-overlay" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Welcome back</span>
@@ -60,11 +57,6 @@ export function AuthGate() {
           aria-label="Create your account"
           onClick={() => navigate('/register')}
         >
-          <img
-            className="auth-gate__half-cover"
-            src={`${base}auth/sign-up.png`}
-            alt=""
-          />
           <span className="auth-gate__half-overlay" aria-hidden="true" />
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Join us</span>

@@ -99,6 +99,16 @@
   transition: box-shadow 0.5s ease;
 }
 
+.auth-gate__card-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--auth-cover);
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+
 .auth-gate:has(.auth-gate__half--signin:hover) .auth-gate__card,
 .auth-gate:has(.auth-gate__half--signin:focus-visible) .auth-gate__card {
   box-shadow: 0 28px 90px rgba(37, 99, 235, 0.18);
@@ -140,38 +150,13 @@
 .auth-gate__half--signin {
   clip-path: polygon(0 0, 100% 0, 0 100%);
   z-index: 1;
+  background: transparent;
 }
 
 .auth-gate__half--signup {
   clip-path: polygon(100% 0, 100% 100%, 0 100%);
   z-index: 2;
-}
-
-.auth-gate__half-cover {
-  position: absolute;
-  display: block;
-  object-fit: cover;
-  pointer-events: none;
-  user-select: none;
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.auth-gate__half--signin .auth-gate__half-cover {
-  width: 118%;
-  height: 118%;
-  left: -4%;
-  top: -6%;
-  object-position: 42% 38%;
-}
-
-.auth-gate__half--signup .auth-gate__half-cover {
-  width: 118%;
-  height: 118%;
-  right: -4%;
-  bottom: -6%;
-  left: auto;
-  top: auto;
-  object-position: 58% 62%;
+  background: transparent;
 }
 
 .auth-gate__half-overlay {
@@ -191,14 +176,19 @@
   background: linear-gradient(325deg, rgba(92, 61, 10, 0.45) 0%, rgba(92, 61, 10, 0.15) 100%);
 }
 
-.auth-gate__half:hover .auth-gate__half-cover,
-.auth-gate__half:focus-visible .auth-gate__half-cover {
-  transform: scale(1.04);
-}
-
 .auth-gate__half:hover .auth-gate__half-overlay,
 .auth-gate__half:focus-visible .auth-gate__half-overlay {
   opacity: 1;
+}
+
+.auth-gate:has(.auth-gate__half--signin:hover) .auth-gate__card-cover,
+.auth-gate:has(.auth-gate__half--signin:focus-visible) .auth-gate__card-cover {
+  filter: brightness(0.92) saturate(1.05);
+}
+
+.auth-gate:has(.auth-gate__half--signup:hover) .auth-gate__card-cover,
+.auth-gate:has(.auth-gate__half--signup:focus-visible) .auth-gate__card-cover {
+  filter: brightness(0.92) saturate(1.05);
 }
 
 .auth-gate__card:has(.auth-gate__half--signin:hover) .auth-gate__half--signup,
@@ -306,20 +296,6 @@
   .auth-gate__card {
     aspect-ratio: 0.92;
     width: min(100%, 420px);
-  }
-
-  .auth-gate__half--signin .auth-gate__half-cover {
-    width: 135%;
-    height: 135%;
-    left: -12%;
-    top: -8%;
-  }
-
-  .auth-gate__half--signup .auth-gate__half-cover {
-    width: 135%;
-    height: 135%;
-    right: -12%;
-    bottom: -8%;
   }
 
   .auth-gate__panel {
