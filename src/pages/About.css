@@ -21,11 +21,10 @@
 }
 
 .about-hero__logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+  width: 88px;
+  height: 88px;
   margin-bottom: 1.25rem;
-  box-shadow: 0 8px 32px rgba(201, 162, 75, 0.25);
+  filter: drop-shadow(0 8px 24px rgba(201, 162, 75, 0.28));
 }
 
 .about-hero__card h3 {
