@@ -46,14 +46,13 @@ export function About() {
               Work With Us <ArrowRight size={16} />
             </Button>
           </div>
-          <div className="about-hero__card bento-card about-reveal">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="about-hero__logo" />
-            <h3>{COMPANY.name}</h3>
-            <dl className="about-hero__meta">
-              <div><dt>Registration</dt><dd>{COMPANY.registration}</dd></div>
-              <div><dt>Head Office</dt><dd>{COMPANY.headOffice}</dd></div>
-              <div><dt>Reach</dt><dd>{COMPANY.operationalArea}</dd></div>
-            </dl>
+          <div className="about-hero__logo-wrap about-reveal" aria-hidden="true">
+            <div className="about-hero__logo-glow" />
+            <img
+              src={`${import.meta.env.BASE_URL}logo.png`}
+              alt=""
+              className="about-hero__logo"
+            />
           </div>
         </div>
       </section>

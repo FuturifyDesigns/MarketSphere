@@ -59,7 +59,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
     }
 
     const heroAside = root.querySelectorAll(
-      '.about-hero__card, .services-hero__stats, .contact-quick, .faq-hero__card',
+      '.about-hero__logo-wrap, .services-hero__stats, .contact-quick, .faq-hero__card',
     )
     if (heroAside.length) {
       pageTl.fromTo(
