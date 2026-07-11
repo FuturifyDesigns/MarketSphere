@@ -66,10 +66,7 @@ export function Navbar() {
               <button className="navbar__signout" onClick={() => signOut()}>Sign Out</button>
             </>
           ) : (
-            <>
-              <Button to="/login" variant="ghost" size="sm">Sign In</Button>
-              <Button to="/register" size="sm">Get Started</Button>
-            </>
+            <Button to="/get-started" size="sm">Get Started</Button>
           )}
           <button className="navbar__toggle" onClick={() => setOpen(!open)} aria-label="Menu">
             {open ? <X size={20} /> : <Menu size={20} />}

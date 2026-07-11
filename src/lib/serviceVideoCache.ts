@@ -59,7 +59,7 @@ async function warmDecoder(path: string, src: string) {
   const video = document.createElement('video')
   video.muted = true
   video.defaultMuted = true
-  video.loop = true
+  video.loop = false
   video.playsInline = true
   video.preload = 'auto'
   video.setAttribute('playsinline', '')
@@ -70,29 +70,32 @@ async function warmDecoder(path: string, src: string) {
   video.load()
   void video.play().catch(() => {})
   await waitForCanPlayThrough(video)
+  video.pause()
+  video.currentTime = 0
+  video.remove()
   readyByVideo.set(path, true)
   notify()
 }
 
-async function preloadOne(path: string) {
-  const blobUrl = await fetchToBlob(path)
-  if (blobUrl) {
-    blobByVideo.set(path, blobUrl)
-    await warmDecoder(path, blobUrl)
-    return
-  }
 
-  await warmDecoder(path, localUrl(path))
-}
-
-/** Start downloading + decoding all service videos immediately (slide order first). */
+/** Start downloading + decoding all service videos (deferred until idle). */
 export function preloadServiceVideos() {
   if (preloadPromise) return preloadPromise
 
   preloadStarted = true
   preloadPromise = (async () => {
-    for (const service of SERVICES) {
-      await preloadOne(service.video)
+    const paths = SERVICES.map((service) => service.video)
+    await Promise.all(paths.map((path) => fetchToBlob(path).then((blob) => {
+      if (blob) blobByVideo.set(path, blob)
+    })))
+
+    for (const path of paths) {
+      const blobUrl = blobByVideo.get(path)
+      if (blobUrl) {
+        await warmDecoder(path, blobUrl)
+      } else {
+        await warmDecoder(path, localUrl(path))
+      }
     }
   })()
 

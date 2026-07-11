@@ -15,10 +15,11 @@ export function getLenis() {
 export function useLenis() {
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.55,
+      duration: 1.05,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      touchMultiplier: 1.35,
+      syncTouch: false,
+      touchMultiplier: 1.2,
       prevent: (node) => {
         if (!(node instanceof HTMLElement)) return false
         return Boolean(node.closest('[data-lenis-prevent]'))

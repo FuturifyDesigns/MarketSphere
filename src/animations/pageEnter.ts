@@ -9,6 +9,7 @@ const HERO_CHILD_SELECTORS = [
   '.page-enter-hero > *',
   '.about-hero__content > *',
   '.services-hero__inner > *',
+  '.browse-hero__inner > *',
   '.contact-hero__content > *',
   '.faq-hero__content > *',
   '.page-hero > .container > *',
@@ -133,19 +134,25 @@ export function runAuthPageEnter(root: HTMLElement) {
       { opacity: 0, y: 32, scale: 0.98 },
       { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out', clearProps: 'transform,opacity' },
     )
-    gsap.fromTo(
-      root.querySelectorAll('.auth-card > *'),
-      { y: 24, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.7,
-        stagger: 0.08,
-        ease: 'power4.out',
-        delay: 0.15,
-        clearProps: 'transform,opacity',
-      },
+
+    const targets = root.querySelectorAll(
+      '.auth-card > *, .auth-gate__card, .auth-gate__home, .auth-shell__aside, .auth-shell__form-wrap',
     )
+    if (targets.length) {
+      gsap.fromTo(
+        targets,
+        { y: 24, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.7,
+          stagger: 0.08,
+          ease: 'power4.out',
+          delay: 0.15,
+          clearProps: 'transform,opacity',
+        },
+      )
+    }
   }, root)
 
   return () => ctx.revert()

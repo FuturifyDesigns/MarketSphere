@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { runPageEnterAnimation } from '../../animations/pageEnter'
 import { onIntroComplete, isIntroComplete } from '../../lib/intro'
 import { scheduleScrollRefresh } from '../../lib/scrollRefresh'
+import { resetScrollOnRouteChange } from '../../lib/scrollToTop'
 import './PageTransition.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -12,6 +13,10 @@ gsap.registerPlugin(ScrollTrigger)
 export function PageTransition() {
   const location = useLocation()
   const wrapRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    resetScrollOnRouteChange()
+  }, [location.pathname])
 
   useEffect(() => {
     const wrap = wrapRef.current
