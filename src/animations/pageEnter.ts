@@ -8,7 +8,7 @@ gsap.registerPlugin(ScrollTrigger)
 const HERO_CHILD_SELECTORS = [
   '.page-enter-hero > *',
   '.about-hero__content > *',
-  '.services-hero__content > *',
+  '.services-hero__inner > *',
   '.contact-hero__content > *',
   '.faq-hero__content > *',
   '.page-hero > .container > *',
@@ -59,7 +59,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
     }
 
     const heroAside = root.querySelectorAll(
-      '.about-hero__logo-wrap, .services-hero__stats, .contact-quick, .faq-hero__card',
+      '.about-hero__logo-wrap, .contact-quick, .faq-hero__card',
     )
     if (heroAside.length) {
       pageTl.fromTo(
@@ -80,7 +80,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
 
     gsap.utils
       .toArray<HTMLElement>(root.querySelectorAll(SCROLL_REVEAL_SELECTORS))
-      .filter((el) => !el.closest('.about-tree'))
+      .filter((el) => !el.closest('.about-tree, .svc-page'))
       .forEach((el) => {
       gsap.fromTo(
         el,
