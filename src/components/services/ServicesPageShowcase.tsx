@@ -79,7 +79,6 @@ export function ServicesPageShowcase() {
                         loop
                         muted
                         playsInline
-                        autoPlay={false}
                         preload="auto"
                         aria-label={`${service.title} showcase video`}
                       />
