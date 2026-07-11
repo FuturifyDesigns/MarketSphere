@@ -44,8 +44,9 @@
 .navbar__name {
   font-family: var(--font-display);
   font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .navbar__pill {

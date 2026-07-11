@@ -1,6 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
+import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -21,57 +22,60 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
     return () => {}
   }
 
+  if (isHome) {
+    gsap.set(root, { opacity: 1, y: 0, visibility: 'visible', clearProps: 'transform,opacity' })
+    return () => {}
+  }
+
   const ctx = gsap.context(() => {
     gsap.set(root, { opacity: 1, visibility: 'visible' })
 
     const pageTl = gsap.timeline({
       defaults: { ease: 'power3.out' },
-      onComplete: () => ScrollTrigger.refresh(),
+      onComplete: () => scheduleScrollRefresh(),
     })
 
     pageTl.fromTo(
       root,
-      { opacity: 0, y: isHome ? 12 : 28 },
-      { opacity: 1, y: 0, duration: isHome ? 0.55 : 0.75, clearProps: 'transform' },
+      { opacity: 0, y: 28 },
+      { opacity: 1, y: 0, duration: 0.75, clearProps: 'transform' },
     )
 
-    if (!isHome) {
-      const heroItems = root.querySelectorAll(HERO_CHILD_SELECTORS)
-      if (heroItems.length) {
-        pageTl.fromTo(
-          heroItems,
-          { y: 36, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.85,
-            stagger: 0.09,
-            ease: 'power4.out',
-            clearProps: 'transform,opacity',
-          },
-          0.12,
-        )
-      }
-
-      const heroAside = root.querySelectorAll(
-        '.about-hero__card, .services-hero__stats, .contact-quick, .faq-hero__card',
+    const heroItems = root.querySelectorAll(HERO_CHILD_SELECTORS)
+    if (heroItems.length) {
+      pageTl.fromTo(
+        heroItems,
+        { y: 36, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.85,
+          stagger: 0.09,
+          ease: 'power4.out',
+          clearProps: 'transform,opacity',
+        },
+        0.12,
       )
-      if (heroAside.length) {
-        pageTl.fromTo(
-          heroAside,
-          { y: 28, opacity: 0, scale: 0.98 },
-          {
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            duration: 0.8,
-            stagger: 0.1,
-            ease: 'power3.out',
-            clearProps: 'transform,opacity',
-          },
-          0.28,
-        )
-      }
+    }
+
+    const heroAside = root.querySelectorAll(
+      '.about-hero__card, .services-hero__stats, .contact-quick, .faq-hero__card',
+    )
+    if (heroAside.length) {
+      pageTl.fromTo(
+        heroAside,
+        { y: 28, opacity: 0, scale: 0.98 },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.8,
+          stagger: 0.1,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity',
+        },
+        0.28,
+      )
     }
 
     gsap.utils.toArray<HTMLElement>(root.querySelectorAll(SCROLL_REVEAL_SELECTORS)).forEach((el) => {
@@ -93,8 +97,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
       )
     })
 
-    if (!isHome) {
-      root.querySelectorAll('.section:not(:first-of-type)').forEach((section) => {
+    root.querySelectorAll('.section:not(:first-of-type)').forEach((section) => {
         gsap.fromTo(
           section,
           { y: 24, opacity: 0 },
@@ -112,7 +115,6 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
           },
         )
       })
-    }
   }, root)
 
   return () => ctx.revert()

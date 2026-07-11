@@ -69,8 +69,9 @@
 .site-intro__brand {
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 6vw, 3.5rem);
-  font-weight: 500;
-  letter-spacing: -0.04em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-day);
   line-height: 1;
   margin-bottom: 1.25rem;

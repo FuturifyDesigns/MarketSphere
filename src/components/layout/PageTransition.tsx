@@ -3,7 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { runPageEnterAnimation } from '../../animations/pageEnter'
-import { onIntroComplete } from '../../lib/intro'
+import { onIntroComplete, isIntroComplete } from '../../lib/intro'
+import { scheduleScrollRefresh } from '../../lib/scrollRefresh'
 import './PageTransition.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -27,30 +28,31 @@ export function PageTransition() {
 
       cleanupEnter()
 
+      const isHome = location.pathname === '/' || location.pathname === ''
+
       window.requestAnimationFrame(() => {
         if (cancelled) return
 
-        cleanupEnter = runPageEnterAnimation(
-          pageRoot,
-          location.pathname === '/' || location.pathname === '',
-        )
+        cleanupEnter = runPageEnterAnimation(pageRoot, isHome)
 
-        gsap.fromTo(
-          '.navbar',
-          { y: -12, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.05 },
-        )
+        if (!isHome) {
+          gsap.fromTo(
+            '.navbar',
+            { y: -12, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.05 },
+          )
+        }
 
-        ScrollTrigger.refresh()
+        scheduleScrollRefresh()
       })
     }
 
     const removeIntroListener = onIntroComplete(start)
-    const failsafe = window.setTimeout(start, 4000)
+    const failsafe = isIntroComplete() ? undefined : window.setTimeout(start, 4000)
 
     return () => {
       cancelled = true
-      window.clearTimeout(failsafe)
+      if (failsafe !== undefined) window.clearTimeout(failsafe)
       removeIntroListener()
       cleanupEnter()
     }

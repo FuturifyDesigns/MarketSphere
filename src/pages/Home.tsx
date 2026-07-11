@@ -11,7 +11,12 @@ import { ProviderCard } from '../components/ui/ProviderCard'
 import { Button } from '../components/ui/Button'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
-import { onIntroComplete } from '../lib/intro'
+import { onIntroComplete, isIntroComplete } from '../lib/intro'
+import { scheduleScrollRefresh, flushScrollRefresh } from '../lib/scrollRefresh'
+import { markHomeSectionsReady } from '../lib/homeSectionsReady'
+import { onServicesShowcaseReady, isServicesShowcaseReady } from '../lib/servicesShowcaseReady'
+import { initHomeSectionReveals } from '../animations/homeSectionReveal'
+import { initProvidersReveal } from '../animations/providersReveal'
 import type { Provider, Testimonial } from '../lib/types'
 import './Home.css'
 
@@ -31,6 +36,7 @@ const MARQUEE_ITEMS = [
 export function Home() {
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
+  const providersRef = useRef<HTMLElement>(null)
   const [providers, setProviders] = useState<Provider[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
@@ -40,6 +46,34 @@ export function Home() {
     supabase.from('testimonials').select('*').eq('approved', true).limit(4)
       .then(({ data }) => setTestimonials(data || []))
   }, [])
+
+  useEffect(() => {
+    const section = providersRef.current
+    const root = rootRef.current
+    if (!section || !root) return
+
+    let cleanup: (() => void) | undefined
+    let started = false
+
+    const boot = () => {
+      if (started) return
+      started = true
+      cleanup?.()
+      cleanup = initProvidersReveal(section)
+      flushScrollRefresh()
+    }
+
+    const removeListener = onServicesShowcaseReady(boot)
+    if (isServicesShowcaseReady()) boot()
+
+    const failsafe = window.setTimeout(boot, 6500)
+
+    return () => {
+      window.clearTimeout(failsafe)
+      removeListener()
+      cleanup?.()
+    }
+  }, [providers.length])
 
   useEffect(() => {
     const root = rootRef.current
@@ -99,6 +133,7 @@ export function Home() {
         }
 
         gsap.utils.toArray<HTMLElement>('.reveal-item').forEach((el) => {
+          if (el.closest('[data-home-section]')) return
           gsap.fromTo(
             el,
             { y: 40, opacity: 0 },
@@ -117,45 +152,22 @@ export function Home() {
           )
         })
 
-        gsap.fromTo(
-          '.stat-card',
-          { y: 50, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: 'power3.out',
-            clearProps: 'transform,opacity',
-            scrollTrigger: {
-              trigger: '.stats-row',
-              start: 'top 80%',
-              once: true,
-            },
-          },
-        )
+        const cleanupHomeSections = initHomeSectionReveals(root)
+        markHomeSectionsReady()
 
-        ScrollTrigger.batch('.testimonial-card', {
-          onEnter: (batch) => {
-            gsap.fromTo(
-              batch,
-              { y: 40, opacity: 0 },
-              { y: 0, opacity: 1, stagger: 0.12, duration: 0.7, ease: 'power3.out', clearProps: 'transform,opacity' },
-            )
-          },
-          start: 'top 90%',
-          once: true,
-        })
+        scheduleScrollRefresh()
 
-        ScrollTrigger.refresh()
+        return () => {
+          cleanupHomeSections?.()
+        }
       }, root)
     }
 
     const removeIntroListener = onIntroComplete(initAnimations)
-    const failsafe = window.setTimeout(initAnimations, 4200)
+    const failsafe = isIntroComplete() ? undefined : window.setTimeout(initAnimations, 4200)
 
     return () => {
-      window.clearTimeout(failsafe)
+      if (failsafe !== undefined) window.clearTimeout(failsafe)
       removeIntroListener()
       ctx?.revert()
       document.documentElement.style.setProperty('--sky-progress', '0')
@@ -205,31 +217,39 @@ export function Home() {
         </div>
       </section>
 
-      <Marquee items={MARQUEE_ITEMS} />
+      <div className="home-marquee">
+        <Marquee items={MARQUEE_ITEMS} />
+      </div>
 
       {/* Vision + Stats */}
-      <section className="section section--vision">
-        <div className="container">
-          <div className="section-header reveal-item">
-            <span className="section-label">Our Vision</span>
-            <h2 className="display-lg">{COMPANY.mission}</h2>
-            <p>{COMPANY.vision}</p>
+      <section className="section section--vision home-showcase" data-home-section="showcase">
+        <div className="home-showcase__pin">
+          <div className="home-showcase__intro">
+            <span className="section-label home-section__label">Our Vision</span>
+            <h2 className="home-showcase__mega home-showcase__mega--vision">
+              <span className="home-section__title-word">{COMPANY.mission}</span>
+            </h2>
+            <p className="home-section__lead">{COMPANY.vision}</p>
           </div>
-          <div className="stats-row">
-            <div className="stat-card bento-card">
-              <span className="stat-card__number">8+</span>
-              <span className="stat-card__label">Service categories</span>
-              <p>From academic tuition to real estate consultancy</p>
-            </div>
-            <div className="stat-card bento-card">
-              <span className="stat-card__number">SADC</span>
-              <span className="stat-card__label">Expansion ready</span>
-              <p>Built in Botswana, scaling across the region</p>
-            </div>
-            <div className="stat-card bento-card">
-              <span className="stat-card__number">100%</span>
-              <span className="stat-card__label">Verified network</span>
-              <p>Every provider reviewed by our team</p>
+          <div className="home-showcase__stage">
+            <div className="container">
+              <div className="stats-row">
+                <div className="stat-card bento-card home-section__item">
+                  <span className="stat-card__number">8+</span>
+                  <span className="stat-card__label">Service categories</span>
+                  <p>From academic tuition to real estate consultancy</p>
+                </div>
+                <div className="stat-card bento-card home-section__item">
+                  <span className="stat-card__number">SADC</span>
+                  <span className="stat-card__label">Expansion ready</span>
+                  <p>Built in Botswana, scaling across the region</p>
+                </div>
+                <div className="stat-card bento-card home-section__item">
+                  <span className="stat-card__number">100%</span>
+                  <span className="stat-card__label">Verified network</span>
+                  <p>Every provider reviewed by our team</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -238,40 +258,48 @@ export function Home() {
       <ServicesShowcase />
 
       {/* Providers */}
-      <section className="section section--providers">
+      <section ref={providersRef} className="section section--providers home-section">
         <div className="container">
-          <div className="section-header section-header--center reveal-item">
-            <span className="section-label">Our Network</span>
-            <h2>Featured providers</h2>
-            <p>Browse verified professionals ready to help you master your field.</p>
-          </div>
+          <header className="home-section__header section-header section-header--center">
+            <span className="section-label home-section__label">Our Network</span>
+            <h2 className="display-lg home-section__title">
+              <span className="home-section__title-word">Featured providers</span>
+            </h2>
+            <p className="home-section__lead">Browse verified professionals ready to help you master your field.</p>
+          </header>
           {providers.length > 0 ? (
             <div className="providers-grid">
               {providers.map((p, i) => (
-                <ProviderCard key={p.id} provider={p} index={i} />
+                <div key={p.id} className="home-section__item">
+                  <ProviderCard provider={p} index={i} disableAnimation />
+                </div>
               ))}
             </div>
           ) : (
-            <div className="empty-state bento-card reveal-item">
+            <div className="empty-state bento-card home-section__item">
               <p>Provider listings coming soon. Be the first to <Link to="/register?role=provider">join our network</Link>.</p>
             </div>
           )}
-          <div className="section-cta">
+          <div className="section-cta home-section__footer">
             <Button to="/browse" size="lg">Browse All Providers</Button>
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="section section--testimonials">
+      <section className="section section--testimonials home-section" data-home-section>
         <div className="container">
-          <div className="section-header reveal-item">
-            <span className="section-label">Client Stories</span>
-            <h2>Satisfied clients<br /><em className="text-gold">across Botswana</em></h2>
-          </div>
+          <header className="home-section__header section-header section-header--center">
+            <span className="section-label home-section__label">Client Stories</span>
+            <h2 className="display-lg home-section__title">
+              <span className="home-section__title-word">
+                Satisfied clients <em className="text-gold">across Botswana</em>
+              </span>
+            </h2>
+          </header>
           <div className="testimonials-grid">
             {(testimonials.length > 0 ? testimonials : fallbackTestimonials).map((t) => (
-              <blockquote key={t.id} className="testimonial-card bento-card">
+              <blockquote key={t.id} className="testimonial-card bento-card home-section__item">
                 <div className="testimonial-card__stars">★★★★★</div>
                 <p>"{t.content}"</p>
                 <footer>
@@ -285,12 +313,16 @@ export function Home() {
       </section>
 
       {/* CTA */}
-      <section className="section section--cta">
+      <section className="section section--cta home-section" data-home-section="stack">
         <div className="container">
-          <div className="cta-panel bento-card reveal-item">
-            <h2 className="display-lg">Ready to get started?</h2>
-            <p>Join MarketSphere — whether you're looking for services or offering them.</p>
-            <div className="cta-panel__actions">
+          <div className="cta-panel bento-card">
+            <header className="home-section__header home-section__header--inline">
+              <h2 className="display-lg home-section__title">
+                <span className="home-section__title-word">Ready to get started?</span>
+              </h2>
+              <p className="home-section__lead">Join MarketSphere — whether you're looking for services or offering them.</p>
+            </header>
+            <div className="cta-panel__actions home-section__footer">
               <Button to="/register" size="lg">Create Account</Button>
               <Button to="/contact" variant="secondary" size="lg">Contact Us</Button>
             </div>

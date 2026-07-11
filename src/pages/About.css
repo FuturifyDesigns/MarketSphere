@@ -73,7 +73,7 @@
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-style: italic;
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   color: var(--text-primary);
   margin-top: 0.75rem;
 }
