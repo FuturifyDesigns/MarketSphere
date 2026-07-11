@@ -55,11 +55,11 @@
 }
 
 .footer__logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
   margin-bottom: 1.25rem;
-  box-shadow: 0 4px 20px rgba(201, 162, 75, 0.2);
+  filter: drop-shadow(0 4px 16px rgba(201, 162, 75, 0.22));
 }
 
 .footer__brand h3 {

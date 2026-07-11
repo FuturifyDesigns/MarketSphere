@@ -22,10 +22,11 @@
 }
 
 .auth-logo img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
   margin-bottom: 1.5rem;
+  filter: drop-shadow(0 4px 16px rgba(201, 162, 75, 0.22));
 }
 
 .auth-card h1 {
