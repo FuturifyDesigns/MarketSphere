@@ -16,9 +16,11 @@ export function ServicesPageShowcase() {
     if (!root) return
 
     let cleanup: (() => void) | undefined
+    let initialized = false
 
     const init = () => {
-      cleanup?.()
+      if (initialized) return
+      initialized = true
       cleanup = initServicesPageShowcase(root)
     }
 
