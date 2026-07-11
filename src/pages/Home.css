@@ -20,19 +20,22 @@
 .hero__welcome {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4em;
   margin-bottom: clamp(1rem, 2.5vw, 1.5rem);
   padding-left: 1.35rem;
-  max-width: 22ch;
+  max-width: 100%;
+  line-height: 1.2;
 }
 
 .hero__welcome::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.1em;
-  bottom: 0.1em;
+  top: 0.15em;
+  bottom: 0.15em;
   width: 3px;
   border-radius: 100px;
   background: linear-gradient(
@@ -43,37 +46,26 @@
     color-mix(in srgb, var(--color-gold) 70%, white) 65%,
     transparent 100%
   );
-  box-shadow: 0 0 18px color-mix(in srgb, var(--color-gold) 45%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-gold) 40%, transparent);
 }
 
 .hero__welcome-eyebrow {
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 3.2vw, 2.1rem);
+  font-size: clamp(1.35rem, 3vw, 2.15rem);
   font-weight: 500;
   font-style: italic;
-  line-height: 1.15;
-  letter-spacing: 0.02em;
-  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .hero__welcome-brand {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4.8vw, 3.5rem);
+  font-size: clamp(1.35rem, 3vw, 2.15rem);
   font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: 0.03em;
-  background: linear-gradient(
-    120deg,
-    #a67c2e 0%,
-    var(--color-gold) 38%,
-    #f0d78c 62%,
-    var(--color-gold) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 12px 40px color-mix(in srgb, var(--color-gold) 22%, transparent);
-  filter: drop-shadow(0 4px 20px color-mix(in srgb, var(--color-gold) 18%, transparent));
+  letter-spacing: 0.02em;
+  color: var(--color-gold);
+  white-space: nowrap;
 }
 
 .hero .display-xl {
@@ -621,6 +613,15 @@
   .hero__inner {
     grid-template-columns: 1fr;
     text-align: center;
+  }
+
+  .hero__welcome {
+    justify-content: center;
+    padding-left: 0;
+  }
+
+  .hero__welcome::before {
+    display: none;
   }
 
   .hero__sub {
