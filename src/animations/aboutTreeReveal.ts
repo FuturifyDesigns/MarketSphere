@@ -6,84 +6,123 @@ import { flushScrollRefresh } from '../lib/scrollRefresh'
 gsap.registerPlugin(ScrollTrigger)
 
 const PATH_CLASS = 'about-tree__path'
+const TRUNK_CLASS = 'about-tree__trunk'
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
 const SCROLL_UNIT = 0.44
 
-function getJointCenter(joint: HTMLElement, svg: SVGSVGElement) {
-  const jointRect = joint.getBoundingClientRect()
+type Point = { x: number; y: number }
+
+function getPoint(el: HTMLElement, svg: SVGSVGElement): Point {
+  const rect = el.getBoundingClientRect()
   const svgRect = svg.getBoundingClientRect()
   return {
-    x: jointRect.left + jointRect.width / 2 - svgRect.left,
-    y: jointRect.top + jointRect.height / 2 - svgRect.top,
+    x: rect.left + rect.width / 2 - svgRect.left,
+    y: rect.top + rect.height / 2 - svgRect.top,
   }
 }
 
-function getSpineX(root: HTMLElement, svg: SVGSVGElement) {
-  const spine = root.querySelector<HTMLElement>('.about-tree__spine')
-  if (!spine) return svg.getBoundingClientRect().width / 2
-  const spineRect = spine.getBoundingClientRect()
-  const svgRect = svg.getBoundingClientRect()
-  return spineRect.left + spineRect.width / 2 - svgRect.left
+function getHub(root: HTMLElement): HTMLElement | null {
+  return root.querySelector<HTMLElement>('.about-tree__spine-hub')
 }
 
-function buildBranchPath(
-  spineX: number,
-  jointY: number,
-  node: HTMLElement,
-  svg: SVGSVGElement,
-  side: 'left' | 'right' | 'center',
-) {
-  if (side === 'center') return ''
-
+function getCardEdgeX(node: HTMLElement, svg: SVGSVGElement, side: 'left' | 'right'): number {
   const nodeRect = node.getBoundingClientRect()
   const svgRect = svg.getBoundingClientRect()
-  const toX =
-    side === 'left'
-      ? nodeRect.right - svgRect.left + 4
-      : nodeRect.left - svgRect.left - 4
+  return side === 'left' ? nodeRect.right - svgRect.left + 8 : nodeRect.left - svgRect.left - 8
+}
 
-  return `M ${spineX} ${jointY} L ${toX} ${jointY}`
+function createSvgPath(
+  d: string,
+  className: string,
+  dataset: Record<string, string> = {},
+) {
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  path.setAttribute('class', className)
+  path.setAttribute('d', d)
+  path.setAttribute('fill', 'none')
+  path.setAttribute('stroke', 'var(--color-gold)')
+  path.setAttribute('stroke-width', '2')
+  path.setAttribute('stroke-linecap', 'round')
+  path.setAttribute('stroke-linejoin', 'round')
+  Object.entries(dataset).forEach(([key, value]) => {
+    path.dataset[key] = value
+  })
+  const length = path.getTotalLength()
+  gsap.set(path, { strokeDasharray: length, strokeDashoffset: length, opacity: 0 })
+  return path
+}
+
+function measureBranchSteps(root: HTMLElement) {
+  const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
+  const leftStep = steps.find((step) => step.dataset.side === 'left')
+  const rightStep = steps.find((step) => step.dataset.side === 'right')
+  const rootStep = steps.find((step) => step.dataset.side === 'center')
+  return { steps, leftStep, rightStep, rootStep }
 }
 
 function rebuildPaths(root: HTMLElement) {
   const svg = root.querySelector<SVGSVGElement>('.about-tree__svg')
   const pathsGroup = root.querySelector<SVGGElement>('.about-tree__paths')
-  if (!svg || !pathsGroup) return
+  const canvas = root.querySelector<HTMLElement>('.about-tree__canvas')
+  const hub = getHub(root)
+  if (!svg || !pathsGroup || !canvas || !hub) return
 
   pathsGroup.innerHTML = ''
 
-  const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
-  const spineX = getSpineX(root, svg)
+  const { leftStep, rightStep, rootStep } = measureBranchSteps(root)
+  const hubPoint = getPoint(hub, svg)
+  const canvasRect = canvas.getBoundingClientRect()
+  const svgRect = svg.getBoundingClientRect()
+  const trunkTop = canvasRect.top - svgRect.top + 12
+  const trunkBottom = canvasRect.bottom - svgRect.top - 12
 
-  steps.forEach((step, index) => {
-    if (index === 0) return
+  const trunk = createSvgPath(
+    `M ${hubPoint.x} ${trunkTop} L ${hubPoint.x} ${trunkBottom}`,
+    TRUNK_CLASS,
+    { role: 'trunk' },
+  )
+  pathsGroup.appendChild(trunk)
 
-    const side = (step.dataset.side as 'left' | 'right' | 'center') || 'center'
-    if (side === 'center') return
+  if (rootStep) {
+    const rootNode = rootStep.querySelector<HTMLElement>('.about-tree__node')
+    if (rootNode) {
+      const rootRect = rootNode.getBoundingClientRect()
+      const rootTop = rootRect.top - svgRect.top + 16
+      const rootStem = createSvgPath(
+        `M ${hubPoint.x} ${trunkTop} L ${hubPoint.x} ${rootTop}`,
+        PATH_CLASS,
+        { role: 'root-stem', stepIndex: '0' },
+      )
+      pathsGroup.appendChild(rootStem)
+    }
+  }
 
-    const joint = step.querySelector<HTMLElement>('.about-tree__joint')
-    const node = step.querySelector<HTMLElement>('.about-tree__node')
-    if (!joint || !node) return
+  if (leftStep) {
+    const leftNode = leftStep.querySelector<HTMLElement>('.about-tree__node')
+    if (leftNode) {
+      const toX = getCardEdgeX(leftNode, svg, 'left')
+      const leftBranch = createSvgPath(
+        `M ${hubPoint.x} ${hubPoint.y} L ${toX} ${hubPoint.y}`,
+        PATH_CLASS,
+        { role: 'branch-left', stepIndex: String(leftStep.dataset.stepIndex || '1') },
+      )
+      pathsGroup.appendChild(leftBranch)
+    }
+  }
 
-    const jointPoint = getJointCenter(joint, svg)
-    const d = buildBranchPath(spineX, jointPoint.y, node, svg, side)
-    if (!d) return
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    path.setAttribute('class', PATH_CLASS)
-    path.setAttribute('data-step-index', String(index))
-    path.setAttribute('d', d)
-    path.setAttribute('fill', 'none')
-    path.setAttribute('stroke', 'var(--color-gold)')
-    path.setAttribute('stroke-width', '2')
-    path.setAttribute('stroke-linecap', 'round')
-    path.setAttribute('opacity', '0.6')
-
-    const length = path.getTotalLength()
-    gsap.set(path, { strokeDasharray: length, strokeDashoffset: length, opacity: 0 })
-    pathsGroup.appendChild(path)
-  })
+  if (rightStep) {
+    const rightNode = rightStep.querySelector<HTMLElement>('.about-tree__node')
+    if (rightNode) {
+      const toX = getCardEdgeX(rightNode, svg, 'right')
+      const rightBranch = createSvgPath(
+        `M ${hubPoint.x} ${hubPoint.y} L ${toX} ${hubPoint.y}`,
+        PATH_CLASS,
+        { role: 'branch-right', stepIndex: String(rightStep.dataset.stepIndex || '2') },
+      )
+      pathsGroup.appendChild(rightBranch)
+    }
+  }
 }
 
 function getStepScrollDuration(step: HTMLElement) {
@@ -91,6 +130,20 @@ function getStepScrollDuration(step: HTMLElement) {
   if (revealItems > 4) return 1.35 + revealItems * 0.07
   if (revealItems > 1) return 1.05 + revealItems * 0.06
   return 1.1
+}
+
+function getBranchPath(root: HTMLElement, side: string) {
+  const paths = gsap.utils.toArray<SVGPathElement>(`.${PATH_CLASS}`, root)
+  if (side === 'left') {
+    return paths.find((path) => path.dataset.role === 'branch-left')
+  }
+  if (side === 'right') {
+    return paths.find((path) => path.dataset.role === 'branch-right')
+  }
+  if (side === 'center') {
+    return paths.find((path) => path.dataset.role === 'root-stem')
+  }
+  return undefined
 }
 
 export function initAboutTreeAnimation(root: HTMLElement) {
@@ -101,29 +154,39 @@ export function initAboutTreeAnimation(root: HTMLElement) {
       y: 0,
       clearProps: 'transform,opacity',
     })
-    gsap.set(root.querySelectorAll(`.${PATH_CLASS}`), { opacity: 0.6, strokeDashoffset: 0 })
-    gsap.set(root.querySelector('.about-tree__spine'), { scaleY: 1 })
+    gsap.set(root.querySelectorAll(`.${PATH_CLASS}, .${TRUNK_CLASS}`), {
+      opacity: 0.65,
+      strokeDashoffset: 0,
+    })
     return () => {}
   }
 
   const onRefreshInit = () => rebuildPaths(root)
   ScrollTrigger.addEventListener('refreshInit', onRefreshInit)
 
+  let resizeHandler: (() => void) | undefined
+
   const ctx = gsap.context(() => {
     const stage = root.querySelector<HTMLElement>('.about-tree__stage')
     const pin = root.querySelector<HTMLElement>('.about-tree__pin')
-    const spine = root.querySelector<HTMLElement>('.about-tree__spine')
     const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
 
     if (!stage || !pin || steps.length === 0) return
 
-    rebuildPaths(root)
+    const drawTree = () => {
+      rebuildPaths(root)
+      flushScrollRefresh()
+    }
 
-    const paths = () => gsap.utils.toArray<SVGPathElement>(`.${PATH_CLASS}`, root)
+    resizeHandler = drawTree
+    drawTree()
+    window.addEventListener('resize', drawTree)
+
+    const trunk = () => root.querySelector<SVGPathElement>(`.${TRUNK_CLASS}`)
+    const drawnBranches = new Set<'left' | 'right'>()
 
     gsap.set(steps, { autoAlpha: 0, pointerEvents: 'none' })
     gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 0, y: 18 })
-    if (spine) gsap.set(spine, { scaleY: 0, transformOrigin: 'top center' })
 
     const tl = gsap.timeline({
       defaults: { ease: REVEAL_EASE },
@@ -133,8 +196,10 @@ export function initAboutTreeAnimation(root: HTMLElement) {
     steps.forEach((step, index) => {
       const side = (step.dataset.side as 'left' | 'right' | 'center') || 'center'
       const node = step.querySelector<HTMLElement>('.about-tree__node')
+      const card = step.querySelector<HTMLElement>('.about-tree__card')
       const revealItems = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
-      const path = paths().find((p) => p.dataset.stepIndex === String(index))
+      const branchPath = getBranchPath(root, side)
+      const trunkPath = trunk()
       const segment = getStepScrollDuration(step)
       const label = `tree-step-${index}`
 
@@ -147,18 +212,32 @@ export function initAboutTreeAnimation(root: HTMLElement) {
       tl.addLabel(label)
       tl.set(step, { autoAlpha: 1, pointerEvents: 'auto' }, label)
 
-      if (spine) {
+      if (trunkPath) {
         tl.to(
-          spine,
-          { scaleY: (index + 0.45) / steps.length, duration: segment * 0.2, ease: 'none' },
+          trunkPath,
+          {
+            strokeDashoffset: 0,
+            opacity: 0.65,
+            duration: segment * 0.28,
+            ease: 'none',
+          },
           label,
         )
       }
 
-      if (path) {
+      if (branchPath && side === 'center' && index === 0) {
         tl.to(
-          path,
-          { strokeDashoffset: 0, opacity: 0.6, duration: segment * 0.22, ease: 'none' },
+          branchPath,
+          { strokeDashoffset: 0, opacity: 0.65, duration: segment * 0.22, ease: 'none' },
+          label,
+        )
+      }
+
+      if ((side === 'left' || side === 'right') && branchPath && !drawnBranches.has(side)) {
+        drawnBranches.add(side)
+        tl.to(
+          branchPath,
+          { strokeDashoffset: 0, opacity: 0.65, duration: segment * 0.24, ease: 'none' },
           label,
         )
       }
@@ -169,8 +248,20 @@ export function initAboutTreeAnimation(root: HTMLElement) {
           node,
           { opacity: 0, x: enterX, y: 28, scale: 0.96 },
           { opacity: 1, x: 0, y: 0, scale: 1, duration: segment * 0.28 },
-          path ? `${label}+=${segment * 0.08}` : label,
+          branchPath || side === 'center' ? `${label}+=${segment * 0.08}` : label,
         )
+        if (card) {
+          tl.fromTo(
+            card,
+            { boxShadow: '0 4px 24px color-mix(in srgb, var(--color-bronze) 6%, transparent)' },
+            {
+              boxShadow: '0 8px 32px color-mix(in srgb, var(--color-gold) 12%, transparent)',
+              duration: segment * 0.3,
+              ease: REVEAL_EASE,
+            },
+            `${label}+=${segment * 0.1}`,
+          )
+        }
       }
 
       if (revealItems.length) {
@@ -184,7 +275,7 @@ export function initAboutTreeAnimation(root: HTMLElement) {
             stagger: segment * 0.045,
             ease: REVEAL_EASE,
           },
-          path ? `${label}+=${segment * 0.18}` : `${label}+=${segment * 0.1}`,
+          `${label}+=${segment * 0.16}`,
         )
       }
 
@@ -201,15 +292,34 @@ export function initAboutTreeAnimation(root: HTMLElement) {
       invalidateOnRefresh: true,
       animation: tl,
       id: 'about-tree-pin',
+      onRefresh: drawTree,
     })
 
     gsap.set(steps[0], { autoAlpha: 1, pointerEvents: 'auto' })
 
-    flushScrollRefresh()
+    root.querySelectorAll<HTMLElement>('[data-lenis-prevent]').forEach((scrollEl) => {
+      scrollEl.addEventListener(
+        'wheel',
+        (event) => {
+          const atTop = scrollEl.scrollTop <= 0
+          const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1
+          const goingUp = event.deltaY < 0
+          const goingDown = event.deltaY > 0
+
+          if ((goingUp && !atTop) || (goingDown && !atBottom)) {
+            event.stopPropagation()
+          }
+        },
+        { passive: true },
+      )
+    })
+
+    requestAnimationFrame(drawTree)
   }, root)
 
   return () => {
     ScrollTrigger.removeEventListener('refreshInit', onRefreshInit)
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler)
     ctx.revert()
   }
 }
