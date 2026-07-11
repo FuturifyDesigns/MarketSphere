@@ -10,102 +10,6 @@ const FADE_EASE = 'power2.inOut'
 const SCROLL_UNIT = 0.85
 const SLIDE_SEGMENT = 1.45
 
-type VideoController = {
-  activeIndex: number | null
-  videos: HTMLVideoElement[]
-  pinActive: boolean
-}
-
-function createVideoController(root: HTMLElement): VideoController {
-  return {
-    activeIndex: null,
-    videos: gsap.utils.toArray<HTMLVideoElement>('.svc-page__video', root),
-    pinActive: false,
-  }
-}
-
-function getActiveSlideIndex(
-  tl: gsap.core.Timeline,
-  progress: number,
-  slideCount: number,
-): number | null {
-  const time = progress * tl.duration()
-  const firstLabel = tl.labels['service-0']
-  if (firstLabel === undefined || time < firstLabel) return null
-
-  for (let i = slideCount - 1; i >= 0; i--) {
-    const label = tl.labels[`service-${i}`]
-    if (label !== undefined && time >= label) return i
-  }
-
-  return null
-}
-
-async function playVideoSafe(video: HTMLVideoElement) {
-  video.muted = true
-  video.defaultMuted = true
-
-  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-    await new Promise<void>((resolve) => {
-      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        resolve()
-        return
-      }
-      const done = () => resolve()
-      video.addEventListener('loadeddata', done, { once: true })
-      video.addEventListener('canplay', done, { once: true })
-      video.addEventListener('error', done, { once: true })
-      video.load()
-    })
-  }
-
-  try {
-    await video.play()
-    video.removeAttribute('poster')
-  } catch {
-    /* autoplay may be blocked until next gesture — keepalive will retry */
-  }
-}
-
-function activateSlideVideo(ctrl: VideoController, index: number | null) {
-  if (!ctrl.pinActive) {
-    pauseAllVideos(ctrl)
-    return
-  }
-
-  if (ctrl.activeIndex === index) {
-    if (index !== null) void playVideoSafe(ctrl.videos[index])
-    return
-  }
-
-  ctrl.activeIndex = index
-
-  ctrl.videos.forEach((video, i) => {
-    if (i === index) void playVideoSafe(video)
-    else video.pause()
-  })
-}
-
-function pauseAllVideos(ctrl: VideoController) {
-  ctrl.activeIndex = null
-  ctrl.videos.forEach((video) => video.pause())
-}
-
-function startVideoKeepAlive(ctrl: VideoController, getProgress: () => number, slideCount: number, tl: gsap.core.Timeline) {
-  let raf = 0
-
-  const tick = () => {
-    if (ctrl.pinActive) {
-      const index = getActiveSlideIndex(tl, getProgress(), slideCount)
-      if (index !== null) activateSlideVideo(ctrl, index)
-    }
-    raf = window.requestAnimationFrame(tick)
-  }
-
-  raf = window.requestAnimationFrame(tick)
-  return () => window.cancelAnimationFrame(raf)
-}
-
 function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: string) {
   tl.fromTo(
     slide.querySelector('.svc-page__media'),
@@ -116,37 +20,18 @@ function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: st
 }
 
 export function initServicesPageShowcase(root: HTMLElement) {
-  const videoCtrl = createVideoController(root)
-  let stopKeepAlive: (() => void) | undefined
-
-  videoCtrl.videos.forEach((video) => {
-    video.muted = true
-    video.defaultMuted = true
-    video.loop = true
-    video.playsInline = true
-    video.setAttribute('playsinline', '')
-    video.setAttribute('webkit-playsinline', '')
-    video.preload = 'auto'
-    video.load()
-
-    video.addEventListener('canplay', () => {
-      if (videoCtrl.activeIndex === videoCtrl.videos.indexOf(video) && videoCtrl.pinActive) {
-        void playVideoSafe(video)
-      }
-    })
-  })
-
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__intro'), {
-      autoAlpha: 1,
+      opacity: 1,
       pointerEvents: 'auto',
+      visibility: 'visible',
     })
     gsap.set(root.querySelectorAll('.svc-page__media, .svc-page__copy > *'), {
       opacity: 1,
       y: 0,
-      clearProps: 'transform,opacity',
+      clearProps: 'transform',
     })
-    return () => pauseAllVideos(videoCtrl)
+    return () => {}
   }
 
   const ctx = gsap.context(() => {
@@ -158,9 +43,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
 
     if (!pin || !intro || slides.length === 0) return
 
-    pauseAllVideos(videoCtrl)
-
-    gsap.set(slides, { autoAlpha: 0, pointerEvents: 'none' })
+    gsap.set(slides, { opacity: 0, pointerEvents: 'none', visibility: 'visible', zIndex: 1 })
     gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
     gsap.set(dots, { scale: 1, opacity: 0.35 })
     if (dots[0]) gsap.set(dots[0], { scale: 1.2, opacity: 1 })
@@ -191,13 +74,12 @@ export function initServicesPageShowcase(root: HTMLElement) {
         tl.set(intro, { pointerEvents: 'none' })
       } else {
         const prev = slides[index - 1]
-        tl.to(prev, { autoAlpha: 0, duration: 0.24, ease: FADE_EASE })
-        tl.set(prev, { pointerEvents: 'none' })
+        tl.to(prev, { opacity: 0, duration: 0.24, ease: FADE_EASE })
+        tl.set(prev, { pointerEvents: 'none', zIndex: 1 })
       }
 
       tl.addLabel(label)
-      tl.call(() => activateSlideVideo(videoCtrl, index), [], label)
-      tl.set(slide, { autoAlpha: 1, pointerEvents: 'auto' }, label)
+      tl.set(slide, { opacity: 1, pointerEvents: 'auto', zIndex: 2 }, label)
       tl.to(dots, { scale: 1, opacity: 0.35, duration: 0.15 }, label)
       if (dots[index]) {
         tl.to(dots[index], { scale: 1.25, opacity: 1, duration: 0.2 }, label)
@@ -221,18 +103,6 @@ export function initServicesPageShowcase(root: HTMLElement) {
       tl.to({}, { duration: SLIDE_SEGMENT * 0.55 })
     })
 
-    let currentProgress = 0
-
-    const syncVideo = (progress: number) => {
-      currentProgress = progress
-      const index = getActiveSlideIndex(tl, progress, slides.length)
-      if (index === null) {
-        pauseAllVideos(videoCtrl)
-        return
-      }
-      activateSlideVideo(videoCtrl, index)
-    }
-
     ScrollTrigger.create({
       trigger: pin,
       start: 'top top',
@@ -245,35 +115,11 @@ export function initServicesPageShowcase(root: HTMLElement) {
       fastScrollEnd: true,
       animation: tl,
       id: 'services-page-showcase',
-      onToggle: (self) => {
-        videoCtrl.pinActive = self.isActive
-        if (!self.isActive) pauseAllVideos(videoCtrl)
-        else syncVideo(self.progress)
-      },
-      onUpdate: (self) => syncVideo(self.progress),
     })
-
-    const st = ScrollTrigger.getById('services-page-showcase')
-    if (st) {
-      videoCtrl.pinActive = st.isActive
-      syncVideo(st.progress)
-    }
-
-    stopKeepAlive = startVideoKeepAlive(
-      videoCtrl,
-      () => currentProgress,
-      slides.length,
-      tl,
-    )
 
     gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
     flushScrollRefresh()
   }, root)
 
-  return () => {
-    stopKeepAlive?.()
-    videoCtrl.pinActive = false
-    pauseAllVideos(videoCtrl)
-    ctx.revert()
-  }
+  return () => ctx.revert()
 }

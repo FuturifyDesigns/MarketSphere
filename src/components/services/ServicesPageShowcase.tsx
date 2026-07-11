@@ -8,6 +8,39 @@ import './ServicesPageShowcase.css'
 
 const base = import.meta.env.BASE_URL
 
+function startAlwaysPlayingVideos(root: HTMLElement) {
+  const videos = Array.from(root.querySelectorAll<HTMLVideoElement>('.svc-page__video'))
+
+  const playAll = () => {
+    videos.forEach((video) => {
+      video.muted = true
+      video.loop = true
+      video.playsInline = true
+      if (video.paused) void video.play().catch(() => {})
+    })
+  }
+
+  videos.forEach((video) => {
+    video.preload = 'auto'
+    video.load()
+    video.addEventListener('loadeddata', playAll)
+    video.addEventListener('canplay', playAll)
+    video.addEventListener('pause', playAll)
+  })
+
+  playAll()
+  const timer = window.setInterval(playAll, 200)
+
+  return () => {
+    window.clearInterval(timer)
+    videos.forEach((video) => {
+      video.removeEventListener('loadeddata', playAll)
+      video.removeEventListener('canplay', playAll)
+      video.removeEventListener('pause', playAll)
+    })
+  }
+}
+
 export function ServicesPageShowcase() {
   const rootRef = useRef<HTMLElement>(null)
 
@@ -15,13 +48,15 @@ export function ServicesPageShowcase() {
     const root = rootRef.current
     if (!root) return
 
-    let cleanup: (() => void) | undefined
+    let cleanupShowcase: (() => void) | undefined
+    let cleanupVideos: (() => void) | undefined
     let initialized = false
 
     const init = () => {
       if (initialized) return
       initialized = true
-      cleanup = initServicesPageShowcase(root)
+      cleanupVideos = startAlwaysPlayingVideos(root)
+      cleanupShowcase = initServicesPageShowcase(root)
     }
 
     const removeIntroListener = onIntroComplete(init)
@@ -30,7 +65,8 @@ export function ServicesPageShowcase() {
     return () => {
       window.clearTimeout(failsafe)
       removeIntroListener()
-      cleanup?.()
+      cleanupVideos?.()
+      cleanupShowcase?.()
     }
   }, [])
 
@@ -77,9 +113,9 @@ export function ServicesPageShowcase() {
                         data-service-index={i}
                         data-service-title={service.title}
                         src={`${base}${service.video}`}
-                        poster={`${base}${service.image}`}
                         loop
                         muted
+                        autoPlay
                         playsInline
                         preload="auto"
                         aria-label={`${service.title} showcase video`}
