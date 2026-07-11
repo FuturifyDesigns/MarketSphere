@@ -2,28 +2,55 @@ import { useState, type FormEvent } from 'react'
 import { Mail, MapPin, Phone, Clock, ArrowRight, MessageSquare, Building2, Send } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
+import {
+  clearFieldError,
+  collectErrors,
+  hasErrors,
+  validateEmail,
+  validateMessage,
+  validateName,
+  validatePhone,
+  type FieldErrors,
+} from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
 import './Contact.css'
 
+type ContactFields = 'name' | 'email' | 'phone' | 'message'
+
 export function Contact() {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<ContactFields>>({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const updateField = (key: ContactFields, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => clearFieldError(prev, key))
+  }
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+
+    const errors = collectErrors<ContactFields>([
+      ['name', validateName(form.name, 'Full name')],
+      ['email', validateEmail(form.email)],
+      ['phone', validatePhone(form.phone, true)],
+      ['message', validateMessage(form.message)],
+    ])
+    setFieldErrors(errors)
+    if (hasErrors(errors)) return
+
     setLoading(true)
 
-    const form = e.currentTarget
-    const data = new FormData(form)
-
     const { error: insertError } = await supabase.from('contact_messages').insert({
-      full_name: String(data.get('name') || '').trim(),
-      email: String(data.get('email') || '').trim(),
-      phone: String(data.get('phone') || '').trim() || null,
-      message: String(data.get('message') || '').trim(),
+      full_name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      message: form.message.trim(),
     })
 
     setLoading(false)
@@ -33,7 +60,7 @@ export function Contact() {
       return
     }
 
-    form.reset()
+    setForm({ name: '', email: '', phone: '', message: '' })
     setSubmitted(true)
   }
 
@@ -147,7 +174,7 @@ export function Contact() {
                 <Button to="/" variant="secondary">Back to Home</Button>
               </div>
             ) : (
-              <form className="contact-form bento-card" onSubmit={handleSubmit}>
+              <form className="contact-form bento-card" onSubmit={handleSubmit} noValidate>
                 <div className="contact-form__header">
                   <div className="contact-form__icon"><Send size={20} /></div>
                   <div>
@@ -156,18 +183,42 @@ export function Contact() {
                   </div>
                 </div>
                 <div className="contact-form__fields">
-                  <Input label="Full Name" name="name" required />
-                  <Input label="Email" name="email" type="email" required />
-                  <Input label="Phone" name="phone" type="tel" />
-                  <div className="input-group">
-                    <label htmlFor="message">Message</label>
-                    <textarea id="message" name="message" className="input-field" required rows={5} placeholder="How can we help you?" />
-                  </div>
+                  <Input
+                    label="Full Name"
+                    autoComplete="name"
+                    value={form.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                    error={fieldErrors.name}
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={(e) => updateField('email', e.target.value)}
+                    error={fieldErrors.email}
+                  />
+                  <Input
+                    label="Phone (optional)"
+                    type="tel"
+                    autoComplete="tel"
+                    value={form.phone}
+                    onChange={(e) => updateField('phone', e.target.value)}
+                    error={fieldErrors.phone}
+                  />
+                  <Textarea
+                    label="Message"
+                    placeholder="How can we help you?"
+                    rows={5}
+                    value={form.message}
+                    onChange={(e) => updateField('message', e.target.value)}
+                    error={fieldErrors.message}
+                  />
                 </div>
                 <Button type="submit" size="lg" disabled={loading}>
                   {loading ? 'Sending…' : 'Send Message'} <ArrowRight size={16} />
                 </Button>
-                {error && <p className="contact-form__error">{error}</p>}
+                {error && <p className="contact-form__error" role="alert">{error}</p>}
               </form>
             )}
           </div>

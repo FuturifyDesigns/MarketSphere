@@ -6,8 +6,25 @@ import { prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { Textarea } from '../../components/ui/Textarea'
+import {
+  clearFieldError,
+  collectErrors,
+  hasErrors,
+  validateBusinessName,
+  validateDescription,
+  validateLocation,
+  validateOptionalEmail,
+  validatePhone,
+  validateServiceDescription,
+  validateServiceTitle,
+  type FieldErrors,
+} from '../../lib/validation'
 import type { Category, Enquiry, Provider, ProviderService } from '../../lib/types'
 import './Dashboard.css'
+
+type ProfileFields = 'business_name' | 'description' | 'location' | 'contact_email' | 'contact_phone'
+type ServiceFields = 'title' | 'description'
 
 export function ProviderDashboard() {
   const { user, refreshProfile } = useAuth()
@@ -27,6 +44,9 @@ export function ProviderDashboard() {
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingGallery, setUploadingGallery] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [profileErrors, setProfileErrors] = useState<FieldErrors<ProfileFields>>({})
+  const [serviceErrors, setServiceErrors] = useState<FieldErrors<ServiceFields>>({})
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -63,16 +83,44 @@ export function ProviderDashboard() {
 
   const saveProfile = async () => {
     if (!user) return
+    setSaveError('')
+
+    const errors = collectErrors<ProfileFields>([
+      ['business_name', validateBusinessName(form.business_name)],
+      ['description', validateDescription(form.description, false, 20)],
+      ['location', validateLocation(form.location)],
+      ['contact_email', validateOptionalEmail(form.contact_email)],
+      ['contact_phone', validatePhone(form.contact_phone, true)],
+    ])
+    setProfileErrors(errors)
+    if (hasErrors(errors)) return
+
+    const payload = {
+      business_name: form.business_name.trim(),
+      description: form.description.trim(),
+      location: form.location.trim() || null,
+      contact_email: form.contact_email.trim() || null,
+      contact_phone: form.contact_phone.trim() || null,
+    }
+
     setSaving(true)
     if (provider) {
-      await supabase.from('providers').update({ ...form, updated_at: new Date().toISOString() }).eq('id', provider.id)
-    } else {
-      const { data } = await supabase
+      const { error } = await supabase
         .from('providers')
-        .insert({ ...form, user_id: user.id })
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq('id', provider.id)
+      if (error) setSaveError('Could not update profile. Please try again.')
+    } else {
+      const { data, error } = await supabase
+        .from('providers')
+        .insert({ ...payload, user_id: user.id })
         .select()
         .single()
-      setProvider(data)
+      if (error) {
+        setSaveError('Could not submit profile. Please try again.')
+      } else {
+        setProvider(data)
+      }
     }
     setSaving(false)
     refreshProfile()
@@ -142,23 +190,37 @@ export function ProviderDashboard() {
   }
 
   const addService = async () => {
-    if (!provider || !newService.title) return
-    const { data } = await supabase
+    if (!provider) return
+    setSaveError('')
+
+    const errors = collectErrors<ServiceFields>([
+      ['title', validateServiceTitle(newService.title)],
+      ['description', validateServiceDescription(newService.description)],
+    ])
+    setServiceErrors(errors)
+    if (hasErrors(errors)) return
+
+    const { data, error } = await supabase
       .from('provider_services')
       .insert({
         provider_id: provider.id,
-        title: newService.title,
-        description: newService.description,
+        title: newService.title.trim(),
+        description: newService.description.trim() || null,
         category_id: newService.category_id || null,
       })
       .select('*, categories(*)')
       .single()
+    if (error) {
+      setSaveError('Could not add service. Please try again.')
+      return
+    }
     if (data) {
       setProvider({
         ...provider,
         provider_services: [...(provider.provider_services || []), data],
       })
       setNewService({ title: '', description: '', category_id: '' })
+      setServiceErrors({})
     }
   }
 
@@ -239,16 +301,57 @@ export function ProviderDashboard() {
                 <small>Images are compressed automatically to stay within free storage limits.</small>
               </div>
 
-              {uploadError && <p className="upload-error">{uploadError}</p>}
+              {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
 
-              <Input label="Business Name" value={form.business_name} onChange={(e) => setForm({ ...form, business_name: e.target.value })} required />
-              <div className="input-group">
-                <label htmlFor="desc">Description</label>
-                <textarea id="desc" className="input-field" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} />
-              </div>
-              <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-              <Input label="Contact Email" type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
-              <Input label="Contact Phone" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+              <Input
+                label="Business Name"
+                value={form.business_name}
+                onChange={(e) => {
+                  setForm({ ...form, business_name: e.target.value })
+                  setProfileErrors((prev) => clearFieldError(prev, 'business_name'))
+                }}
+                error={profileErrors.business_name}
+              />
+              <Textarea
+                label="Description"
+                rows={4}
+                value={form.description}
+                onChange={(e) => {
+                  setForm({ ...form, description: e.target.value })
+                  setProfileErrors((prev) => clearFieldError(prev, 'description'))
+                }}
+                error={profileErrors.description}
+              />
+              <Input
+                label="Location"
+                value={form.location}
+                onChange={(e) => {
+                  setForm({ ...form, location: e.target.value })
+                  setProfileErrors((prev) => clearFieldError(prev, 'location'))
+                }}
+                error={profileErrors.location}
+              />
+              <Input
+                label="Contact Email"
+                type="email"
+                value={form.contact_email}
+                onChange={(e) => {
+                  setForm({ ...form, contact_email: e.target.value })
+                  setProfileErrors((prev) => clearFieldError(prev, 'contact_email'))
+                }}
+                error={profileErrors.contact_email}
+              />
+              <Input
+                label="Contact Phone"
+                type="tel"
+                value={form.contact_phone}
+                onChange={(e) => {
+                  setForm({ ...form, contact_phone: e.target.value })
+                  setProfileErrors((prev) => clearFieldError(prev, 'contact_phone'))
+                }}
+                error={profileErrors.contact_phone}
+              />
+              {saveError && tab === 'profile' && <p className="upload-error" role="alert">{saveError}</p>}
               <Button onClick={saveProfile} disabled={saving}>
                 {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
               </Button>
@@ -270,18 +373,37 @@ export function ProviderDashboard() {
             {provider && (
               <>
                 <h3>Add Service</h3>
-                <Input label="Service Title" value={newService.title} onChange={(e) => setNewService({ ...newService, title: e.target.value })} />
+                <Input
+                  label="Service Title"
+                  value={newService.title}
+                  onChange={(e) => {
+                    setNewService({ ...newService, title: e.target.value })
+                    setServiceErrors((prev) => clearFieldError(prev, 'title'))
+                  }}
+                  error={serviceErrors.title}
+                />
                 <div className="input-group">
-                  <label>Category</label>
-                  <select value={newService.category_id} onChange={(e) => setNewService({ ...newService, category_id: e.target.value })}>
+                  <label htmlFor="service-category">Category</label>
+                  <select
+                    id="service-category"
+                    value={newService.category_id}
+                    onChange={(e) => setNewService({ ...newService, category_id: e.target.value })}
+                  >
                     <option value="">Select category</option>
                     {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
-                <div className="input-group">
-                  <label htmlFor="svc-desc">Description</label>
-                  <textarea id="svc-desc" className="input-field" value={newService.description} onChange={(e) => setNewService({ ...newService, description: e.target.value })} rows={2} />
-                </div>
+                <Textarea
+                  label="Description (optional)"
+                  rows={2}
+                  value={newService.description}
+                  onChange={(e) => {
+                    setNewService({ ...newService, description: e.target.value })
+                    setServiceErrors((prev) => clearFieldError(prev, 'description'))
+                  }}
+                  error={serviceErrors.description}
+                />
+                {saveError && tab === 'services' && <p className="upload-error" role="alert">{saveError}</p>}
                 <Button onClick={addService}>Add Service</Button>
               </>
             )}

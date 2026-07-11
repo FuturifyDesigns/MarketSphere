@@ -1,21 +1,24 @@
-import { forwardRef, type InputHTMLAttributes } from 'react'
+import { forwardRef, type TextareaHTMLAttributes } from 'react'
 import './Input.css'
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
   error?: string
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className = '', id, ...props }, ref) => {
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ label, error, className = '', id, rows = 4, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
     const errorId = inputId ? `${inputId}-error` : undefined
+
     return (
       <div className={`input-group ${error ? 'input-group--error' : ''} ${className}`}>
         {label && <label htmlFor={inputId}>{label}</label>}
-        <input
+        <textarea
           ref={ref}
           id={inputId}
+          rows={rows}
+          className="input-field"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           {...props}
@@ -27,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
-Input.displayName = 'Input'
+Textarea.displayName = 'Textarea'

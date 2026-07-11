@@ -5,8 +5,19 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
+import {
+  clearFieldError,
+  collectErrors,
+  hasErrors,
+  validateMessage,
+  validateSubject,
+  type FieldErrors,
+} from '../lib/validation'
 import type { Provider } from '../lib/types'
 import './ProviderProfile.css'
+
+type EnquiryFields = 'subject' | 'message'
 
 export function ProviderProfile() {
   const { id } = useParams<{ id: string }>()
@@ -15,6 +26,9 @@ export function ProviderProfile() {
   const [isFavorite, setIsFavorite] = useState(false)
   const [showEnquiry, setShowEnquiry] = useState(false)
   const [enquiry, setEnquiry] = useState({ subject: '', message: '' })
+  const [enquiryErrors, setEnquiryErrors] = useState<FieldErrors<EnquiryFields>>({})
+  const [enquiryError, setEnquiryError] = useState('')
+  const [submittingEnquiry, setSubmittingEnquiry] = useState(false)
   const [enquirySent, setEnquirySent] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -56,12 +70,31 @@ export function ProviderProfile() {
   const submitEnquiry = async (e: FormEvent) => {
     e.preventDefault()
     if (!user || !id) return
-    await supabase.from('enquiries').insert({
+    setEnquiryError('')
+
+    const errors = collectErrors<EnquiryFields>([
+      ['subject', validateSubject(enquiry.subject)],
+      ['message', validateMessage(enquiry.message)],
+    ])
+    setEnquiryErrors(errors)
+    if (hasErrors(errors)) return
+
+    setSubmittingEnquiry(true)
+    const { error } = await supabase.from('enquiries').insert({
       customer_id: user.id,
       provider_id: id,
-      subject: enquiry.subject,
-      message: enquiry.message,
+      subject: enquiry.subject.trim(),
+      message: enquiry.message.trim(),
     })
+    setSubmittingEnquiry(false)
+
+    if (error) {
+      setEnquiryError('Could not send enquiry. Please try again.')
+      return
+    }
+
+    setEnquiry({ subject: '', message: '' })
+    setEnquiryErrors({})
     setEnquirySent(true)
     setShowEnquiry(false)
   }
@@ -156,27 +189,32 @@ export function ProviderProfile() {
         <div className="modal-overlay" onClick={() => setShowEnquiry(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Send Enquiry</h2>
-            <form onSubmit={submitEnquiry}>
+            <form onSubmit={submitEnquiry} noValidate>
               <Input
                 label="Subject"
                 value={enquiry.subject}
-                onChange={(e) => setEnquiry({ ...enquiry, subject: e.target.value })}
-                required
+                onChange={(e) => {
+                  setEnquiry({ ...enquiry, subject: e.target.value })
+                  setEnquiryErrors((prev) => clearFieldError(prev, 'subject'))
+                }}
+                error={enquiryErrors.subject}
               />
-              <div className="input-group">
-                <label htmlFor="enquiry-msg">Message</label>
-                <textarea
-                  id="enquiry-msg"
-                  className="input-field"
-                  value={enquiry.message}
-                  onChange={(e) => setEnquiry({ ...enquiry, message: e.target.value })}
-                  required
-                  rows={4}
-                />
-              </div>
+              <Textarea
+                label="Message"
+                rows={4}
+                value={enquiry.message}
+                onChange={(e) => {
+                  setEnquiry({ ...enquiry, message: e.target.value })
+                  setEnquiryErrors((prev) => clearFieldError(prev, 'message'))
+                }}
+                error={enquiryErrors.message}
+              />
+              {enquiryError && <p className="upload-error" role="alert">{enquiryError}</p>}
               <div className="modal-actions">
                 <Button type="button" variant="ghost" onClick={() => setShowEnquiry(false)}>Cancel</Button>
-                <Button type="submit">Send</Button>
+                <Button type="submit" disabled={submittingEnquiry}>
+                  {submittingEnquiry ? 'Sending…' : 'Send'}
+                </Button>
               </div>
             </form>
           </div>

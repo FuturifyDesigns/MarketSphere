@@ -4,8 +4,24 @@ import { supabase } from '../../lib/supabase'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { Textarea } from '../../components/ui/Textarea'
+import {
+  clearFieldError,
+  collectErrors,
+  hasErrors,
+  slugify,
+  validateCategoryName,
+  validateClientName,
+  validateDescription,
+  validateSlug,
+  validateTestimonialContent,
+  type FieldErrors,
+} from '../../lib/validation'
 import type { Category, ContactMessage, Profile, Provider, Testimonial } from '../../lib/types'
 import './Dashboard.css'
+
+type CategoryFields = 'name' | 'slug' | 'description'
+type TestimonialFields = 'client_name' | 'service_type' | 'content'
 
 export function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, providers: 0, pending: 0, enquiries: 0, contacts: 0 })
@@ -18,6 +34,9 @@ export function AdminDashboard() {
   const [tab, setTab] = useState<'overview' | 'providers' | 'users' | 'categories' | 'testimonials' | 'contacts'>('overview')
   const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '' })
   const [newTestimonial, setNewTestimonial] = useState({ client_name: '', content: '', service_type: '' })
+  const [categoryErrors, setCategoryErrors] = useState<FieldErrors<CategoryFields>>({})
+  const [testimonialErrors, setTestimonialErrors] = useState<FieldErrors<TestimonialFields>>({})
+  const [formError, setFormError] = useState('')
 
   const loadData = async () => {
     const [usersRes, providersRes, pendingRes, enquiriesRes, catsRes, testRes, contactsRes] = await Promise.all([
@@ -53,10 +72,29 @@ export function AdminDashboard() {
   }
 
   const addCategory = async () => {
-    if (!newCategory.name) return
-    const slug = newCategory.slug || newCategory.name.toLowerCase().replace(/\s+/g, '-')
-    await supabase.from('categories').insert({ ...newCategory, slug })
+    setFormError('')
+    const slug = newCategory.slug.trim() || slugify(newCategory.name)
+
+    const errors = collectErrors<CategoryFields>([
+      ['name', validateCategoryName(newCategory.name)],
+      ['slug', validateSlug(slug)],
+      ['description', validateDescription(newCategory.description, true, 5)],
+    ])
+    setCategoryErrors(errors)
+    if (hasErrors(errors)) return
+
+    const { error } = await supabase.from('categories').insert({
+      name: newCategory.name.trim(),
+      slug,
+      description: newCategory.description.trim() || null,
+    })
+    if (error) {
+      setFormError('Could not add category. The slug may already exist.')
+      return
+    }
+
     setNewCategory({ name: '', slug: '', description: '' })
+    setCategoryErrors({})
     loadData()
   }
 
@@ -66,9 +104,30 @@ export function AdminDashboard() {
   }
 
   const addTestimonial = async () => {
-    if (!newTestimonial.client_name || !newTestimonial.content) return
-    await supabase.from('testimonials').insert({ ...newTestimonial, rating: 5, approved: true })
+    setFormError('')
+
+    const errors = collectErrors<TestimonialFields>([
+      ['client_name', validateClientName(newTestimonial.client_name)],
+      ['service_type', newTestimonial.service_type.trim().length > 80 ? 'Service type is too long' : null],
+      ['content', validateTestimonialContent(newTestimonial.content)],
+    ])
+    setTestimonialErrors(errors)
+    if (hasErrors(errors)) return
+
+    const { error } = await supabase.from('testimonials').insert({
+      client_name: newTestimonial.client_name.trim(),
+      content: newTestimonial.content.trim(),
+      service_type: newTestimonial.service_type.trim() || null,
+      rating: 5,
+      approved: true,
+    })
+    if (error) {
+      setFormError('Could not add testimonial. Please try again.')
+      return
+    }
+
     setNewTestimonial({ client_name: '', content: '', service_type: '' })
+    setTestimonialErrors({})
     loadData()
   }
 
@@ -215,9 +274,40 @@ export function AdminDashboard() {
               ))}
             </div>
             <h3>Add Category</h3>
-            <Input label="Name" value={newCategory.name} onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })} />
-            <Input label="Slug" value={newCategory.slug} onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })} />
-            <Input label="Description" value={newCategory.description} onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })} />
+            <Input
+              label="Name"
+              value={newCategory.name}
+              onChange={(e) => {
+                const name = e.target.value
+                setNewCategory((prev) => ({
+                  ...prev,
+                  name,
+                  slug: prev.slug ? prev.slug : slugify(name),
+                }))
+                setCategoryErrors((prev) => clearFieldError(prev, 'name'))
+              }}
+              error={categoryErrors.name}
+            />
+            <Input
+              label="Slug"
+              value={newCategory.slug}
+              onChange={(e) => {
+                setNewCategory({ ...newCategory, slug: e.target.value })
+                setCategoryErrors((prev) => clearFieldError(prev, 'slug'))
+              }}
+              error={categoryErrors.slug}
+            />
+            <Textarea
+              label="Description (optional)"
+              rows={2}
+              value={newCategory.description}
+              onChange={(e) => {
+                setNewCategory({ ...newCategory, description: e.target.value })
+                setCategoryErrors((prev) => clearFieldError(prev, 'description'))
+              }}
+              error={categoryErrors.description}
+            />
+            {formError && tab === 'categories' && <p className="upload-error" role="alert">{formError}</p>}
             <Button onClick={addCategory}>Add Category</Button>
           </div>
         )}
@@ -239,12 +329,35 @@ export function AdminDashboard() {
               ))}
             </div>
             <h3>Add Testimonial</h3>
-            <Input label="Client Name" value={newTestimonial.client_name} onChange={(e) => setNewTestimonial({ ...newTestimonial, client_name: e.target.value })} />
-            <Input label="Service Type" value={newTestimonial.service_type} onChange={(e) => setNewTestimonial({ ...newTestimonial, service_type: e.target.value })} />
-            <div className="input-group">
-              <label htmlFor="test-content">Content</label>
-              <textarea id="test-content" className="input-field" value={newTestimonial.content} onChange={(e) => setNewTestimonial({ ...newTestimonial, content: e.target.value })} rows={3} />
-            </div>
+            <Input
+              label="Client Name"
+              value={newTestimonial.client_name}
+              onChange={(e) => {
+                setNewTestimonial({ ...newTestimonial, client_name: e.target.value })
+                setTestimonialErrors((prev) => clearFieldError(prev, 'client_name'))
+              }}
+              error={testimonialErrors.client_name}
+            />
+            <Input
+              label="Service Type (optional)"
+              value={newTestimonial.service_type}
+              onChange={(e) => {
+                setNewTestimonial({ ...newTestimonial, service_type: e.target.value })
+                setTestimonialErrors((prev) => clearFieldError(prev, 'service_type'))
+              }}
+              error={testimonialErrors.service_type}
+            />
+            <Textarea
+              label="Content"
+              rows={3}
+              value={newTestimonial.content}
+              onChange={(e) => {
+                setNewTestimonial({ ...newTestimonial, content: e.target.value })
+                setTestimonialErrors((prev) => clearFieldError(prev, 'content'))
+              }}
+              error={testimonialErrors.content}
+            />
+            {formError && tab === 'testimonials' && <p className="upload-error" role="alert">{formError}</p>}
             <Button onClick={addTestimonial}>Add Testimonial</Button>
           </div>
         )}

@@ -4,11 +4,21 @@ import { ArrowRight, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { COMPANY } from '../lib/constants'
+import {
+  clearFieldError,
+  collectErrors,
+  hasErrors,
+  validateEmail,
+  validatePassword,
+  type FieldErrors,
+} from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './Auth.css'
+
+type LoginFields = 'email' | 'password'
 
 export function Login() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -17,14 +27,23 @@ export function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<LoginFields>>({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+
+    const errors = collectErrors<LoginFields>([
+      ['email', validateEmail(email)],
+      ['password', validatePassword(password)],
+    ])
+    setFieldErrors(errors)
+    if (hasErrors(errors)) return
+
     setLoading(true)
-    const { error: err } = await signIn(email, password)
+    const { error: err } = await signIn(email.trim(), password)
     setLoading(false)
     if (err) {
       setError(err.message)
@@ -77,10 +96,30 @@ export function Login() {
               <p className="auth-subtitle">Enter your credentials to continue</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="auth-form">
-              <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              {error && <p className="auth-error">{error}</p>}
+            <form onSubmit={handleSubmit} className="auth-form" noValidate>
+              <Input
+                label="Email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setFieldErrors((prev) => clearFieldError(prev, 'email'))
+                }}
+                error={fieldErrors.email}
+              />
+              <Input
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  setFieldErrors((prev) => clearFieldError(prev, 'password'))
+                }}
+                error={fieldErrors.password}
+              />
+              {error && <p className="auth-error" role="alert">{error}</p>}
               <Button type="submit" size="lg" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'} <ArrowRight size={16} />
               </Button>

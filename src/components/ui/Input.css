@@ -32,6 +32,19 @@
   box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.15);
 }
 
+.input-group--error input,
+.input-group--error textarea,
+.input-group--error select {
+  border-color: #c44;
+}
+
+.input-group--error input:focus,
+.input-group--error textarea:focus,
+.input-group--error select:focus {
+  border-color: #c44;
+  box-shadow: 0 0 0 3px rgba(204, 68, 68, 0.15);
+}
+
 .input-error {
   font-size: 0.75rem;
   color: #c44;

@@ -3,11 +3,23 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { COMPANY } from '../lib/constants'
+import {
+  clearFieldError,
+  collectErrors,
+  hasErrors,
+  validateEmail,
+  validateName,
+  validatePassword,
+  validatePhone,
+  type FieldErrors,
+} from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './Auth.css'
+
+type RegisterFields = 'full_name' | 'email' | 'phone' | 'password'
 
 export function Register() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -23,17 +35,35 @@ export function Register() {
     phone: '',
     role: defaultRole,
   })
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegisterFields>>({})
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+    if (key in fieldErrors) {
+      setFieldErrors((prev) => clearFieldError(prev, key as RegisterFields))
+    }
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+
+    const errors = collectErrors<RegisterFields>([
+      ['full_name', validateName(form.full_name, 'Full name')],
+      ['email', validateEmail(form.email)],
+      ['phone', validatePhone(form.phone, true)],
+      ['password', validatePassword(form.password)],
+    ])
+    setFieldErrors(errors)
+    if (hasErrors(errors)) return
+
     setLoading(true)
-    const { error: err } = await signUp(form.email, form.password, {
-      full_name: form.full_name,
-      phone: form.phone || undefined,
+    const { error: err } = await signUp(form.email.trim(), form.password, {
+      full_name: form.full_name.trim(),
+      phone: form.phone.trim() || undefined,
       role: form.role,
     })
     setLoading(false)
@@ -107,48 +137,53 @@ export function Register() {
               <button
                 type="button"
                 className={form.role === 'customer' ? 'role-toggle__btn--active' : ''}
-                onClick={() => setForm({ ...form, role: 'customer' })}
+                onClick={() => updateField('role', 'customer')}
               >
                 I&apos;m a Customer
               </button>
               <button
                 type="button"
                 className={form.role === 'provider' ? 'role-toggle__btn--active' : ''}
-                onClick={() => setForm({ ...form, role: 'provider' })}
+                onClick={() => updateField('role', 'provider')}
               >
                 I&apos;m a Provider
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="auth-form">
+            <form onSubmit={handleSubmit} className="auth-form" noValidate>
               <Input
                 label="Full Name"
+                autoComplete="name"
                 value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                required
+                onChange={(e) => updateField('full_name', e.target.value)}
+                error={fieldErrors.full_name}
               />
               <Input
                 label="Email"
                 type="email"
+                autoComplete="email"
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                required
+                onChange={(e) => updateField('email', e.target.value)}
+                error={fieldErrors.email}
               />
               <Input
-                label="Phone"
+                label="Phone (optional)"
                 type="tel"
+                autoComplete="tel"
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                onChange={(e) => updateField('phone', e.target.value)}
+                error={fieldErrors.phone}
               />
               <Input
                 label="Password"
                 type="password"
+                autoComplete="new-password"
                 value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                minLength={6}
+                onChange={(e) => updateField('password', e.target.value)}
+                error={fieldErrors.password}
               />
-              {error && <p className="auth-error">{error}</p>}
+              <p className="auth-hint">At least 8 characters with a letter and a number.</p>
+              {error && <p className="auth-error" role="alert">{error}</p>}
               <Button type="submit" size="lg" disabled={loading}>
                 {loading ? 'Creating account...' : 'Create Account'} <ArrowRight size={16} />
               </Button>
