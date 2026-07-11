@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { COMPANY } from '../../lib/constants'
+import { preloadServiceVideos } from '../../lib/serviceVideoPreload'
 import { Button } from '../ui/Button'
 import './Navbar.css'
 
@@ -49,6 +50,8 @@ export function Navbar() {
                 to={link.to}
                 className={`navbar__link ${location.pathname === link.to ? 'navbar__link--active' : ''}`}
                 onClick={() => setOpen(false)}
+                onMouseEnter={link.to === '/services' ? () => void preloadServiceVideos() : undefined}
+                onFocus={link.to === '/services' ? () => void preloadServiceVideos() : undefined}
               >
                 {link.label}
               </Link>

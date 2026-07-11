@@ -1,42 +1,34 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { SERVICES } from '../../lib/constants'
 import { onIntroComplete } from '../../lib/intro'
+import { preloadServiceVideos, primeVisibleServiceVideos } from '../../lib/serviceVideoPreload'
 import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
 import './ServicesPageShowcase.css'
 
 const base = import.meta.env.BASE_URL
 
-function startAlwaysPlayingVideos(root: HTMLElement) {
-  const videos = Array.from(root.querySelectorAll<HTMLVideoElement>('.svc-page__video'))
-
+function keepVideosPlaying(videos: HTMLVideoElement[]) {
   const playAll = () => {
     videos.forEach((video) => {
-      video.muted = true
-      video.loop = true
-      video.playsInline = true
       if (video.paused) void video.play().catch(() => {})
     })
   }
 
-  videos.forEach((video) => {
-    video.preload = 'auto'
-    video.load()
-    video.addEventListener('loadeddata', playAll)
-    video.addEventListener('canplay', playAll)
-    video.addEventListener('pause', playAll)
-  })
-
   playAll()
-  const timer = window.setInterval(playAll, 200)
+  const timer = window.setInterval(playAll, 150)
+
+  videos.forEach((video) => {
+    video.addEventListener('canplay', playAll)
+    video.addEventListener('canplaythrough', playAll)
+  })
 
   return () => {
     window.clearInterval(timer)
     videos.forEach((video) => {
-      video.removeEventListener('loadeddata', playAll)
       video.removeEventListener('canplay', playAll)
-      video.removeEventListener('pause', playAll)
+      video.removeEventListener('canplaythrough', playAll)
     })
   }
 }
@@ -44,19 +36,30 @@ function startAlwaysPlayingVideos(root: HTMLElement) {
 export function ServicesPageShowcase() {
   const rootRef = useRef<HTMLElement>(null)
 
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    void preloadServiceVideos().then(() => {
+      primeVisibleServiceVideos(root)
+    })
+
+    const videos = primeVisibleServiceVideos(root)
+    return keepVideosPlaying(videos)
+  }, [])
+
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
     let cleanupShowcase: (() => void) | undefined
-    let cleanupVideos: (() => void) | undefined
     let initialized = false
 
     const init = () => {
       if (initialized) return
       initialized = true
-      cleanupVideos = startAlwaysPlayingVideos(root)
       cleanupShowcase = initServicesPageShowcase(root)
+      primeVisibleServiceVideos(root)
     }
 
     const removeIntroListener = onIntroComplete(init)
@@ -65,7 +68,6 @@ export function ServicesPageShowcase() {
     return () => {
       window.clearTimeout(failsafe)
       removeIntroListener()
-      cleanupVideos?.()
       cleanupShowcase?.()
     }
   }, [])
