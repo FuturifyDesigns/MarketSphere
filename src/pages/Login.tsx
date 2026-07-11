@@ -7,6 +7,7 @@ import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import './authTheme.css'
 import './Auth.css'
 
 export function Login() {
@@ -41,7 +42,8 @@ export function Login() {
   }
 
   return (
-    <div className="auth-page" ref={pageRef}>
+    <div className="auth-page auth-page--signin" ref={pageRef}>
+      <div className="auth-page__bg auth-theme-bg--signin" aria-hidden="true" />
       <div className="auth-shell">
         <aside className="auth-shell__aside auth-shell__aside--login">
           <Link to="/" className="auth-shell__brand">

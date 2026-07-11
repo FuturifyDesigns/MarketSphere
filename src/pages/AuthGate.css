@@ -19,28 +19,16 @@
 .auth-gate__bg--base {
   z-index: 0;
   opacity: 1;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 20%, rgba(201, 162, 75, 0.14), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 80% 80%, rgba(201, 162, 75, 0.1), transparent 50%),
-    var(--bg-primary);
 }
 
 .auth-gate__bg--signin {
   z-index: 1;
   opacity: 0;
-  background:
-    radial-gradient(ellipse 90% 70% at 15% 25%, rgba(96, 165, 250, 0.35), transparent 55%),
-    radial-gradient(ellipse 80% 60% at 85% 75%, rgba(37, 99, 235, 0.12), transparent 50%),
-    linear-gradient(160deg, #e8eef8 0%, #dce8f8 40%, var(--bg-primary) 100%);
 }
 
 .auth-gate__bg--signup {
   z-index: 1;
   opacity: 0;
-  background:
-    radial-gradient(ellipse 90% 70% at 85% 75%, rgba(251, 191, 36, 0.38), transparent 55%),
-    radial-gradient(ellipse 80% 60% at 15% 25%, rgba(201, 162, 75, 0.15), transparent 50%),
-    linear-gradient(340deg, #faf3e0 0%, #f5e8c8 40%, var(--bg-primary) 100%);
 }
 
 .auth-gate:has(.auth-gate__half--signin:hover) .auth-gate__bg--signin {

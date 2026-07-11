@@ -6,6 +6,7 @@ import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import './authTheme.css'
 import './Auth.css'
 
 export function Register() {
@@ -44,7 +45,8 @@ export function Register() {
 
   if (success) {
     return (
-      <div className="auth-page" ref={pageRef}>
+      <div className="auth-page auth-page--signup" ref={pageRef}>
+        <div className="auth-page__bg auth-theme-bg--signup" aria-hidden="true" />
         <div className="auth-shell auth-shell--centered">
           <div className="auth-card auth-card--success">
             <div className="auth-card__success-icon" aria-hidden="true">✓</div>
@@ -61,7 +63,8 @@ export function Register() {
   }
 
   return (
-    <div className="auth-page" ref={pageRef}>
+    <div className="auth-page auth-page--signup" ref={pageRef}>
+      <div className="auth-page__bg auth-theme-bg--signup" aria-hidden="true" />
       <div className="auth-shell">
         <aside className="auth-shell__aside auth-shell__aside--register">
           <Link to="/" className="auth-shell__brand">

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, UserPlus, ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import './authTheme.css'
 import './AuthGate.css'
 
 export function AuthGate() {
@@ -12,9 +13,9 @@ export function AuthGate() {
 
   return (
     <div className="auth-gate" ref={pageRef}>
-      <div className="auth-gate__bg auth-gate__bg--base" aria-hidden="true" />
-      <div className="auth-gate__bg auth-gate__bg--signin" aria-hidden="true" />
-      <div className="auth-gate__bg auth-gate__bg--signup" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--base auth-theme-bg--base" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--signin auth-theme-bg--signin" aria-hidden="true" />
+      <div className="auth-gate__bg auth-gate__bg--signup auth-theme-bg--signup" aria-hidden="true" />
 
       <Link to="/" className="auth-gate__home">
         <img src={`${import.meta.env.BASE_URL}logo.png`} alt={COMPANY.shortName} />
