@@ -78,7 +78,10 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
       )
     }
 
-    gsap.utils.toArray<HTMLElement>(root.querySelectorAll(SCROLL_REVEAL_SELECTORS)).forEach((el) => {
+    gsap.utils
+      .toArray<HTMLElement>(root.querySelectorAll(SCROLL_REVEAL_SELECTORS))
+      .filter((el) => !el.closest('.about-tree'))
+      .forEach((el) => {
       gsap.fromTo(
         el,
         { y: 40, opacity: 0 },
@@ -98,6 +101,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
     })
 
     root.querySelectorAll('.section:not(:first-of-type)').forEach((section) => {
+      if (section.closest('.about-tree')) return
         gsap.fromTo(
           section,
           { y: 24, opacity: 0 },

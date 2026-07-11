@@ -1,10 +1,36 @@
+import { useEffect, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
+import { AboutCompanyTree } from '../components/about/AboutCompanyTree'
+import { initAboutTreeAnimation } from '../animations/aboutTreeReveal'
+import { onIntroComplete } from '../lib/intro'
 import './About.css'
 
 export function About() {
+  const treeRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const tree = treeRef.current
+    if (!tree) return
+
+    let cleanup: (() => void) | undefined
+
+    const init = () => {
+      cleanup?.()
+      cleanup = initAboutTreeAnimation(tree)
+    }
+
+    const removeIntroListener = onIntroComplete(init)
+    const failsafe = window.setTimeout(init, 4200)
+
+    return () => {
+      window.clearTimeout(failsafe)
+      removeIntroListener()
+      cleanup?.()
+    }
+  }, [])
+
   return (
     <div className="page about-page">
       <section className="about-hero">
@@ -12,10 +38,10 @@ export function About() {
           <div className="about-hero__content page-enter-hero">
             <span className="section-label">About Us</span>
             <h1 className="display-xl">
-              Building Botswana's<br />
+              Building Botswana&apos;s<br />
               <em className="text-gold">service marketplace</em>
             </h1>
-            <p className="lead">{COMPANY.overview}</p>
+            <p className="lead">{COMPANY.tagline}</p>
             <Button to="/contact" size="lg">
               Work With Us <ArrowRight size={16} />
             </Button>
@@ -32,66 +58,7 @@ export function About() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container mission-grid">
-          <article className="mission-card bento-card about-reveal">
-            <span className="section-label">Mission</span>
-            <p className="mission-card__text">{COMPANY.mission}</p>
-          </article>
-          <article className="mission-card bento-card about-reveal">
-            <span className="section-label">Vision</span>
-            <p className="mission-card__text mission-card__text--body">{COMPANY.vision}</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="section section--values">
-        <div className="container">
-          <div className="section-header about-reveal">
-            <span className="section-label">Core Values</span>
-            <h2 className="display-lg">What we stand for</h2>
-          </div>
-          <div className="values-bento">
-            {COMPANY.coreValues.map((value, i) => (
-              <div key={value} className={`value-tile bento-card about-reveal ${i === 0 ? 'value-tile--featured' : ''}`}>
-                <span className="value-tile__num">0{i + 1}</span>
-                <span className="value-tile__name">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="section-header about-reveal">
-            <span className="section-label">Areas of Interest</span>
-            <h2 className="display-lg">What we do</h2>
-          </div>
-          <div className="interests-grid">
-            {COMPANY.areasOfInterest.map((area) => (
-              <div key={area} className="interest-item bento-card about-reveal">
-                <span>{area}</span>
-                <ArrowRight size={16} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="details-panel bento-card about-reveal">
-            <h3>Company Details</h3>
-            <div className="details-grid">
-              <div><span>Type</span><strong>{COMPANY.companyType}</strong></div>
-              <div><span>Business</span><strong>{COMPANY.businessType}</strong></div>
-              <div><span>Location</span><strong>{COMPANY.address}</strong></div>
-              <div><span>Email</span><strong><Link to="/contact">{COMPANY.email}</Link></strong></div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <AboutCompanyTree ref={treeRef} />
     </div>
   )
 }
