@@ -7,9 +7,6 @@
   height: var(--nav-height);
   display: flex;
   align-items: center;
-  background: rgba(250, 248, 244, 0.92);
-  backdrop-filter: blur(14px) saturate(1.2);
-  border-bottom: 1px solid rgba(74, 63, 47, 0.08);
   transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
 }
 
@@ -49,7 +46,6 @@
   font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: #2e2720;
 }
 
 .navbar__pill {
@@ -66,16 +62,16 @@
 .navbar__link {
   font-family: var(--font-ui);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.5rem 0.875rem;
   text-decoration: none;
-  color: #4a4034;
+  color: var(--text-secondary);
   border-radius: var(--radius-pill);
   transition: color 0.2s, background 0.2s;
 }
 
 .navbar__link:hover {
-  color: #2e2720;
+  color: var(--text-primary);
 }
 
 [data-theme='night'] .navbar__link {

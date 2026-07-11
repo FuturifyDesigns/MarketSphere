@@ -33,131 +33,164 @@ export function ServicesShowcase() {
       started = true
 
       ctx = gsap.context(() => {
-        const pin = root.querySelector('.services-showcase__pin')
-        const intro = root.querySelector('.services-showcase__intro')
-        const slides = gsap.utils.toArray<HTMLElement>('.services-showcase__slide', root)
-        const layers = gsap.utils.toArray<HTMLElement>('.services-showcase__scenery-layer', root)
-        const dots = gsap.utils.toArray<HTMLElement>('.services-showcase__dot', root)
+      const pin = root.querySelector('.services-showcase__pin')
+      const intro = root.querySelector('.services-showcase__intro')
+      const slides = gsap.utils.toArray<HTMLElement>('.services-showcase__slide', root)
+      const layers = gsap.utils.toArray<HTMLElement>('.services-showcase__scenery-layer', root)
+      const dots = gsap.utils.toArray<HTMLElement>('.services-showcase__dot', root)
 
-        const mm = gsap.matchMedia()
+      const mm = gsap.matchMedia()
 
-        mm.add('(min-width: 901px)', () => {
-          if (!pin || slides.length === 0) return
+      mm.add('(min-width: 901px)', () => {
+        if (!pin || slides.length === 0) return
 
-          const resetSlide = (slide: HTMLElement) => {
-            const copyKids = slide.querySelectorAll('.services-showcase__copy > *')
-            const visual = slide.querySelector('.services-showcase__visual')
-            gsap.set(slide, { autoAlpha: 0 })
-            gsap.set(copyKids, { opacity: 0, y: 28 })
-            gsap.set(visual, { opacity: 0, y: 32 })
+        gsap.set(slides, { autoAlpha: 0 })
+        gsap.set(layers, { autoAlpha: 0 })
+        gsap.set(intro, { autoAlpha: 1 })
+        gsap.set(dots, { scale: 1, opacity: 0.35 })
+
+        const scrollPerSlide = 1.35
+        const scrollTotal = 1.1 + slides.length * scrollPerSlide
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: root,
+            start: 'top top',
+            end: () => `+=${window.innerHeight * scrollTotal}`,
+            pin,
+            scrub: 0.7,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        })
+
+        tl.fromTo(
+          '.services-showcase__intro .section-label',
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.35, ease: 'power3.out' },
+        )
+          .fromTo(
+            '.services-showcase__mega-word',
+            { scale: 0.5, opacity: 0, y: 60 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.9, ease: 'power4.out' },
+            '-=0.1',
+          )
+          .fromTo(
+            '.services-showcase__intro-tagline',
+            { y: 36, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.55, ease: 'power3.out' },
+            '-=0.4',
+          )
+          .to(intro, { autoAlpha: 0, y: -40, duration: 0.45, ease: 'power2.in' }, '+=0.35')
+
+        slides.forEach((slide, i) => {
+          const layer = layers[i]
+          const visual = slide.querySelector('.services-showcase__visual')
+          const copy = slide.querySelector('.services-showcase__copy')
+          const title = slide.querySelector('.services-showcase__title')
+          const tagline = slide.querySelector('.services-showcase__tagline')
+          const desc = slide.querySelector('.services-showcase__desc')
+          const cta = slide.querySelector('.services-showcase__cta')
+          const isRight = slide.classList.contains('is-right')
+          const mediaX = isRight ? -90 : 90
+          const copyX = isRight ? 70 : -70
+          const label = `svc-${i}`
+
+          tl.addLabel(label)
+
+          if (i > 0) {
+            tl.to(layers[i - 1], { autoAlpha: 0, duration: 0.35, ease: 'power2.inOut' }, label)
+            tl.to(slides[i - 1], { autoAlpha: 0, duration: 0.2 }, label)
+            if (dots[i - 1]) tl.to(dots[i - 1], { scale: 1, opacity: 0.35, duration: 0.15 }, label)
           }
 
-          slides.forEach(resetSlide)
-          gsap.set(layers, { autoAlpha: 0 })
-          gsap.set(intro, { autoAlpha: 1, y: 0 })
-          gsap.set('.services-showcase__mega-word', { opacity: 0, y: 40 })
-          gsap.set('.services-showcase__intro-tagline', { opacity: 0, y: 24 })
-          gsap.set('.services-showcase__intro .section-label', { opacity: 0, y: 12 })
-          gsap.set(dots, { scale: 1, opacity: 0.35 })
+          tl.to(layer, { autoAlpha: 1, duration: 0.55, ease: 'power2.out' }, label)
+          tl.fromTo(
+            layer?.querySelector('.services-showcase__scenery-img'),
+            { scale: 1.15 },
+            { scale: 1, duration: scrollPerSlide, ease: 'none' },
+            label,
+          )
+          tl.set(slide, { autoAlpha: 1 }, label)
 
-          const scrollPerSlide = 1.65
-          const scrollTotal = 1.2 + slides.length * scrollPerSlide
+          if (dots[i]) {
+            tl.to(dots[i], { scale: 1.35, opacity: 1, duration: 0.2, ease: 'power2.out' }, `${label}+=0.05`)
+          }
 
-          const tl = gsap.timeline({
-            defaults: { ease: 'power2.out', immediateRender: false },
-            scrollTrigger: {
-              trigger: root,
-              start: 'top top',
-              end: () => `+=${window.innerHeight * scrollTotal}`,
-              pin,
-              scrub: 1.15,
-              anticipatePin: 1,
-              invalidateOnRefresh: true,
+          tl.fromTo(
+            title,
+            { scale: 0.72, opacity: 0, y: 28 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: 'power4.out' },
+            `${label}+=0.12`,
+          )
+          tl.fromTo(
+            tagline,
+            { opacity: 0, y: 18 },
+            { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' },
+            `${label}+=0.28`,
+          )
+          tl.fromTo(
+            visual,
+            {
+              x: mediaX,
+              opacity: 0,
+              scale: 0.94,
+              clipPath: isRight ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)',
             },
-          })
-
-          // Intro
-          tl.to('.services-showcase__intro .section-label', { opacity: 1, y: 0, duration: 0.4 }, 0)
-            .to('.services-showcase__mega-word', { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out' }, 0.08)
-            .to('.services-showcase__intro-tagline', { opacity: 1, y: 0, duration: 0.55 }, 0.35)
-            .to(intro, { autoAlpha: 0, y: -24, duration: 0.45, ease: 'power2.inOut' }, 0.95)
-
-          const introEnd = 1.5
-
-          slides.forEach((slide, i) => {
-            const layer = layers[i]
-            const copyKids = slide.querySelectorAll('.services-showcase__copy > *')
-            const visual = slide.querySelector('.services-showcase__visual')
-            const label = `svc-${i}`
-            const segment = scrollPerSlide
-            const start = i === 0 ? introEnd : undefined
-
-            tl.addLabel(label, start)
-
-            if (i > 0) {
-              const prev = slides[i - 1]
-              const prevKids = prev.querySelectorAll('.services-showcase__copy > *')
-              const prevVisual = prev.querySelector('.services-showcase__visual')
-
-              tl.to(layers[i - 1], { autoAlpha: 0, duration: 0.45, ease: 'power2.inOut' }, label)
-              tl.to(prevKids, { opacity: 0, y: -16, duration: 0.3, stagger: 0.03, ease: 'power2.in' }, label)
-              tl.to(prevVisual, { opacity: 0, y: -20, duration: 0.35, ease: 'power2.in' }, label)
-              tl.set(prev, { autoAlpha: 0 }, `${label}+=0.35`)
-              if (dots[i - 1]) tl.to(dots[i - 1], { scale: 1, opacity: 0.35, duration: 0.2 }, label)
-            }
-
-            tl.to(layer, { autoAlpha: 1, duration: 0.5, ease: 'power2.out' }, label)
-            tl.fromTo(
-              layer?.querySelector('.services-showcase__scenery-img'),
-              { scale: 1.08 },
-              { scale: 1, duration: segment, ease: 'none' },
-              label,
-            )
-            tl.set(slide, { autoAlpha: 1 }, label)
-
-            if (dots[i]) {
-              tl.to(dots[i], { scale: 1.25, opacity: 1, duration: 0.25 }, `${label}+=0.05`)
-            }
-
-            tl.to(copyKids, {
+            {
+              x: 0,
               opacity: 1,
-              y: 0,
-              duration: 0.55,
-              stagger: 0.07,
+              scale: 1,
+              clipPath: 'inset(0 0% 0 0%)',
+              duration: 0.75,
               ease: 'power3.out',
-            }, `${label}+=0.12`)
+            },
+            `${label}+=0.38`,
+          )
+          tl.fromTo(
+            copy,
+            { x: copyX, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' },
+            `${label}+=0.48`,
+          )
+          tl.fromTo(
+            desc,
+            { opacity: 0, y: 22 },
+            { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
+            `${label}+=0.58`,
+          )
+          tl.fromTo(
+            cta,
+            { opacity: 0, y: 12 },
+            { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' },
+            `${label}+=0.68`,
+          )
 
-            tl.to(visual, {
-              opacity: 1,
-              y: 0,
-              duration: 0.65,
-              ease: 'power3.out',
-            }, `${label}+=0.22`)
-
-            tl.to({}, { duration: segment * 0.45 })
-          })
+          tl.to({}, { duration: 0.25 })
         })
+      })
 
-        mm.add('(max-width: 900px)', () => {
-          gsap.utils.toArray<HTMLElement>('.services-showcase__mobile-card', root).forEach((card) => {
-            gsap.fromTo(
-              card,
-              { y: 36, opacity: 0 },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.75,
-                ease: 'power2.out',
-                scrollTrigger: {
-                  trigger: card,
-                  start: 'top 90%',
-                  once: true,
-                },
+      mm.add('(max-width: 900px)', () => {
+        gsap.utils.toArray<HTMLElement>('.services-showcase__mobile-card', root).forEach((card, i) => {
+          gsap.fromTo(
+            card,
+            { y: 48, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.85,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: card,
+                start: 'top 88%',
+                once: true,
               },
-            )
-          })
+              delay: i * 0.04,
+            },
+          )
         })
-      }, root)
+      })
+    }, root)
 
       ScrollTrigger.refresh()
     }
@@ -222,7 +255,7 @@ export function ServicesShowcase() {
                     Learn more <ArrowRight size={14} />
                   </Link>
                 </div>
-                <div className="services-showcase__visual">
+                <div className={`services-showcase__visual${'fullImage' in service && service.fullImage ? ' services-showcase__visual--full' : ''}`}>
                   <img src={`${base}${service.image}`} alt={service.title} loading="lazy" />
                 </div>
               </article>
@@ -237,6 +270,7 @@ export function ServicesShowcase() {
         </div>
       </div>
 
+      {/* Mobile stacked layout */}
       <div className="services-showcase__mobile">
         <div className="container">
           <div className="section-header">
@@ -251,9 +285,12 @@ export function ServicesShowcase() {
             return (
               <article key={service.title} className="services-showcase__mobile-card bento-card">
                 <span className="services-showcase__index">0{i + 1}</span>
-                <div className="services-showcase__mobile-visual">
-                  <img src={`${base}${service.image}`} alt={service.title} loading="lazy" />
-                </div>
+                <img
+                  src={`${base}${service.image}`}
+                  alt={service.title}
+                  loading="lazy"
+                  className={'fullImage' in service && service.fullImage ? 'services-showcase__mobile-img--full' : undefined}
+                />
                 <p className="services-showcase__tagline">{service.tagline}</p>
                 <h3 className="services-showcase__title">
                   {first && <span>{first}</span>}

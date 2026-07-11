@@ -57,6 +57,7 @@ export const SERVICES = [
     icon: 'graduation-cap',
     image: 'services/academic-tuition.png',
     accent: '#4A5D4A',
+    fullImage: true,
   },
   {
     title: 'Platform Marketing',
@@ -75,6 +76,7 @@ export const SERVICES = [
     icon: 'building',
     image: 'services/real-estate.png',
     accent: '#4A4034',
+    fullImage: true,
   },
   {
     title: 'Entrepreneurship Development',
