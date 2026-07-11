@@ -30,11 +30,22 @@ function addIllustrationAnimation(tl: gsap.core.Timeline, slide: HTMLElement, la
     )
   }
   tl.fromTo(
-    slide.querySelectorAll('.svc-illus__float, .svc-illus__pulse'),
+    slide.querySelectorAll('.svc-illus__float, .svc-illus__pulse, .svc-illus__impact'),
     { opacity: 0, y: 10 },
     { opacity: 1, y: 0, duration: 0.28, stagger: 0.05, ease: REVEAL_EASE },
     `${label}+=0.12`,
   )
+
+  const leftFist = slide.querySelector('.svc-illus__fist-left')
+  const rightFist = slide.querySelector('.svc-illus__fist-right')
+  if (leftFist && rightFist) {
+    tl.fromTo(
+      [leftFist, rightFist],
+      { opacity: 0 },
+      { opacity: 1, duration: 0.32, stagger: 0.06, ease: REVEAL_EASE },
+      `${label}+=0.06`,
+    )
+  }
 }
 
 export function initServicesPageShowcase(root: HTMLElement) {

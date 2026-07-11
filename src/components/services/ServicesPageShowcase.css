@@ -165,6 +165,51 @@
   display: block;
 }
 
+.svc-illus__fist-left,
+.svc-illus__fist-right {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.svc-illus__fist-left {
+  animation: svc-fist-left 2.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+.svc-illus__fist-right {
+  animation: svc-fist-right 2.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+.svc-illus__impact {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: svc-impact-burst 2.6s ease-in-out infinite;
+}
+
+@keyframes svc-fist-left {
+  0%, 100% { transform: translateX(-22px) rotate(-2deg); }
+  42% { transform: translateX(10px) rotate(1deg); }
+  50% { transform: translateX(8px) rotate(0deg); }
+  58% { transform: translateX(10px) rotate(1deg); }
+}
+
+@keyframes svc-fist-right {
+  0%, 100% { transform: translateX(22px) rotate(2deg); }
+  42% { transform: translateX(-10px) rotate(-1deg); }
+  50% { transform: translateX(-8px) rotate(0deg); }
+  58% { transform: translateX(-10px) rotate(-1deg); }
+}
+
+@keyframes svc-impact-burst {
+  0%, 38%, 62%, 100% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  48%, 52% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .svc-illus__float {
   animation: svc-float 4.5s ease-in-out infinite;
 }
@@ -277,6 +322,9 @@
 @media (prefers-reduced-motion: reduce) {
   .svc-illus__float,
   .svc-illus__pulse,
+  .svc-illus__fist-left,
+  .svc-illus__fist-right,
+  .svc-illus__impact,
   .svc-page__illus-glow {
     animation: none;
   }

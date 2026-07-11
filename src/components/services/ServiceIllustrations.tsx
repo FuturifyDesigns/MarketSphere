@@ -21,15 +21,93 @@ function SvgFrame({ className = '', children }: IllustrationProps & { children: 
 export function YouthEmpowermentIllustration({ className = '' }: IllustrationProps) {
   return (
     <SvgFrame className={className}>
-      <circle cx="200" cy="160" r="118" stroke="currentColor" strokeWidth="1.5" opacity="0.2" />
-      <circle cx="200" cy="160" r="88" stroke="currentColor" strokeWidth="1.5" opacity="0.35" />
-      <circle cx="152" cy="138" r="22" fill="currentColor" opacity="0.18" />
-      <circle cx="248" cy="138" r="22" fill="currentColor" opacity="0.18" />
-      <circle cx="200" cy="198" r="26" fill="currentColor" opacity="0.24" />
-      <path d="M152 160c16 18 32 28 48 28s32-10 48-28" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path className="svc-illus__draw" d="M118 210c28-42 52-58 82-58s54 16 82 58" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      <path className="svc-illus__float" d="M92 118l18-10 10 18-18 10z" fill="currentColor" opacity="0.35" />
-      <path className="svc-illus__float svc-illus__float--delay" d="M300 92l14-8 8 14-14 8z" fill="currentColor" opacity="0.28" />
+      <circle cx="200" cy="158" r="108" stroke="currentColor" strokeWidth="1.5" opacity="0.14" />
+      <circle cx="200" cy="158" r="76" stroke="currentColor" strokeWidth="1.5" opacity="0.22" />
+
+      <g className="svc-illus__impact" aria-hidden>
+        <path d="M200 118v-16M200 198v16M162 158h-16M238 158h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+        <path d="M176 134l-11-11M224 134l11-11M176 182l-11 11M224 182l11 11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" opacity="0.4" />
+        <circle cx="200" cy="158" r="10" fill="currentColor" opacity="0.35" />
+      </g>
+
+      <g className="svc-illus__fist-left">
+        <path
+          className="svc-illus__draw"
+          d="M44 176c36-6 72-18 108-28"
+          stroke="currentColor"
+          strokeWidth="3.25"
+          strokeLinecap="round"
+        />
+        <path
+          className="svc-illus__draw"
+          d="M148 118c0-10 8-18 18-18h30c12 0 20 8 20 20v52c0 14-10 24-24 24h-30c-12 0-20-8-20-20v-14"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+        />
+        <path d="M162 108h8M176 106h8M190 108h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+        <path
+          d="M148 152c-10 4-16 12-16 22"
+          stroke="currentColor"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          opacity="0.65"
+        />
+        <path
+          className="svc-illus__draw"
+          d="M152 174c8 6 18 10 30 10"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+      </g>
+
+      <g className="svc-illus__fist-right">
+        <path
+          className="svc-illus__draw"
+          d="M356 176c-36-6-72-18-108-28"
+          stroke="currentColor"
+          strokeWidth="3.25"
+          strokeLinecap="round"
+        />
+        <path
+          className="svc-illus__draw"
+          d="M252 118c0-10-8-18-18-18h-30c-12 0-20 8-20 20v52c0 14 10 24 24 24h30c12 0 20-8 20-20v-14"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+        />
+        <path d="M238 108h-8M224 106h-8M210 108h-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.55" />
+        <path
+          d="M252 152c10 4 16 12 16 22"
+          stroke="currentColor"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          opacity="0.65"
+        />
+        <path
+          className="svc-illus__draw"
+          d="M248 174c-8 6-18 10-30 10"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+      </g>
+
+      <path
+        className="svc-illus__float"
+        d="M88 108l14-8 8 14-14 8z"
+        fill="currentColor"
+        opacity="0.3"
+      />
+      <path
+        className="svc-illus__float svc-illus__float--delay"
+        d="M312 108l14-8 8 14-14 8z"
+        fill="currentColor"
+        opacity="0.24"
+      />
     </SvgFrame>
   )
 }
