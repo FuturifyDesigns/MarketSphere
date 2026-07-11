@@ -29,25 +29,27 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
             <div className="about-tree__spine-hub" aria-hidden="true" />
 
             <div className="about-tree__steps">
-              <div className="about-tree__step about-tree__step--root" data-side="center" data-step-index="0">
+              <div className="about-tree__step about-tree__step--right" data-side="right" data-step-index="0">
                 <article className="about-tree__node about-tree__node--root">
                   <div className="about-tree__card bento-card">
-                    <img src={`${base}logo.png`} alt="" className="about-tree__logo" />
-                    <span className="section-label">Root</span>
-                    <h3 className="about-tree__node-title">{COMPANY.shortName}</h3>
-                    <p className="about-tree__node-subtitle">{COMPANY.name}</p>
+                    <div className="about-tree__card-head">
+                      <img src={`${base}logo.png`} alt="" className="about-tree__logo about-tree__reveal-item" />
+                      <span className="about-tree__step-label about-tree__reveal-item">Root</span>
+                      <h3 className="about-tree__node-title about-tree__reveal-item">{COMPANY.shortName}</h3>
+                      <p className="about-tree__node-subtitle about-tree__reveal-item">{COMPANY.name}</p>
+                    </div>
                     <div className="about-tree__card-scroll" data-lenis-prevent>
-                      <p className="about-tree__node-body about-tree__reveal-item">{COMPANY.overview}</p>
+                      <p className="about-tree__node-body">{COMPANY.overview}</p>
                       <dl className="about-tree__meta">
-                        <div className="about-tree__reveal-item">
+                        <div>
                           <dt>Registration</dt>
                           <dd>{COMPANY.registration}</dd>
                         </div>
-                        <div className="about-tree__reveal-item">
+                        <div>
                           <dt>Head Office</dt>
                           <dd>{COMPANY.headOffice}</dd>
                         </div>
-                        <div className="about-tree__reveal-item">
+                        <div>
                           <dt>Reach</dt>
                           <dd>{COMPANY.operationalArea}</dd>
                         </div>
@@ -63,7 +65,7 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                       <Target size={20} />
                     </div>
-                    <span className="section-label about-tree__reveal-item">Mission</span>
+                    <span className="about-tree__step-label about-tree__reveal-item">Mission</span>
                     <p className="about-tree__quote about-tree__reveal-item">{COMPANY.mission}</p>
                   </div>
                 </article>
@@ -75,7 +77,7 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                       <Eye size={20} />
                     </div>
-                    <span className="section-label about-tree__reveal-item">Vision</span>
+                    <span className="about-tree__step-label about-tree__reveal-item">Vision</span>
                     <p className="about-tree__node-body about-tree__reveal-item">{COMPANY.vision}</p>
                   </div>
                 </article>
@@ -88,7 +90,7 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                       <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                         <Sparkles size={20} />
                       </div>
-                      <span className="section-label about-tree__reveal-item">Core Values</span>
+                      <span className="about-tree__step-label about-tree__reveal-item">Core Values</span>
                       <h3 className="about-tree__node-heading about-tree__reveal-item">What we stand for</h3>
                     </div>
                     <div className="about-tree__card-scroll" data-lenis-prevent>
@@ -96,7 +98,7 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                         {COMPANY.coreValues.map((value, i) => (
                           <div
                             key={value}
-                            className={`about-tree__cluster-item about-tree__reveal-item ${i === 0 ? 'about-tree__cluster-item--featured' : ''}`}
+                            className={`about-tree__cluster-item ${i === 0 ? 'about-tree__cluster-item--featured' : ''}`}
                           >
                             <span className="about-tree__cluster-num">0{i + 1}</span>
                             <span>{value}</span>
@@ -112,13 +114,13 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                 <article className="about-tree__node about-tree__node--wide">
                   <div className="about-tree__card bento-card">
                     <div className="about-tree__card-head">
-                      <span className="section-label about-tree__reveal-item">Areas of Interest</span>
+                      <span className="about-tree__step-label about-tree__reveal-item">Areas of Interest</span>
                       <h3 className="about-tree__node-heading about-tree__reveal-item">What we do</h3>
                     </div>
                     <div className="about-tree__card-scroll" data-lenis-prevent>
                       <div className="about-tree__cluster about-tree__cluster--areas">
                         {COMPANY.areasOfInterest.map((area) => (
-                          <div key={area} className="about-tree__cluster-item about-tree__cluster-item--area about-tree__reveal-item">
+                          <div key={area} className="about-tree__cluster-item about-tree__cluster-item--area">
                             <span>{area}</span>
                             <ArrowRight size={14} />
                           </div>
@@ -135,22 +137,22 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                       <Building2 size={20} />
                     </div>
-                    <span className="section-label about-tree__reveal-item">Company Details</span>
+                    <span className="about-tree__step-label about-tree__reveal-item">Company Details</span>
                     <h3 className="about-tree__node-heading about-tree__reveal-item">Get in touch</h3>
                     <div className="about-tree__details">
-                      <div className="about-tree__reveal-item about-tree__detail-tile">
+                      <div className="about-tree__detail-tile">
                         <span>Type</span>
                         <strong>{COMPANY.companyType}</strong>
                       </div>
-                      <div className="about-tree__reveal-item about-tree__detail-tile">
+                      <div className="about-tree__detail-tile">
                         <span>Business</span>
                         <strong>{COMPANY.businessType}</strong>
                       </div>
-                      <div className="about-tree__reveal-item about-tree__detail-tile">
+                      <div className="about-tree__detail-tile">
                         <span>Location</span>
                         <strong>{COMPANY.address}</strong>
                       </div>
-                      <div className="about-tree__reveal-item about-tree__detail-tile">
+                      <div className="about-tree__detail-tile">
                         <span>Email</span>
                         <strong>
                           <Link to="/contact">{COMPANY.email}</Link>
