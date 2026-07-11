@@ -42,33 +42,48 @@ export const COMPANY = {
 export const SERVICES = [
   {
     title: 'Youth Empowerment',
+    tagline: 'Empowering youth. Building communities. Shaping the future.',
     description:
       'We identify different youth centered and community projects that will harness the potentials of youths and young professionals in different parts of the country.',
     icon: 'users',
+    image: 'services/youth-empowerment.png',
+    accent: '#6B5A3E',
   },
   {
     title: 'Academic Tuition',
+    tagline: 'Learn today. Excel tomorrow.',
     description:
       'We have flexible packages for out of school and school going folks to better upgrade their grades.',
     icon: 'graduation-cap',
+    image: 'services/academic-tuition.png',
+    accent: '#4A5D4A',
   },
   {
     title: 'Platform Marketing',
+    tagline: 'Powerful apps. Broader reach.',
     description:
       'We have at our disposal a couple of powerful apps that makes advertisements worthwhile and easy getting fast and broader mileage.',
     icon: 'megaphone',
+    image: 'services/platform-marketing.png',
+    accent: '#5C5040',
   },
   {
     title: 'Real Estate Consultancy',
+    tagline: 'Your dream property, our priority.',
     description:
       'We are quite acclimatized to the real estate industry in different areas of the country and we have a resolve to help customers achieve their property needs around the country from time to time.',
     icon: 'building',
+    image: 'services/real-estate.png',
+    accent: '#4A4034',
   },
   {
     title: 'Entrepreneurship Development',
+    tagline: 'Fostering enterprise. Reducing dependency.',
     description:
       'We through our networks will provide a number of different opportunities that will foster the spirit of entrepreneurship in the population in the ultimate goal to reducing unemployment and total Government dependency.',
     icon: 'lightbulb',
+    image: 'services/entrepreneurship.png',
+    accent: '#1A1510',
   },
 ] as const
 

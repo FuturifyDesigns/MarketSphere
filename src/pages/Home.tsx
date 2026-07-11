@@ -2,27 +2,20 @@ import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowRight, ArrowDown, Building, GraduationCap, Lightbulb, Megaphone, Users } from 'lucide-react'
+import { ArrowRight, ArrowDown } from 'lucide-react'
 import { SkyBackground } from '../components/home/SkyBackground'
 import { Marquee } from '../components/home/Marquee'
+import { ServicesShowcase } from '../components/home/ServicesShowcase'
 import { HeroDemo } from '../components/hero/HeroDemo'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import { Button } from '../components/ui/Button'
-import { COMPANY, SERVICES } from '../lib/constants'
+import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { onIntroComplete } from '../lib/intro'
 import type { Provider, Testimonial } from '../lib/types'
 import './Home.css'
 
 gsap.registerPlugin(ScrollTrigger)
-
-const SERVICE_ICONS: Record<string, typeof Users> = {
-  users: Users,
-  'graduation-cap': GraduationCap,
-  megaphone: Megaphone,
-  building: Building,
-  lightbulb: Lightbulb,
-}
 
 const MARQUEE_ITEMS = [
   'Youth Empowerment',
@@ -38,8 +31,6 @@ const MARQUEE_ITEMS = [
 export function Home() {
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
-  const servicesPinRef = useRef<HTMLElement>(null)
-  const servicesTrackRef = useRef<HTMLDivElement>(null)
   const [providers, setProviders] = useState<Provider[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
@@ -144,24 +135,6 @@ export function Home() {
           },
         )
 
-        const track = servicesTrackRef.current
-        const pin = servicesPinRef.current
-        if (track && pin) {
-          const getScroll = () => track.scrollWidth - window.innerWidth + 100
-          gsap.to(track, {
-            x: () => -getScroll(),
-            ease: 'none',
-            scrollTrigger: {
-              trigger: pin,
-              pin: true,
-              scrub: 1,
-              start: 'top top',
-              end: () => `+=${getScroll()}`,
-              invalidateOnRefresh: true,
-            },
-          })
-        }
-
         ScrollTrigger.batch('.testimonial-card', {
           onEnter: (batch) => {
             gsap.fromTo(
@@ -262,36 +235,7 @@ export function Home() {
         </div>
       </section>
 
-      {/* Horizontal services — pinned scroll */}
-      <section className="services-pin" ref={servicesPinRef}>
-        <div className="services-pin__header container">
-          <span className="section-label">What We Offer</span>
-          <h2 className="display-lg">Services that empower<br /><em className="text-gold">the nation</em></h2>
-        </div>
-        <div className="services-track-wrap">
-          <div className="services-track" ref={servicesTrackRef}>
-            {SERVICES.map((service, i) => {
-              const Icon = SERVICE_ICONS[service.icon] || Lightbulb
-              return (
-                <article key={service.title} className="service-panel bento-card">
-                  <span className="service-panel__index">0{i + 1}</span>
-                  <div className="service-panel__icon"><Icon size={28} /></div>
-                  <h3>{service.title}</h3>
-                  <p>{service.description}</p>
-                  <Link to="/services" className="service-panel__link">
-                    Learn more <ArrowRight size={14} />
-                  </Link>
-                </article>
-              )
-            })}
-            <article className="service-panel service-panel--cta bento-card">
-              <h3>See all services</h3>
-              <p>Explore our full range of professional and socio-economic solutions.</p>
-              <Button to="/services" size="lg">View Services</Button>
-            </article>
-          </div>
-        </div>
-      </section>
+      <ServicesShowcase />
 
       {/* Providers */}
       <section className="section section--providers">
