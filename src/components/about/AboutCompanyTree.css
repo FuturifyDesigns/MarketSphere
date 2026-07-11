@@ -280,11 +280,19 @@
 }
 
 .about-tree__meta dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-gold);
+}
+
+.about-tree__meta dt svg {
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .about-tree__meta dd {
@@ -308,8 +316,9 @@
 
 .about-tree__cluster-item {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
   padding: 0.875rem 1rem;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-gold) 4%, var(--card-bg));
@@ -325,6 +334,36 @@
     background 0.28s ease;
 }
 
+.about-tree__cluster-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--color-gold);
+  background: color-mix(in srgb, var(--color-gold) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 22%, transparent);
+  transition: transform 0.28s ease, background 0.28s ease, box-shadow 0.28s ease;
+}
+
+.about-tree__cluster-icon--area {
+  width: 2rem;
+  height: 2rem;
+}
+
+.about-tree__cluster-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.about-tree__cluster-label {
+  line-height: 1.35;
+}
+
 .about-tree__cluster-item:hover {
   transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
@@ -332,15 +371,31 @@
   box-shadow: 0 10px 28px color-mix(in srgb, var(--color-gold) 12%, transparent);
 }
 
+.about-tree__cluster-item:hover .about-tree__cluster-icon {
+  transform: scale(1.06);
+  background: color-mix(in srgb, var(--color-gold) 20%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-gold) 16%, transparent);
+}
+
 .about-tree__cluster-item--featured {
   grid-column: span 2;
   min-height: 80px;
-  justify-content: flex-end;
+  align-items: center;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--color-gold) 16%, var(--card-bg)) 0%,
     color-mix(in srgb, var(--color-gold) 6%, var(--card-bg)) 100%
   );
+}
+
+.about-tree__cluster-item--featured .about-tree__cluster-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.about-tree__cluster-item--featured .about-tree__cluster-label {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
 }
 
 .about-tree__cluster-item--featured:hover {
@@ -349,11 +404,6 @@
     color-mix(in srgb, var(--color-gold) 22%, var(--card-bg)) 0%,
     color-mix(in srgb, var(--color-gold) 10%, var(--card-bg)) 100%
   );
-}
-
-.about-tree__cluster-item--featured span:last-child {
-  font-family: var(--font-display);
-  font-size: 1.2rem;
 }
 
 .about-tree__cluster-num {
@@ -365,9 +415,7 @@
 }
 
 .about-tree__cluster-item--area {
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
 }
 
@@ -379,16 +427,20 @@
   transform: translateX(-5px) translateY(-2px);
 }
 
-.about-tree__cluster-item--area svg {
+.about-tree__detail-tile span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--color-gold);
-  flex-shrink: 0;
-  opacity: 0.55;
-  transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
-.about-tree__cluster-item--area:hover svg {
-  opacity: 1;
-  transform: translateX(4px);
+.about-tree__detail-tile span svg {
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .about-tree__details {
@@ -417,14 +469,6 @@
   border-color: color-mix(in srgb, var(--color-gold) 38%, transparent);
   background: color-mix(in srgb, var(--color-gold) 9%, var(--card-bg));
   box-shadow: 0 8px 24px color-mix(in srgb, var(--color-gold) 10%, transparent);
-}
-
-.about-tree__detail-tile span {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-gold);
 }
 
 .about-tree__detail-tile strong {
