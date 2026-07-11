@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { LogIn, UserPlus, ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
@@ -14,7 +14,6 @@ export function AuthGate() {
   useAuthPageEnter(pageRef)
 
   const gateStyle = {
-    '--auth-cover': `url(${base}auth/auth-cover.png)`,
     '--auth-cover-signin': `url(${base}auth/sign-in.png)`,
     '--auth-cover-signup': `url(${base}auth/sign-up.png)`,
   } as CSSProperties
@@ -25,13 +24,12 @@ export function AuthGate() {
       <div className="auth-gate__bg auth-gate__bg--signin auth-theme-bg--signin" aria-hidden="true" />
       <div className="auth-gate__bg auth-gate__bg--signup auth-theme-bg--signup" aria-hidden="true" />
 
-      <Link to="/" className="auth-gate__home">
-        <img src={`${base}logo.png`} alt={COMPANY.shortName} />
-        <span>{COMPANY.shortName}</span>
-      </Link>
-
       <div className="auth-gate__card">
-        <div className="auth-gate__card-cover" aria-hidden="true" />
+        <Link to="/" className="auth-gate__card-brand">
+          <img src={`${base}logo.png`} alt="" />
+          <span>{COMPANY.shortName}</span>
+        </Link>
+
         <div className="auth-gate__divider" aria-hidden="true" />
 
         <button
@@ -41,6 +39,10 @@ export function AuthGate() {
           onClick={() => navigate('/login')}
         >
           <span className="auth-gate__half-overlay" aria-hidden="true" />
+          <div className="auth-gate__panel auth-gate__panel--default">
+            <LogIn size={28} strokeWidth={1.5} />
+            <span className="auth-gate__label">Sign In</span>
+          </div>
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Welcome back</span>
             <h2>Sign in to your account</h2>
@@ -58,6 +60,10 @@ export function AuthGate() {
           onClick={() => navigate('/register')}
         >
           <span className="auth-gate__half-overlay" aria-hidden="true" />
+          <div className="auth-gate__panel auth-gate__panel--default">
+            <UserPlus size={28} strokeWidth={1.5} />
+            <span className="auth-gate__label">Sign Up</span>
+          </div>
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Join us</span>
             <h2>Create your account</h2>
