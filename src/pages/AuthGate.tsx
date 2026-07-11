@@ -1,10 +1,12 @@
 import { useRef, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LogIn, UserPlus, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './AuthGate.css'
+
+const base = import.meta.env.BASE_URL
 
 export function AuthGate() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -12,8 +14,8 @@ export function AuthGate() {
   useAuthPageEnter(pageRef)
 
   const gateStyle = {
-    '--auth-cover-signin': `url(${import.meta.env.BASE_URL}auth/sign-in.png)`,
-    '--auth-cover-signup': `url(${import.meta.env.BASE_URL}auth/sign-up.png)`,
+    '--auth-cover-signin': `url(${base}auth/sign-in.png)`,
+    '--auth-cover-signup': `url(${base}auth/sign-up.png)`,
   } as CSSProperties
 
   return (
@@ -23,7 +25,7 @@ export function AuthGate() {
       <div className="auth-gate__bg auth-gate__bg--signup auth-theme-bg--signup" aria-hidden="true" />
 
       <Link to="/" className="auth-gate__home">
-        <img src={`${import.meta.env.BASE_URL}logo.png`} alt={COMPANY.shortName} />
+        <img src={`${base}logo.png`} alt={COMPANY.shortName} />
         <span>{COMPANY.shortName}</span>
       </Link>
 
@@ -33,18 +35,19 @@ export function AuthGate() {
         <button
           type="button"
           className="auth-gate__half auth-gate__half--signin"
+          aria-label="Sign in to your account"
           onClick={() => navigate('/login')}
         >
-          <span className="auth-gate__half-cover auth-gate__half-cover--signin" aria-hidden="true" />
+          <img
+            className="auth-gate__half-cover"
+            src={`${base}auth/sign-in.png`}
+            alt=""
+          />
           <span className="auth-gate__half-overlay" aria-hidden="true" />
-          <div className="auth-gate__panel auth-gate__panel--default">
-            <LogIn size={28} strokeWidth={1.5} />
-            <span className="auth-gate__label">Sign In</span>
-          </div>
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Welcome back</span>
             <h2>Sign in to your account</h2>
-            <p>Access your dashboard, manage bookings, and connect with verified providers across Botswana.</p>
+            <p>Access your dashboard and connect with verified providers across Botswana.</p>
             <span className="auth-gate__cta">
               Continue to sign in <ArrowRight size={14} />
             </span>
@@ -54,18 +57,19 @@ export function AuthGate() {
         <button
           type="button"
           className="auth-gate__half auth-gate__half--signup"
+          aria-label="Create your account"
           onClick={() => navigate('/register')}
         >
-          <span className="auth-gate__half-cover auth-gate__half-cover--signup" aria-hidden="true" />
+          <img
+            className="auth-gate__half-cover"
+            src={`${base}auth/sign-up.png`}
+            alt=""
+          />
           <span className="auth-gate__half-overlay" aria-hidden="true" />
-          <div className="auth-gate__panel auth-gate__panel--default">
-            <UserPlus size={28} strokeWidth={1.5} />
-            <span className="auth-gate__label">Sign Up</span>
-          </div>
           <div className="auth-gate__panel auth-gate__panel--hover">
             <span className="auth-gate__eyebrow">Join us</span>
             <h2>Create your account</h2>
-            <p>Register as a customer to find services, or list your business and grow with {COMPANY.shortName}.</p>
+            <p>Register as a customer or list your business with {COMPANY.shortName}.</p>
             <span className="auth-gate__cta">
               Continue to sign up <ArrowRight size={14} />
             </span>
