@@ -1,16 +1,10 @@
-import { useEffect } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
-import { preloadServiceVideos, releaseServiceVideoPreload } from '../lib/serviceVideoPreload'
 import { Button } from '../components/ui/Button'
 import { ServicesPageShowcase } from '../components/services/ServicesPageShowcase'
 import './Services.css'
 
 export function Services() {
-  useEffect(() => {
-    void preloadServiceVideos()
-    return () => releaseServiceVideoPreload()
-  }, [])
   return (
     <div className="page services-page">
       <section className="services-hero">

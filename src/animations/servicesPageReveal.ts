@@ -13,8 +13,8 @@ const SLIDE_SEGMENT = 1.45
 function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: string) {
   tl.fromTo(
     slide.querySelector('.svc-page__media'),
-    { opacity: 0, scale: 0.94, y: 20 },
-    { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: REVEAL_EASE },
+    { scale: 0.96, y: 16 },
+    { scale: 1, y: 0, duration: 0.35, ease: REVEAL_EASE },
     label,
   )
 }
@@ -51,7 +51,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
 
     slides.forEach((slide) => {
       gsap.set(slide.querySelectorAll('.svc-page__copy > *'), { opacity: 0, y: 22 })
-      gsap.set(slide.querySelector('.svc-page__media'), { opacity: 0, scale: 0.94, y: 20 })
+      gsap.set(slide.querySelector('.svc-page__media'), { opacity: 1, scale: 0.96, y: 16 })
     })
 
     const tl = gsap.timeline({ paused: true, defaults: { ease: REVEAL_EASE } })

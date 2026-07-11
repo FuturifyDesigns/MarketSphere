@@ -1,52 +1,14 @@
-import { useEffect, useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { SERVICES } from '../../lib/constants'
 import { onIntroComplete } from '../../lib/intro'
-import { preloadServiceVideos, primeVisibleServiceVideos } from '../../lib/serviceVideoPreload'
 import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
+import { ServiceSlideMedia } from './ServiceSlideMedia'
 import './ServicesPageShowcase.css'
-
-const base = import.meta.env.BASE_URL
-
-function keepVideosPlaying(videos: HTMLVideoElement[]) {
-  const playAll = () => {
-    videos.forEach((video) => {
-      if (video.paused) void video.play().catch(() => {})
-    })
-  }
-
-  playAll()
-  const timer = window.setInterval(playAll, 150)
-
-  videos.forEach((video) => {
-    video.addEventListener('canplay', playAll)
-    video.addEventListener('canplaythrough', playAll)
-  })
-
-  return () => {
-    window.clearInterval(timer)
-    videos.forEach((video) => {
-      video.removeEventListener('canplay', playAll)
-      video.removeEventListener('canplaythrough', playAll)
-    })
-  }
-}
 
 export function ServicesPageShowcase() {
   const rootRef = useRef<HTMLElement>(null)
-
-  useLayoutEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    void preloadServiceVideos().then(() => {
-      primeVisibleServiceVideos(root)
-    })
-
-    const videos = primeVisibleServiceVideos(root)
-    return keepVideosPlaying(videos)
-  }, [])
 
   useEffect(() => {
     const root = rootRef.current
@@ -59,7 +21,6 @@ export function ServicesPageShowcase() {
       if (initialized) return
       initialized = true
       cleanupShowcase = initServicesPageShowcase(root)
-      primeVisibleServiceVideos(root)
     }
 
     const removeIntroListener = onIntroComplete(init)
@@ -110,17 +71,11 @@ export function ServicesPageShowcase() {
                   <div className="svc-page__media-wrap">
                     <div className="svc-page__media-glow" aria-hidden="true" />
                     <div className="svc-page__media">
-                      <video
-                        className="svc-page__video"
-                        data-service-index={i}
-                        data-service-title={service.title}
-                        src={`${base}${service.video}`}
-                        loop
-                        muted
-                        autoPlay
-                        playsInline
-                        preload="auto"
-                        aria-label={`${service.title} showcase video`}
+                      <ServiceSlideMedia
+                        video={service.video}
+                        image={service.image}
+                        title={service.title}
+                        index={i}
                       />
                     </div>
                   </div>
