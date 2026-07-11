@@ -47,6 +47,7 @@ export const SERVICES = [
       'We identify different youth centered and community projects that will harness the potentials of youths and young professionals in different parts of the country.',
     icon: 'users',
     image: 'services/youth-empowerment.png',
+    video: 'services/youth-empowerment.mp4',
     accent: '#6B5A3E',
   },
   {
@@ -56,6 +57,7 @@ export const SERVICES = [
       'We have flexible packages for out of school and school going folks to better upgrade their grades.',
     icon: 'graduation-cap',
     image: 'services/academic-tuition.png',
+    video: 'services/academic-tuition.mp4',
     accent: '#4A5D4A',
   },
   {
@@ -65,6 +67,7 @@ export const SERVICES = [
       'We have at our disposal a couple of powerful apps that makes advertisements worthwhile and easy getting fast and broader mileage.',
     icon: 'megaphone',
     image: 'services/platform-marketing.png',
+    video: 'services/platform-marketing.mp4',
     accent: '#5C5040',
   },
   {
@@ -74,6 +77,7 @@ export const SERVICES = [
       'We are quite acclimatized to the real estate industry in different areas of the country and we have a resolve to help customers achieve their property needs around the country from time to time.',
     icon: 'building',
     image: 'services/real-estate.png',
+    video: 'services/real-estate.mp4',
     accent: '#4A4034',
   },
   {
@@ -83,6 +87,7 @@ export const SERVICES = [
       'We through our networks will provide a number of different opportunities that will foster the spirit of entrepreneurship in the population in the ultimate goal to reducing unemployment and total Government dependency.',
     icon: 'lightbulb',
     image: 'services/entrepreneurship.png',
+    video: 'services/entrepreneurship.mp4',
     accent: '#1A1510',
   },
 ] as const

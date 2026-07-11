@@ -9,43 +9,49 @@ const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
 const SCROLL_UNIT = 0.5
 
-function addIllustrationAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: string) {
-  const drawPaths = slide.querySelectorAll<SVGPathElement>('.svc-illus__draw')
-  drawPaths.forEach((path) => {
-    const length = path.getTotalLength()
-    gsap.set(path, { strokeDasharray: length, strokeDashoffset: length })
-  })
+let activeVideoIndex: number | null = -1
 
+function getActiveSlideIndex(tl: gsap.core.Timeline, progress: number, slideCount: number): number | null {
+  const time = progress * tl.duration()
+
+  for (let i = slideCount - 1; i >= 0; i--) {
+    const label = tl.labels[`service-${i}`]
+    if (label !== undefined && time >= label) return i
+  }
+
+  return null
+}
+
+export function setActiveSlideVideo(root: HTMLElement, index: number | null) {
+  if (index === activeVideoIndex) return
+  activeVideoIndex = index
+
+  root.querySelectorAll<HTMLVideoElement>('.svc-page__video').forEach((video, i) => {
+    if (i === index) {
+      video.currentTime = 0
+      void video.play().catch(() => {})
+    } else {
+      video.pause()
+      video.currentTime = 0
+    }
+  })
+}
+
+function pauseAllVideos(root: HTMLElement) {
+  activeVideoIndex = -1
+  root.querySelectorAll<HTMLVideoElement>('.svc-page__video').forEach((video) => {
+    video.pause()
+    video.currentTime = 0
+  })
+}
+
+function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: string) {
   tl.fromTo(
-    slide.querySelector('.svc-page__illus'),
-    { opacity: 0, scale: 0.92, y: 24 },
+    slide.querySelector('.svc-page__media'),
+    { opacity: 0, scale: 0.94, y: 20 },
     { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: REVEAL_EASE },
     label,
   )
-  if (drawPaths.length) {
-    tl.to(
-      drawPaths,
-      { strokeDashoffset: 0, duration: 0.42, stagger: 0.06, ease: 'none' },
-      `${label}+=0.08`,
-    )
-  }
-  tl.fromTo(
-    slide.querySelectorAll('.svc-illus__float, .svc-illus__pulse, .svc-illus__impact'),
-    { opacity: 0, y: 10 },
-    { opacity: 1, y: 0, duration: 0.28, stagger: 0.05, ease: REVEAL_EASE },
-    `${label}+=0.12`,
-  )
-
-  const leftFist = slide.querySelector('.svc-illus__fist-left')
-  const rightFist = slide.querySelector('.svc-illus__fist-right')
-  if (leftFist && rightFist) {
-    tl.fromTo(
-      [leftFist, rightFist],
-      { opacity: 0 },
-      { opacity: 1, duration: 0.32, stagger: 0.06, ease: REVEAL_EASE },
-      `${label}+=0.06`,
-    )
-  }
 }
 
 export function initServicesPageShowcase(root: HTMLElement) {
@@ -54,7 +60,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
       autoAlpha: 1,
       pointerEvents: 'auto',
     })
-    gsap.set(root.querySelectorAll('.svc-page__illus, .svc-page__copy > *'), {
+    gsap.set(root.querySelectorAll('.svc-page__media, .svc-page__copy > *'), {
       opacity: 1,
       y: 0,
       clearProps: 'transform,opacity',
@@ -71,6 +77,8 @@ export function initServicesPageShowcase(root: HTMLElement) {
 
     if (!pin || !intro || slides.length === 0) return
 
+    pauseAllVideos(root)
+
     gsap.set(slides, { autoAlpha: 0, pointerEvents: 'none' })
     gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
     gsap.set(dots, { scale: 1, opacity: 0.35 })
@@ -79,7 +87,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
 
     slides.forEach((slide) => {
       gsap.set(slide.querySelectorAll('.svc-page__copy > *'), { opacity: 0, y: 22 })
-      gsap.set(slide.querySelector('.svc-page__illus'), { opacity: 0, scale: 0.92, y: 24 })
+      gsap.set(slide.querySelector('.svc-page__media'), { opacity: 0, scale: 0.94, y: 20 })
     })
 
     const tl = gsap.timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
@@ -121,7 +129,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
         )
       }
 
-      addIllustrationAnimation(tl, slide, label)
+      addMediaAnimation(tl, slide, label)
 
       tl.fromTo(
         copyItems,
@@ -144,11 +152,25 @@ export function initServicesPageShowcase(root: HTMLElement) {
       fastScrollEnd: true,
       animation: tl,
       id: 'services-page-showcase',
+      onUpdate: (self) => {
+        if (!self.isActive) {
+          pauseAllVideos(root)
+          return
+        }
+
+        const index = getActiveSlideIndex(tl, self.progress, slides.length)
+        setActiveSlideVideo(root, index)
+      },
+      onLeave: () => pauseAllVideos(root),
+      onLeaveBack: () => pauseAllVideos(root),
     })
 
     gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
     scheduleScrollRefresh()
   }, root)
 
-  return () => ctx.revert()
+  return () => {
+    pauseAllVideos(root)
+    ctx.revert()
+  }
 }

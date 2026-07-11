@@ -4,8 +4,9 @@ import { ArrowRight } from 'lucide-react'
 import { SERVICES } from '../../lib/constants'
 import { onIntroComplete } from '../../lib/intro'
 import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
-import { SERVICE_ILLUSTRATIONS } from './ServiceIllustrations'
 import './ServicesPageShowcase.css'
+
+const base = import.meta.env.BASE_URL
 
 export function ServicesPageShowcase() {
   const rootRef = useRef<HTMLElement>(null)
@@ -57,7 +58,6 @@ export function ServicesPageShowcase() {
 
         <div className="svc-page__stage">
           {SERVICES.map((service, i) => {
-            const Illustration = SERVICE_ILLUSTRATIONS[service.title]
             const isRight = i % 2 === 1
 
             return (
@@ -67,10 +67,19 @@ export function ServicesPageShowcase() {
                 style={{ '--svc-accent': service.accent } as CSSProperties}
               >
                 <div className="svc-page__slide-inner container">
-                  <div className="svc-page__illus-wrap">
-                    <div className="svc-page__illus-glow" aria-hidden="true" />
-                    <div className="svc-page__illus">
-                      {Illustration ? <Illustration className="svc-page__illus-svg" /> : null}
+                  <div className="svc-page__media-wrap">
+                    <div className="svc-page__media-glow" aria-hidden="true" />
+                    <div className="svc-page__media">
+                      <video
+                        className="svc-page__video"
+                        src={`${base}${service.video}`}
+                        poster={`${base}${service.image}`}
+                        loop
+                        muted
+                        playsInline
+                        preload="metadata"
+                        aria-label={`${service.title} showcase video`}
+                      />
                     </div>
                   </div>
                   <div className="svc-page__copy">
