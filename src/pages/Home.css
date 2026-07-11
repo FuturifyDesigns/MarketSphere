@@ -279,7 +279,50 @@
 .stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.section--vision .stat-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: clamp(1.35rem, 2.5vw, 1.85rem);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-gold) 14%, transparent) 0%,
+    color-mix(in srgb, var(--bg-primary) 92%, #0e1116) 55%,
+    color-mix(in srgb, var(--bg-primary) 96%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-gold) 32%, transparent);
+  box-shadow:
+    0 16px 40px color-mix(in srgb, #000 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
+  overflow: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+.section--vision .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+  opacity: 0.85;
+}
+
+.section--vision .stat-card:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
+  box-shadow:
+    0 22px 48px color-mix(in srgb, var(--color-gold) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent);
 }
 
 .stat-card {
@@ -290,26 +333,27 @@
 
 .stat-card__number {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2.25rem, 4.5vw, 3.25rem);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--color-gold);
   line-height: 1;
+  text-shadow: 0 0 28px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
 
 .stat-card__label {
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--text-primary);
 }
 
 .stat-card p {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-top: 0.5rem;
-  line-height: 1.5;
+  margin-top: 0.35rem;
+  line-height: 1.55;
 }
 
 /* ─── Horizontal services (Lusion-style pin) ─── */

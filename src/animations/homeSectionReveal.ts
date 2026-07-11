@@ -126,7 +126,11 @@ function buildShowcaseSection(section: HTMLElement, config: SectionConfig) {
   gsap.set(intro, { autoAlpha: 1, visibility: 'visible' })
   gsap.set(pin, { autoAlpha: 1 })
   if (stage) gsap.set(stage, { autoAlpha: 0, visibility: 'hidden' })
-  items.forEach((item, i) => setSplitItemInitial(item, i))
+  if (isVision) {
+    items.forEach((item) => gsap.set(item, { opacity: 0, y: 56, scale: 0.95 }))
+  } else {
+    items.forEach((item, i) => setSplitItemInitial(item, i))
+  }
   if (footer) gsap.set(footer, { opacity: 0, y: 18 })
 
   const tl = gsap.timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
@@ -162,6 +166,16 @@ function buildShowcaseSection(section: HTMLElement, config: SectionConfig) {
   tl.set(intro, { visibility: 'hidden', pointerEvents: 'none' })
 
   items.forEach((item, i) => {
+    if (isVision) {
+      tl.fromTo(
+        item,
+        { opacity: 0, y: 56, scale: 0.95, visibility: 'visible' },
+        { opacity: 1, y: 0, scale: 1, duration: config.itemDuration, ease: REVEAL_EASE },
+        i === 0 ? '+=0.06' : `+=${config.gap}`,
+      )
+      return
+    }
+
     const fromLeft = i % 2 === 0
     const mediaX = fromLeft ? -90 : 90
     tl.fromTo(

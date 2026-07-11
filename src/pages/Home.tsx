@@ -12,9 +12,9 @@ import { Button } from '../components/ui/Button'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
-import { scheduleScrollRefresh, flushScrollRefresh } from '../lib/scrollRefresh'
+import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 import { markHomeSectionsReady } from '../lib/homeSectionsReady'
-import { onServicesShowcaseReady, isServicesShowcaseReady } from '../lib/servicesShowcaseReady'
+import { isServicesShowcaseReady, onServicesShowcaseReady } from '../lib/servicesShowcaseReady'
 import { initHomeSectionReveals } from '../animations/homeSectionReveal'
 import { initProvidersReveal } from '../animations/providersReveal'
 import type { Provider, Testimonial } from '../lib/types'
@@ -49,30 +49,16 @@ export function Home() {
 
   useEffect(() => {
     const section = providersRef.current
-    const root = rootRef.current
-    if (!section || !root) return
+    if (!section) return
 
-    let cleanup: (() => void) | undefined
-    let started = false
+    const refresh = () => initProvidersReveal(section)
 
-    const boot = () => {
-      if (started) return
-      started = true
-      cleanup?.()
-      cleanup = initProvidersReveal(section)
-      flushScrollRefresh()
+    if (isServicesShowcaseReady()) {
+      refresh()
+      return
     }
 
-    const removeListener = onServicesShowcaseReady(boot)
-    if (isServicesShowcaseReady()) boot()
-
-    const failsafe = window.setTimeout(boot, 6500)
-
-    return () => {
-      window.clearTimeout(failsafe)
-      removeListener()
-      cleanup?.()
-    }
+    return onServicesShowcaseReady(refresh)
   }, [providers.length])
 
   useEffect(() => {
@@ -234,17 +220,17 @@ export function Home() {
           <div className="home-showcase__stage">
             <div className="container">
               <div className="stats-row">
-                <div className="stat-card bento-card home-section__item">
+                <div className="stat-card home-section__item">
                   <span className="stat-card__number">8+</span>
                   <span className="stat-card__label">Service categories</span>
                   <p>From academic tuition to real estate consultancy</p>
                 </div>
-                <div className="stat-card bento-card home-section__item">
+                <div className="stat-card home-section__item">
                   <span className="stat-card__number">SADC</span>
                   <span className="stat-card__label">Expansion ready</span>
                   <p>Built in Botswana, scaling across the region</p>
                 </div>
-                <div className="stat-card bento-card home-section__item">
+                <div className="stat-card home-section__item">
                   <span className="stat-card__number">100%</span>
                   <span className="stat-card__label">Verified network</span>
                   <p>Every provider reviewed by our team</p>
