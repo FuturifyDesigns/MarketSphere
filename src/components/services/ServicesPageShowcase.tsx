@@ -72,12 +72,15 @@ export function ServicesPageShowcase() {
                     <div className="svc-page__media">
                       <video
                         className="svc-page__video"
+                        data-service-index={i}
+                        data-service-title={service.title}
                         src={`${base}${service.video}`}
                         poster={`${base}${service.image}`}
                         loop
                         muted
                         playsInline
-                        preload="metadata"
+                        autoPlay={false}
+                        preload="auto"
                         aria-label={`${service.title} showcase video`}
                       />
                     </div>

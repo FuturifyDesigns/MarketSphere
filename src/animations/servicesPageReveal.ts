@@ -7,42 +7,49 @@ gsap.registerPlugin(ScrollTrigger)
 
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
-const SCROLL_UNIT = 0.5
+const SCROLL_UNIT = 0.65
 
-let activeVideoIndex: number | null = -1
+type VideoController = {
+  activeIndex: number | null
+  videos: HTMLVideoElement[]
+}
 
-function getActiveSlideIndex(tl: gsap.core.Timeline, progress: number, slideCount: number): number | null {
-  const time = progress * tl.duration()
+function createVideoController(root: HTMLElement): VideoController {
+  return {
+    activeIndex: null,
+    videos: gsap.utils.toArray<HTMLVideoElement>('.svc-page__video', root),
+  }
+}
 
-  for (let i = slideCount - 1; i >= 0; i--) {
-    const label = tl.labels[`service-${i}`]
-    if (label !== undefined && time >= label) return i
+function ensurePlaying(video: HTMLVideoElement) {
+  if (video.paused && !video.ended) {
+    void video.play().catch(() => {})
+  }
+}
+
+function activateSlideVideo(ctrl: VideoController, index: number | null) {
+  if (ctrl.activeIndex === index) {
+    if (index !== null) ensurePlaying(ctrl.videos[index])
+    return
   }
 
-  return null
-}
+  const previous = ctrl.activeIndex
+  ctrl.activeIndex = index
 
-export function setActiveSlideVideo(root: HTMLElement, index: number | null) {
-  if (index === activeVideoIndex) return
-  activeVideoIndex = index
-
-  root.querySelectorAll<HTMLVideoElement>('.svc-page__video').forEach((video, i) => {
+  ctrl.videos.forEach((video, i) => {
     if (i === index) {
-      video.currentTime = 0
+      if (previous !== index) video.currentTime = 0
       void video.play().catch(() => {})
-    } else {
-      video.pause()
-      video.currentTime = 0
+      return
     }
+
+    video.pause()
   })
 }
 
-function pauseAllVideos(root: HTMLElement) {
-  activeVideoIndex = -1
-  root.querySelectorAll<HTMLVideoElement>('.svc-page__video').forEach((video) => {
-    video.pause()
-    video.currentTime = 0
-  })
+function pauseAllVideos(ctrl: VideoController) {
+  ctrl.activeIndex = null
+  ctrl.videos.forEach((video) => video.pause())
 }
 
 function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: string) {
@@ -55,6 +62,15 @@ function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: st
 }
 
 export function initServicesPageShowcase(root: HTMLElement) {
+  const videoCtrl = createVideoController(root)
+
+  videoCtrl.videos.forEach((video) => {
+    video.muted = true
+    video.loop = true
+    video.playsInline = true
+    video.preload = 'auto'
+  })
+
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__intro'), {
       autoAlpha: 1,
@@ -65,8 +81,10 @@ export function initServicesPageShowcase(root: HTMLElement) {
       y: 0,
       clearProps: 'transform,opacity',
     })
-    return () => {}
+    return () => pauseAllVideos(videoCtrl)
   }
+
+  let keepAlive: number | undefined
 
   const ctx = gsap.context(() => {
     const pin = root.querySelector<HTMLElement>('.svc-page__pin')
@@ -77,7 +95,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
 
     if (!pin || !intro || slides.length === 0) return
 
-    pauseAllVideos(root)
+    pauseAllVideos(videoCtrl)
 
     gsap.set(slides, { autoAlpha: 0, pointerEvents: 'none' })
     gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
@@ -100,11 +118,12 @@ export function initServicesPageShowcase(root: HTMLElement) {
       'intro',
     )
     tl.to({}, { duration: 0.45 })
+    tl.call(() => activateSlideVideo(videoCtrl, null), [], 'intro+=0.44')
 
     slides.forEach((slide, index) => {
       const label = `service-${index}`
       const copyItems = slide.querySelectorAll('.svc-page__copy > *')
-      const segment = 1.15
+      const segment = 1.35
 
       if (index === 0) {
         tl.to(intro, { autoAlpha: 0, duration: 0.28, ease: FADE_EASE })
@@ -116,6 +135,7 @@ export function initServicesPageShowcase(root: HTMLElement) {
       }
 
       tl.addLabel(label)
+      tl.call(() => activateSlideVideo(videoCtrl, index), [], label)
       tl.set(slide, { autoAlpha: 1, pointerEvents: 'auto' }, label)
       tl.to(dots, { scale: 1, opacity: 0.35, duration: 0.15 }, label)
       if (dots[index]) {
@@ -137,8 +157,14 @@ export function initServicesPageShowcase(root: HTMLElement) {
         { opacity: 1, y: 0, duration: segment * 0.22, stagger: segment * 0.05 },
         `${label}+=0.1`,
       )
-      tl.to({}, { duration: segment * 0.18 })
+      tl.to({}, { duration: segment * 0.28 })
     })
+
+    keepAlive = window.setInterval(() => {
+      const st = ScrollTrigger.getById('services-page-showcase')
+      if (!st?.isActive || videoCtrl.activeIndex === null) return
+      ensurePlaying(videoCtrl.videos[videoCtrl.activeIndex])
+    }, 400)
 
     ScrollTrigger.create({
       trigger: pin,
@@ -152,17 +178,8 @@ export function initServicesPageShowcase(root: HTMLElement) {
       fastScrollEnd: true,
       animation: tl,
       id: 'services-page-showcase',
-      onUpdate: (self) => {
-        if (!self.isActive) {
-          pauseAllVideos(root)
-          return
-        }
-
-        const index = getActiveSlideIndex(tl, self.progress, slides.length)
-        setActiveSlideVideo(root, index)
-      },
-      onLeave: () => pauseAllVideos(root),
-      onLeaveBack: () => pauseAllVideos(root),
+      onLeave: () => pauseAllVideos(videoCtrl),
+      onLeaveBack: () => pauseAllVideos(videoCtrl),
     })
 
     gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
@@ -170,7 +187,8 @@ export function initServicesPageShowcase(root: HTMLElement) {
   }, root)
 
   return () => {
-    pauseAllVideos(root)
+    if (keepAlive) window.clearInterval(keepAlive)
+    pauseAllVideos(videoCtrl)
     ctx.revert()
   }
 }
