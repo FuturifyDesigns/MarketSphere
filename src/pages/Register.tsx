@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent } from 'react'
+import { useState, useRef, type CSSProperties, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -43,10 +43,18 @@ export function Register() {
     }
   }
 
+  const coverStyle = {
+    '--auth-cover': `url(${import.meta.env.BASE_URL}auth/sign-up.png)`,
+  } as CSSProperties
+
   if (success) {
     return (
       <div className="auth-page auth-page--signup" ref={pageRef}>
-        <div className="auth-page__bg auth-theme-bg--signup" aria-hidden="true" />
+        <div
+          className="auth-page__bg auth-page__bg--cover auth-theme-bg--signup"
+          style={coverStyle}
+          aria-hidden="true"
+        />
         <div className="auth-shell auth-shell--centered">
           <div className="auth-card auth-card--success">
             <div className="auth-card__success-icon" aria-hidden="true">✓</div>
@@ -64,7 +72,11 @@ export function Register() {
 
   return (
     <div className="auth-page auth-page--signup" ref={pageRef}>
-      <div className="auth-page__bg auth-theme-bg--signup" aria-hidden="true" />
+      <div
+        className="auth-page__bg auth-page__bg--cover auth-theme-bg--signup"
+        style={coverStyle}
+        aria-hidden="true"
+      />
       <div className="auth-shell">
         <aside className="auth-shell__aside auth-shell__aside--register">
           <Link to="/" className="auth-shell__brand">

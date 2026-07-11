@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent } from 'react'
+import { useState, useRef, type CSSProperties, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -41,9 +41,17 @@ export function Login() {
     }
   }
 
+  const coverStyle = {
+    '--auth-cover': `url(${import.meta.env.BASE_URL}auth/sign-in.png)`,
+  } as CSSProperties
+
   return (
     <div className="auth-page auth-page--signin" ref={pageRef}>
-      <div className="auth-page__bg auth-theme-bg--signin" aria-hidden="true" />
+      <div
+        className="auth-page__bg auth-page__bg--cover auth-theme-bg--signin"
+        style={coverStyle}
+        aria-hidden="true"
+      />
       <div className="auth-shell">
         <aside className="auth-shell__aside auth-shell__aside--login">
           <Link to="/" className="auth-shell__brand">

@@ -8,15 +8,39 @@
 }
 
 .auth-theme-bg--signin {
-  background:
-    radial-gradient(ellipse 90% 70% at 15% 25%, rgba(96, 165, 250, 0.35), transparent 55%),
-    radial-gradient(ellipse 80% 60% at 85% 75%, rgba(37, 99, 235, 0.12), transparent 50%),
-    linear-gradient(160deg, #e8eef8 0%, #dce8f8 40%, var(--bg-primary) 100%);
+  background-color: #dce8f8;
 }
 
 .auth-theme-bg--signup {
-  background:
-    radial-gradient(ellipse 90% 70% at 85% 75%, rgba(251, 191, 36, 0.38), transparent 55%),
-    radial-gradient(ellipse 80% 60% at 15% 25%, rgba(201, 162, 75, 0.15), transparent 50%),
-    linear-gradient(340deg, #faf3e0 0%, #f5e8c8 40%, var(--bg-primary) 100%);
+  background-color: #f5e8c8;
+}
+
+.auth-page__bg--cover {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.auth-page--signin .auth-page__bg--cover {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(232, 238, 248, 0.92) 0%,
+      rgba(232, 238, 248, 0.72) 38%,
+      rgba(232, 238, 248, 0.35) 62%,
+      rgba(232, 238, 248, 0.12) 100%
+    ),
+    var(--auth-cover);
+}
+
+.auth-page--signup .auth-page__bg--cover {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(250, 243, 224, 0.92) 0%,
+      rgba(250, 243, 224, 0.72) 38%,
+      rgba(250, 243, 224, 0.35) 62%,
+      rgba(250, 243, 224, 0.12) 100%
+    ),
+    var(--auth-cover);
 }

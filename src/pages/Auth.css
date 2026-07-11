@@ -46,7 +46,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: clamp(2rem, 5vw, 3.5rem);
+  justify-content: flex-start;
+  padding: clamp(1.5rem, 3.5vw, 2.5rem) clamp(2rem, 5vw, 3.5rem);
   overflow: hidden;
 }
 
@@ -97,13 +98,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: auto;
+  margin-bottom: clamp(1.75rem, 4vh, 2.5rem);
   text-decoration: none;
   color: var(--text-primary);
   font-family: var(--font-display);
   font-size: 0.875rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .auth-shell__brand img {
@@ -116,7 +118,7 @@
 .auth-shell__aside-content {
   position: relative;
   z-index: 1;
-  margin-top: clamp(2rem, 8vh, 5rem);
+  margin-top: 0;
   max-width: 42ch;
 }
 
@@ -306,11 +308,15 @@
 
   .auth-shell__aside {
     min-height: auto;
-    padding-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .auth-shell__brand {
+    margin-bottom: 1.25rem;
   }
 
   .auth-shell__aside-content {
-    margin-top: 1.5rem;
+    margin-top: 0;
   }
 
   .auth-shell__aside-content h1 {
