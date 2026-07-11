@@ -255,7 +255,7 @@ export function ServicesShowcase() {
                     Learn more <ArrowRight size={14} />
                   </Link>
                 </div>
-                <div className={`services-showcase__visual${'fullImage' in service && service.fullImage ? ' services-showcase__visual--full' : ''}`}>
+                <div className="services-showcase__visual">
                   <img src={`${base}${service.image}`} alt={service.title} loading="lazy" />
                 </div>
               </article>
@@ -285,12 +285,7 @@ export function ServicesShowcase() {
             return (
               <article key={service.title} className="services-showcase__mobile-card bento-card">
                 <span className="services-showcase__index">0{i + 1}</span>
-                <img
-                  src={`${base}${service.image}`}
-                  alt={service.title}
-                  loading="lazy"
-                  className={'fullImage' in service && service.fullImage ? 'services-showcase__mobile-img--full' : undefined}
-                />
+                <img src={`${base}${service.image}`} alt={service.title} loading="lazy" />
                 <p className="services-showcase__tagline">{service.tagline}</p>
                 <h3 className="services-showcase__title">
                   {first && <span>{first}</span>}
