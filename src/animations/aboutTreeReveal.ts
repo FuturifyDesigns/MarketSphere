@@ -1,7 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
-import { flushScrollRefresh } from '../lib/scrollRefresh'
+import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -9,7 +9,7 @@ const PATH_CLASS = 'about-tree__path'
 const TRUNK_CLASS = 'about-tree__trunk'
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
-const SCROLL_UNIT = 0.44
+const SCROLL_UNIT = 0.42
 
 type Point = { x: number; y: number }
 
@@ -123,6 +123,8 @@ function rebuildPaths(root: HTMLElement) {
       pathsGroup.appendChild(rightBranch)
     }
   }
+
+  return gsap.utils.toArray<SVGPathElement>(`.${PATH_CLASS}, .${TRUNK_CLASS}`, root)
 }
 
 function getStepScrollDuration(step: HTMLElement) {
@@ -146,6 +148,14 @@ function getBranchPath(root: HTMLElement, side: string) {
   return undefined
 }
 
+function debounce(fn: () => void, ms: number) {
+  let timer: number | undefined
+  return () => {
+    if (timer !== undefined) window.clearTimeout(timer)
+    timer = window.setTimeout(fn, ms)
+  }
+}
+
 export function initAboutTreeAnimation(root: HTMLElement) {
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.about-tree__step'), { autoAlpha: 1, pointerEvents: 'auto' })
@@ -161,29 +171,36 @@ export function initAboutTreeAnimation(root: HTMLElement) {
     return () => {}
   }
 
-  const onRefreshInit = () => rebuildPaths(root)
-  ScrollTrigger.addEventListener('refreshInit', onRefreshInit)
-
   let resizeHandler: (() => void) | undefined
+  let treeTrigger: ScrollTrigger | undefined
 
   const ctx = gsap.context(() => {
-    const stage = root.querySelector<HTMLElement>('.about-tree__stage')
     const pin = root.querySelector<HTMLElement>('.about-tree__pin')
     const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
 
-    if (!stage || !pin || steps.length === 0) return
+    if (!pin || steps.length === 0) return
 
-    const drawTree = () => {
+    const syncPaths = () => {
       rebuildPaths(root)
-      flushScrollRefresh()
     }
 
-    resizeHandler = drawTree
-    drawTree()
-    window.addEventListener('resize', drawTree)
+    syncPaths()
+
+    resizeHandler = debounce(() => {
+      if (treeTrigger) {
+        const progress = treeTrigger.progress
+        syncPaths()
+        treeTrigger.animation?.progress(progress)
+      } else {
+        syncPaths()
+      }
+    }, 180)
+
+    window.addEventListener('resize', resizeHandler)
 
     const trunk = () => root.querySelector<SVGPathElement>(`.${TRUNK_CLASS}`)
     const drawnBranches = new Set<'left' | 'right'>()
+    let trunkScheduled = false
 
     gsap.set(steps, { autoAlpha: 0, pointerEvents: 'none' })
     gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 0, y: 18 })
@@ -196,7 +213,6 @@ export function initAboutTreeAnimation(root: HTMLElement) {
     steps.forEach((step, index) => {
       const side = (step.dataset.side as 'left' | 'right' | 'center') || 'center'
       const node = step.querySelector<HTMLElement>('.about-tree__node')
-      const card = step.querySelector<HTMLElement>('.about-tree__card')
       const revealItems = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
       const branchPath = getBranchPath(root, side)
       const trunkPath = trunk()
@@ -212,7 +228,8 @@ export function initAboutTreeAnimation(root: HTMLElement) {
       tl.addLabel(label)
       tl.set(step, { autoAlpha: 1, pointerEvents: 'auto' }, label)
 
-      if (trunkPath) {
+      if (trunkPath && !trunkScheduled) {
+        trunkScheduled = true
         tl.to(
           trunkPath,
           {
@@ -225,7 +242,7 @@ export function initAboutTreeAnimation(root: HTMLElement) {
         )
       }
 
-      if (branchPath && side === 'center' && index === 0) {
+      if (side === 'center' && index === 0 && branchPath) {
         tl.to(
           branchPath,
           { strokeDashoffset: 0, opacity: 0.65, duration: segment * 0.22, ease: 'none' },
@@ -244,24 +261,13 @@ export function initAboutTreeAnimation(root: HTMLElement) {
 
       if (node) {
         const enterX = side === 'left' ? -72 : side === 'right' ? 72 : 0
+        const hasBranch = Boolean(branchPath && (side === 'center' || drawnBranches.has(side)))
         tl.fromTo(
           node,
           { opacity: 0, x: enterX, y: 28, scale: 0.96 },
           { opacity: 1, x: 0, y: 0, scale: 1, duration: segment * 0.28 },
-          branchPath || side === 'center' ? `${label}+=${segment * 0.08}` : label,
+          hasBranch ? `${label}+=${segment * 0.08}` : label,
         )
-        if (card) {
-          tl.fromTo(
-            card,
-            { boxShadow: '0 4px 24px color-mix(in srgb, var(--color-bronze) 6%, transparent)' },
-            {
-              boxShadow: '0 8px 32px color-mix(in srgb, var(--color-gold) 12%, transparent)',
-              duration: segment * 0.3,
-              ease: REVEAL_EASE,
-            },
-            `${label}+=${segment * 0.1}`,
-          )
-        }
       }
 
       if (revealItems.length) {
@@ -282,44 +288,27 @@ export function initAboutTreeAnimation(root: HTMLElement) {
       tl.to({}, { duration: segment * 0.12 })
     })
 
-    ScrollTrigger.create({
-      trigger: stage,
+    treeTrigger = ScrollTrigger.create({
+      trigger: pin,
       start: 'top top',
       end: () => `+=${tl.duration() * window.innerHeight * SCROLL_UNIT}`,
-      pin,
+      pin: true,
+      pinSpacing: true,
       scrub: 1.35,
-      anticipatePin: 1,
+      anticipatePin: 0,
       invalidateOnRefresh: true,
+      fastScrollEnd: true,
       animation: tl,
       id: 'about-tree-pin',
-      onRefresh: drawTree,
     })
 
     gsap.set(steps[0], { autoAlpha: 1, pointerEvents: 'auto' })
-
-    root.querySelectorAll<HTMLElement>('[data-lenis-prevent]').forEach((scrollEl) => {
-      scrollEl.addEventListener(
-        'wheel',
-        (event) => {
-          const atTop = scrollEl.scrollTop <= 0
-          const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1
-          const goingUp = event.deltaY < 0
-          const goingDown = event.deltaY > 0
-
-          if ((goingUp && !atTop) || (goingDown && !atBottom)) {
-            event.stopPropagation()
-          }
-        },
-        { passive: true },
-      )
-    })
-
-    requestAnimationFrame(drawTree)
+    scheduleScrollRefresh()
   }, root)
 
   return () => {
-    ScrollTrigger.removeEventListener('refreshInit', onRefreshInit)
     if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+    treeTrigger = undefined
     ctx.revert()
   }
 }

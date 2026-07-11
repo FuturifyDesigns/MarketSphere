@@ -19,6 +19,10 @@ export function useLenis() {
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       touchMultiplier: 1.35,
+      prevent: (node) => {
+        if (!(node instanceof HTMLElement)) return false
+        return Boolean(node.closest('[data-lenis-prevent]'))
+      },
     })
     lenisInstance = lenis
 
