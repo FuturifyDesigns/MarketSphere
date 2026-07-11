@@ -200,10 +200,6 @@
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.96);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow:
     0 24px 64px rgba(74, 63, 47, 0.18),
     0 0 0 1px rgba(201, 162, 75, 0.15);
@@ -224,10 +220,7 @@
   width: 100%;
   height: auto;
   display: block;
-  aspect-ratio: auto;
-  max-height: min(70vh, 640px);
-  object-fit: contain;
-  object-position: center;
+  max-height: min(78vh, 680px);
 }
 
 /* Progress dots */
@@ -268,11 +261,8 @@
 
 .services-showcase__mobile-card img {
   width: 100%;
+  height: auto;
   border-radius: var(--radius-md);
-  aspect-ratio: auto;
-  max-height: 520px;
-  object-fit: contain;
-  background: #fff;
   margin: 0.25rem 0 0.5rem;
 }
 
