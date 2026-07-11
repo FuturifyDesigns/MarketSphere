@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { preloadServiceVideos } from './lib/serviceVideoCache'
 import { SiteIntro } from './components/intro/SiteIntro'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
@@ -17,6 +19,10 @@ import { ProviderDashboard } from './pages/dashboard/ProviderDashboard'
 import { AdminDashboard } from './pages/dashboard/AdminDashboard'
 
 export default function App() {
+  useEffect(() => {
+    void preloadServiceVideos()
+  }, [])
+
   return (
     <AuthProvider>
       <SiteIntro />
