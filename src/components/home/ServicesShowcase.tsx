@@ -7,7 +7,7 @@ import { onIntroComplete } from '../../lib/intro'
 import { onHomeSectionsReady } from '../../lib/homeSectionsReady'
 import { flushScrollRefresh } from '../../lib/scrollRefresh'
 import { markServicesShowcaseReady } from '../../lib/servicesShowcaseReady'
-import { initProvidersReveal } from '../../animations/providersReveal'
+import { initBelowFoldSections } from '../../animations/belowFoldReveal'
 import { SERVICES } from '../../lib/constants'
 import './ServicesShowcase.css'
 
@@ -89,7 +89,7 @@ export function ServicesShowcase() {
     if (!root) return
 
     let ctx: gsap.Context | undefined
-    let providersCleanup: (() => void) | undefined
+    let belowFoldCleanup: (() => void) | undefined
     let started = false
     let booted = false
 
@@ -303,9 +303,9 @@ export function ServicesShowcase() {
       flushScrollRefresh()
       markServicesShowcaseReady()
 
-      const providersSection = root.closest('.home')?.querySelector<HTMLElement>('.section--providers')
-      if (providersSection) {
-        providersCleanup = initProvidersReveal(providersSection)
+      const homeEl = root.closest('.home')
+      if (homeEl instanceof HTMLElement) {
+        belowFoldCleanup = initBelowFoldSections(homeEl)
       }
     }
 
@@ -321,7 +321,7 @@ export function ServicesShowcase() {
     return () => {
       window.clearTimeout(failsafe)
       removeIntroListener()
-      providersCleanup?.()
+      belowFoldCleanup?.()
       ctx?.revert()
     }
   }, [])

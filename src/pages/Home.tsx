@@ -16,7 +16,7 @@ import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 import { markHomeSectionsReady } from '../lib/homeSectionsReady'
 import { isServicesShowcaseReady, onServicesShowcaseReady } from '../lib/servicesShowcaseReady'
 import { initHomeSectionReveals } from '../animations/homeSectionReveal'
-import { initProvidersReveal } from '../animations/providersReveal'
+import { initBelowFoldSections } from '../animations/belowFoldReveal'
 import type { Provider, Testimonial } from '../lib/types'
 import './Home.css'
 
@@ -36,7 +36,6 @@ const MARQUEE_ITEMS = [
 export function Home() {
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
-  const providersRef = useRef<HTMLElement>(null)
   const [providers, setProviders] = useState<Provider[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
@@ -48,18 +47,27 @@ export function Home() {
   }, [])
 
   useEffect(() => {
-    const section = providersRef.current
-    if (!section) return
+    const root = rootRef.current
+    if (!root) return
 
-    const refresh = () => initProvidersReveal(section)
+    let cleanup: (() => void) | undefined
+
+    const refresh = () => {
+      cleanup?.()
+      cleanup = initBelowFoldSections(root)
+    }
 
     if (isServicesShowcaseReady()) {
       refresh()
-      return
     }
 
-    return onServicesShowcaseReady(refresh)
-  }, [providers.length])
+    const removeListener = onServicesShowcaseReady(refresh)
+
+    return () => {
+      removeListener()
+      cleanup?.()
+    }
+  }, [providers.length, testimonials.length])
 
   useEffect(() => {
     const root = rootRef.current
@@ -244,7 +252,7 @@ export function Home() {
       <ServicesShowcase />
 
       {/* Providers */}
-      <section ref={providersRef} className="section section--providers home-section">
+      <section className="section section--providers home-section">
         <div className="container">
           <header className="home-section__header section-header section-header--center">
             <span className="section-label home-section__label">Our Network</span>
@@ -273,7 +281,7 @@ export function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="section section--testimonials home-section" data-home-section>
+      <section className="section section--testimonials home-section">
         <div className="container">
           <header className="home-section__header section-header section-header--center">
             <span className="section-label home-section__label">Client Stories</span>
