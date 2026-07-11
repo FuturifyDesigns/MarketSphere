@@ -33,6 +33,7 @@ export function Register() {
     setLoading(true)
     const { error: err } = await signUp(form.email, form.password, {
       full_name: form.full_name,
+      phone: form.phone || undefined,
       role: form.role,
     })
     setLoading(false)

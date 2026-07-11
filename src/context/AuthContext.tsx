@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
-  signUp: (email: string, password: string, meta: { full_name: string; role: string }) => Promise<{ error: Error | null }>
+  signUp: (email: string, password: string, meta: { full_name: string; phone?: string; role: string }) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    meta: { full_name: string; role: string }
+    meta: { full_name: string; phone?: string; role: string }
   ) => {
     const { error } = await supabase.auth.signUp({
       email,
