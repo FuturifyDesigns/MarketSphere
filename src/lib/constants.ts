@@ -1,6 +1,6 @@
 export const COMPANY = {
   name: 'Market Sphere Group (Pty) Ltd',
-  shortName: 'MarketSphere',
+  shortName: 'Market Sphere Group',
   tagline: 'Master Your Field for Relevance',
   registration: 'UIN BW00000887185',
   mission: 'Master Your Field for Relevance',
@@ -89,9 +89,9 @@ export const SERVICES = [
 
 export const FAQ_ITEMS = [
   {
-    question: 'What is MarketSphere?',
+    question: 'What is Market Sphere Group?',
     answer:
-      'MarketSphere is an online marketplace platform by Market Sphere Group (Pty) Ltd that connects customers with verified service providers across Botswana. Browse, search, and enquire about services from trusted professionals.',
+      'Market Sphere Group connects customers with verified service providers across Botswana through our online marketplace. Browse, search, and enquire about services from trusted professionals.',
   },
   {
     question: 'How do I find a service provider?',
@@ -106,7 +106,7 @@ export const FAQ_ITEMS = [
   {
     question: 'Is payment handled on the platform?',
     answer:
-      'No. MarketSphere facilitates connections and enquiries only. Any payment arrangements happen directly between you and the service provider.',
+      'No. Market Sphere Group facilitates connections and enquiries only. Any payment arrangements happen directly between you and the service provider.',
   },
   {
     question: 'Where is Market Sphere Group located?',

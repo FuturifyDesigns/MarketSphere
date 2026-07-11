@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ArrowRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { FAQ_ITEMS } from '../lib/constants'
+import { FAQ_ITEMS, COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import './FAQ.css'
 
@@ -19,7 +19,7 @@ export function FAQ() {
               <em className="text-gold">We've got answers</em>
             </h1>
             <p className="lead">
-              Everything you need to know about using MarketSphere and working with Market Sphere Group.
+              Everything you need to know about using {COMPANY.shortName} and our services.
             </p>
           </div>
           <div className="faq-hero__card bento-card page-reveal">

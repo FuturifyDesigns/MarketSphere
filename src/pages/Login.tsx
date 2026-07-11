@@ -2,6 +2,7 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
@@ -45,7 +46,7 @@ export function Login() {
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
         </Link>
         <h1>Welcome back</h1>
-        <p className="auth-subtitle">Sign in to your MarketSphere account</p>
+        <p className="auth-subtitle">Sign in to your {COMPANY.shortName} account</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />

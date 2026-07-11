@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { COMPANY } from '../../lib/constants'
 import { Button } from '../ui/Button'
 import './Navbar.css'
 
@@ -36,8 +37,8 @@ export function Navbar() {
     <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
       <div className="navbar__inner container">
         <Link to="/" className="navbar__brand" onClick={() => setOpen(false)}>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="MarketSphere" className="navbar__logo" />
-          <span className="navbar__name">MarketSphere</span>
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt={COMPANY.shortName} className="navbar__logo" />
+          <span className="navbar__name">{COMPANY.shortName}</span>
         </Link>
 
         <nav className={`navbar__nav ${open ? 'navbar__nav--open' : ''}`}>

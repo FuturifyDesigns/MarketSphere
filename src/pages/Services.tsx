@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { ArrowRight, Building, GraduationCap, Lightbulb, Megaphone, Users } from 'lucide-react'
-import { SERVICES } from '../lib/constants'
+import { SERVICES, COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import './Services.css'
 
@@ -75,7 +75,7 @@ export function Services() {
           <div className="cta-panel bento-card page-reveal">
             <span className="section-label">Get Started</span>
             <h2 className="display-lg">Looking for a specific service?</h2>
-            <p>Browse our network of verified providers or list your own business on MarketSphere.</p>
+            <p>Browse our network of verified providers or list your own business with {COMPANY.shortName}.</p>
             <div className="cta-panel__actions">
               <Button to="/browse" size="lg">
                 Browse Providers <ArrowRight size={16} />

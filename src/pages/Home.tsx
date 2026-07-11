@@ -314,7 +314,7 @@ export function Home() {
               <h2 className="display-lg home-section__title">
                 <span className="home-section__title-word">Ready to get started?</span>
               </h2>
-              <p className="home-section__lead">Join MarketSphere — whether you're looking for services or offering them.</p>
+              <p className="home-section__lead">Join {COMPANY.shortName} — whether you're looking for services or offering them.</p>
             </header>
             <div className="cta-panel__actions home-section__footer">
               <Button to="/register" size="lg">Create Account</Button>
