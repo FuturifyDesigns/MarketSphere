@@ -37,11 +37,12 @@ export function useLenis() {
     document.documentElement.classList.add('lenis')
 
     const lenis = new Lenis({
-      duration: 1.05,
+      duration: 0.88,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       syncTouch: false,
       touchMultiplier: 1,
+      wheelMultiplier: 0.92,
       prevent: (node) => {
         if (!(node instanceof HTMLElement)) return false
         return Boolean(node.closest('[data-lenis-prevent]'))

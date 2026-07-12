@@ -521,6 +521,8 @@
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 300px;
   }
 
   .about-tree__node {
@@ -566,5 +568,23 @@
 
   .about-tree__details {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (hover: none) {
+  .about-tree__card,
+  .about-tree__card::after,
+  .about-tree__logo,
+  .about-tree__node-icon,
+  .about-tree__cluster-item,
+  .about-tree__cluster-icon,
+  .about-tree__detail-tile {
+    transition: none;
+  }
+
+  .about-tree__card:hover,
+  .about-tree__cluster-item:hover,
+  .about-tree__detail-tile:hover {
+    transform: none;
   }
 }

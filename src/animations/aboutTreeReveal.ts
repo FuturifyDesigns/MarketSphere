@@ -65,7 +65,7 @@ function rebuildPaths(root: HTMLElement) {
   const hub = getHub(root)
   if (!svg || !pathsGroup || !canvas || !hub) return
 
-  pathsGroup.innerHTML = ''
+  pathsGroup.replaceChildren()
 
   const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
   const hubPoint = getPoint(hub, svg)
@@ -73,8 +73,9 @@ function rebuildPaths(root: HTMLElement) {
   const svgRect = svg.getBoundingClientRect()
   const trunkTop = canvasRect.top - svgRect.top + 12
   const trunkBottom = canvasRect.bottom - svgRect.top - 12
+  const fragment = document.createDocumentFragment()
 
-  pathsGroup.appendChild(
+  fragment.appendChild(
     createSvgPath(
       `M ${hubPoint.x} ${trunkTop} L ${hubPoint.x} ${trunkBottom}`,
       TRUNK_CLASS,
@@ -89,7 +90,7 @@ function rebuildPaths(root: HTMLElement) {
     if (!side || !stepIndex || !node) return
 
     const toX = getCardEdgeX(node, svg, side)
-    pathsGroup.appendChild(
+    fragment.appendChild(
       createSvgPath(
         `M ${hubPoint.x} ${hubPoint.y} L ${toX} ${hubPoint.y}`,
         PATH_CLASS,
@@ -97,6 +98,8 @@ function rebuildPaths(root: HTMLElement) {
       ),
     )
   })
+
+  pathsGroup.appendChild(fragment)
 }
 
 function getScrollMax(scrollEl: HTMLElement) {
@@ -129,46 +132,43 @@ function debounce(fn: () => void, ms: number) {
 
 function runMobileAboutTreeStack(root: HTMLElement) {
   const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
+  const MOBILE_ENTER_X = 44
 
   gsap.set(steps, {
     autoAlpha: 1,
     pointerEvents: 'auto',
     clearProps: 'transform,x,y,scale',
   })
-  gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 1, y: 0 })
+  gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { clearProps: 'transform,x,y,opacity' })
   gsap.set(root.querySelectorAll('.about-tree__card-scroll'), {
     opacity: 1,
     scrollTop: 0,
     clearProps: 'transform,y',
   })
+  gsap.set(root.querySelectorAll(`.${PATH_CLASS}, .${TRUNK_CLASS}`), { display: 'none' })
 
   steps.forEach((step) => {
-    gsap.from(step, {
-      opacity: 0,
-      y: 28,
-      duration: 0.55,
-      ease: REVEAL_EASE,
+    const side = (step.dataset.side as 'left' | 'right') || 'left'
+    const enterX = side === 'left' ? -MOBILE_ENTER_X : MOBILE_ENTER_X
+    const items = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
+
+    const tl = gsap.timeline({
+      defaults: { ease: REVEAL_EASE, force3D: true },
       scrollTrigger: {
         trigger: step,
-        start: 'top 88%',
+        start: 'top 86%',
         once: true,
+        fastScrollEnd: true,
       },
     })
 
-    const items = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
+    tl.from(step, { autoAlpha: 0, x: enterX, duration: 0.58 })
     if (items.length) {
-      gsap.from(items, {
-        opacity: 0,
-        y: 16,
-        duration: 0.45,
-        stagger: 0.05,
-        ease: REVEAL_EASE,
-        scrollTrigger: {
-          trigger: step,
-          start: 'top 85%',
-          once: true,
-        },
-      })
+      tl.from(
+        items,
+        { autoAlpha: 0, x: enterX * 0.38, duration: 0.42, stagger: 0.04 },
+        '-=0.36',
+      )
     }
   })
 
@@ -207,7 +207,7 @@ function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
     } else {
       syncPaths()
     }
-  }, 180)
+  }, 220)
 
   window.addEventListener('resize', resizeHandler)
 
@@ -334,6 +334,7 @@ function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
     anticipatePin: 0,
     invalidateOnRefresh: true,
     fastScrollEnd: true,
+    preventOverlaps: true,
     animation: tl,
     id: 'about-tree-pin',
   })
@@ -367,7 +368,7 @@ export function initAboutTreeAnimation(root: HTMLElement) {
     const mm = gsap.matchMedia()
 
     mm.add('(min-width: 901px)', () => {
-      return runAboutTreePin(root, { scrub: 1.35, scrollUnit: 0.42, enterX: 72 })
+      return runAboutTreePin(root, { scrub: 1.2, scrollUnit: 0.42, enterX: 72 })
     })
 
     mm.add('(max-width: 900px)', () => {

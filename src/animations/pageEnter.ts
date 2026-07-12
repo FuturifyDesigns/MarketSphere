@@ -96,6 +96,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
             trigger: el,
             start: 'top 88%',
             once: true,
+            fastScrollEnd: true,
           },
         },
       )
@@ -116,6 +117,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
               trigger: section,
               start: 'top 92%',
               once: true,
+              fastScrollEnd: true,
             },
           },
         )
