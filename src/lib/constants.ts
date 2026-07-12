@@ -104,36 +104,44 @@ export const SERVICES = [
 
 export const FAQ_ITEMS = [
   {
+    category: 'Platform',
     question: 'What is Market Sphere Group?',
     answer:
       'Market Sphere Group connects customers with verified service providers across Botswana through our online marketplace. Browse, search, and enquire about services from trusted professionals.',
   },
   {
+    category: 'Platform',
     question: 'How do I find a service provider?',
     answer:
       'Use the Browse Providers page to search by category or location. View provider profiles, read descriptions, and submit an enquiry directly through the platform.',
   },
   {
+    category: 'Providers',
     question: 'How do I become a service provider?',
     answer:
       'Register as a Service Provider, complete your business profile with logo, services, and contact details. Your application will be reviewed by our team before going live.',
   },
   {
+    category: 'Payments',
     question: 'Is payment handled on the platform?',
     answer:
       'No. Market Sphere Group facilitates connections and enquiries only. Any payment arrangements happen directly between you and the service provider.',
   },
   {
+    category: 'Company',
     question: 'Where is Market Sphere Group located?',
     answer:
       'Our head office is in Gaborone, Botswana, at 10102 MAFULO House, Taung Broadhurst. We operate across Botswana with plans to expand into SADC markets.',
   },
   {
+    category: 'Providers',
     question: 'How long does provider approval take?',
     answer:
       'We review all provider applications to ensure quality and trust. Approval typically takes 1–3 business days after you submit a complete profile.',
   },
 ] as const
+
+export const FAQ_CATEGORIES = ['All', 'Platform', 'Providers', 'Payments', 'Company'] as const
 
 export const COLORS = {
   day: '#FAF8F4',

@@ -69,6 +69,7 @@
   text-decoration: none;
   color: var(--text-secondary);
   border-radius: var(--radius-pill);
+  -webkit-tap-highlight-color: transparent;
   transition: color 0.2s, background 0.2s;
 }
 
