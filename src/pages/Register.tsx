@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { COMPANY } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
+import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import {
   clearFieldError,
   collectErrors,
@@ -83,8 +84,9 @@ export function Register() {
     return (
       <div className="auth-page auth-page--signup" ref={pageRef}>
         <AuthPageCover variant="signup" />
-        <div className="auth-shell auth-shell--centered">
-          <div className="auth-card auth-card--success">
+      <div className="auth-shell auth-shell--centered">
+        <AuthMobileHeader eyebrow="Almost there" backTo="/get-started" />
+        <div className="auth-card auth-card--success">
             <div className="auth-card__success-icon" aria-hidden="true">✓</div>
             <h2>Check your email</h2>
             <p className="auth-subtitle">
@@ -102,6 +104,7 @@ export function Register() {
     <div className="auth-page auth-page--signup" ref={pageRef}>
       <AuthPageCover variant="signup" />
       <div className="auth-shell">
+        <AuthMobileHeader eyebrow="Join the network" backTo="/get-started" />
         <aside className="auth-shell__aside auth-shell__aside--register">
           <Link to="/" className="auth-shell__brand">
             <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />

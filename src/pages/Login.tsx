@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { COMPANY } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
+import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import {
   clearFieldError,
   collectErrors,
@@ -66,6 +67,7 @@ export function Login() {
     <div className="auth-page auth-page--signin" ref={pageRef}>
       <AuthPageCover variant="signin" />
       <div className="auth-shell">
+        <AuthMobileHeader eyebrow="Welcome back" backTo="/get-started" />
         <aside className="auth-shell__aside auth-shell__aside--login">
           <Link to="/" className="auth-shell__brand">
             <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />

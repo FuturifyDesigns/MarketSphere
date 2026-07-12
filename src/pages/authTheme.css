@@ -66,16 +66,28 @@
 
 @media (max-width: 900px) {
   .auth-page__cover-img {
-    object-position: center 28%;
+    object-position: center 22%;
+    opacity: 0.55;
   }
 
   .auth-page__bg--signin .auth-page__cover-scrim,
   .auth-page__bg--signup .auth-page__cover-scrim {
     background: linear-gradient(
       180deg,
-      rgba(248, 246, 241, 0.92) 0%,
-      rgba(248, 246, 241, 0.72) 42%,
-      rgba(248, 246, 241, 0.28) 100%
+      rgba(252, 250, 245, 0.97) 0%,
+      rgba(252, 250, 245, 0.88) 28%,
+      rgba(252, 250, 245, 0.72) 55%,
+      rgba(252, 250, 245, 0.45) 100%
+    );
+  }
+
+  .auth-page__bg--signup .auth-page__cover-scrim {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 251, 242, 0.98) 0%,
+      rgba(255, 248, 235, 0.9) 30%,
+      rgba(255, 245, 228, 0.75) 58%,
+      rgba(255, 242, 220, 0.42) 100%
     );
   }
 }
