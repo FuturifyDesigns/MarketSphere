@@ -147,13 +147,43 @@
 
 @media (max-width: 768px) {
   .footer__grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .footer__brand,
+  .footer__col,
+  .footer__contact {
+    text-align: center;
+    width: 100%;
+    max-width: 22rem;
+  }
+
+  .footer__logo {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .footer__contact p {
+    justify-content: center;
+    text-align: left;
   }
 
   .footer__cta-inner {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer__cta-desc {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .footer__col a:hover {
+    transform: none;
   }
 
   .footer__bottom-inner {

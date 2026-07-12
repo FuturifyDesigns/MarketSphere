@@ -6,13 +6,14 @@ import { ArrowRight, ArrowDown } from 'lucide-react'
 import { SkyBackground } from '../components/home/SkyBackground'
 import { Marquee } from '../components/home/Marquee'
 import { ServicesShowcase } from '../components/home/ServicesShowcase'
-import { HeroDemo } from '../components/hero/HeroDemo'
+import { HeroVideo } from '../components/hero/HeroVideo'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import { Button } from '../components/ui/Button'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
+import { isMobileViewport } from '../lib/nativeScroll'
 import { markHomeSectionsReady } from '../lib/homeSectionsReady'
 import { isServicesShowcaseReady, onServicesShowcaseReady } from '../lib/servicesShowcaseReady'
 import { initHomeSectionReveals } from '../animations/homeSectionReveal'
@@ -81,18 +82,21 @@ export function Home() {
       started = true
 
       ctx = gsap.context(() => {
-        // Day → night sky scrub
-        ScrollTrigger.create({
-          trigger: root,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 0.8,
-          onUpdate: (self) => {
-            const p = self.progress
-            document.documentElement.style.setProperty('--sky-progress', String(p))
-            document.documentElement.setAttribute('data-theme', p > 0.55 ? 'night' : 'day')
-          },
-        })
+        const isDesktop = !isMobileViewport()
+
+        if (isDesktop) {
+          ScrollTrigger.create({
+            trigger: root,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0.8,
+            onUpdate: (self) => {
+              const p = self.progress
+              document.documentElement.style.setProperty('--sky-progress', String(p))
+              document.documentElement.setAttribute('data-theme', p > 0.55 ? 'night' : 'day')
+            },
+          })
+        }
 
         const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } })
         heroTl
@@ -102,7 +106,7 @@ export function Home() {
           .fromTo('.hero__visual', { scale: 0.92, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, clearProps: 'transform,opacity' }, '-=0.8')
           .fromTo('.hero__scroll-hint', { opacity: 0 }, { opacity: 1, duration: 0.6, clearProps: 'opacity' }, '-=0.3')
 
-        if (heroRef.current) {
+        if (isDesktop && heroRef.current) {
           gsap.to('.hero__content', {
             y: -60,
             ease: 'none',
@@ -205,7 +209,7 @@ export function Home() {
           </div>
           <div className="hero__visual">
             <div className="hero__visual-ring" />
-            <HeroDemo />
+            <HeroVideo />
           </div>
         </div>
         <div className="hero__scroll-hint">

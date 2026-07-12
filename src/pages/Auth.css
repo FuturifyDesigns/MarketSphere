@@ -323,15 +323,23 @@
 @media (max-width: 900px) {
   .auth-page {
     height: auto;
+    min-height: 100svh;
     min-height: 100dvh;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow-x: clip;
+    overflow-y: visible;
+    touch-action: pan-y;
+  }
+
+  .auth-page__bg {
+    height: 100svh;
+    height: 100dvh;
   }
 
   .auth-shell {
     grid-template-columns: 1fr;
-    min-height: 100dvh;
+    min-height: 0;
     height: auto;
+    overflow: visible;
   }
 
   .auth-shell__aside {
@@ -340,13 +348,14 @@
 
   .auth-shell__form-wrap {
     align-items: flex-start;
-    padding: calc(var(--nav-height) + 0.5rem) 0.875rem 1.25rem;
-    min-height: 100dvh;
+    padding: 1rem 0.875rem 1.5rem;
+    min-height: 0;
   }
 
   .auth-shell--centered {
-    padding: calc(var(--nav-height) + 0.75rem) 0.875rem 1.25rem;
-    min-height: 100dvh;
+    padding: 1rem 0.875rem 1.5rem;
+    min-height: 0;
+    align-items: flex-start;
   }
 
   .auth-card {
@@ -361,6 +370,12 @@
 
   .auth-form {
     gap: 0.625rem;
+  }
+
+  .auth-form .input-group input,
+  .auth-form .input-group select,
+  .auth-form .input-group textarea {
+    font-size: 16px;
   }
 
   .auth-form__strength {

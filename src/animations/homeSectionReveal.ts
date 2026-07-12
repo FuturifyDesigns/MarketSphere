@@ -24,6 +24,115 @@ function setSplitItemInitial(item: HTMLElement, index: number) {
   })
 }
 
+function buildMobileShowcaseSection(section: HTMLElement) {
+  const intro = section.querySelector<HTMLElement>('.home-showcase__intro')
+  const stage = section.querySelector<HTMLElement>('.home-showcase__stage')
+  const items = gsap.utils.toArray<HTMLElement>('.home-section__item', section)
+  const footer = section.querySelector<HTMLElement>('.home-section__footer')
+
+  if (intro) {
+    gsap.set(intro, { autoAlpha: 1, visibility: 'visible' })
+    gsap.from(intro.children, {
+      opacity: 0,
+      y: 20,
+      duration: 0.5,
+      stagger: 0.06,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 88%',
+        once: true,
+      },
+    })
+  }
+
+  if (stage) {
+    gsap.set(stage, { autoAlpha: 1, visibility: 'visible' })
+  }
+
+  items.forEach((item) => {
+    gsap.from(item, {
+      opacity: 0,
+      y: 28,
+      duration: 0.5,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: item,
+        start: 'top 90%',
+        once: true,
+      },
+    })
+  })
+
+  if (footer) {
+    gsap.from(footer, {
+      opacity: 0,
+      y: 16,
+      duration: 0.45,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: footer,
+        start: 'top 92%',
+        once: true,
+      },
+    })
+  }
+}
+
+function buildMobileBelowFoldSection(section: HTMLElement) {
+  const label = section.querySelector<HTMLElement>('.home-section__label')
+  const titleWord = section.querySelector<HTMLElement>('.home-section__title-word')
+  const title = section.querySelector<HTMLElement>('.home-section__title')
+  const lead = section.querySelector<HTMLElement>('.home-section__lead')
+  const items = gsap.utils.toArray<HTMLElement>('.home-section__item', section)
+  const footer = section.querySelector<HTMLElement>('.home-section__footer')
+  const titleEl = titleWord || title
+
+  const headerTargets = [label, titleEl, lead].filter(Boolean) as HTMLElement[]
+  if (headerTargets.length) {
+    gsap.from(headerTargets, {
+      opacity: 0,
+      y: 20,
+      duration: 0.5,
+      stagger: 0.08,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: section,
+        start: 'top 88%',
+        once: true,
+      },
+    })
+  }
+
+  items.forEach((item) => {
+    gsap.from(item, {
+      opacity: 0,
+      y: 24,
+      duration: 0.5,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: item,
+        start: 'top 90%',
+        once: true,
+      },
+    })
+  })
+
+  if (footer) {
+    gsap.from(footer, {
+      opacity: 0,
+      y: 16,
+      duration: 0.45,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: footer,
+        start: 'top 92%',
+        once: true,
+      },
+    })
+  }
+}
+
 function buildBelowFoldScrollSection(section: HTMLElement, config: SectionConfig) {
   const label = section.querySelector<HTMLElement>('.home-section__label')
   const titleWord = section.querySelector<HTMLElement>('.home-section__title-word')
@@ -229,9 +338,24 @@ function buildShowcaseSection(section: HTMLElement, config: SectionConfig) {
   })
 }
 
-function setupMarquee(root: HTMLElement) {
+function setupMarquee(root: HTMLElement, mobile = false) {
   const marquee = root.querySelector<HTMLElement>('.home-marquee')
   if (!marquee) return
+
+  if (mobile) {
+    gsap.from(marquee, {
+      opacity: 0,
+      y: 16,
+      duration: 0.5,
+      ease: FADE_EASE,
+      scrollTrigger: {
+        trigger: marquee,
+        start: 'top 92%',
+        once: true,
+      },
+    })
+    return
+  }
 
   gsap.set(marquee, { opacity: 0, y: 20 })
   gsap.to(marquee, {
@@ -272,13 +396,8 @@ export function initHomeSectionReveals(root: HTMLElement): (() => void) | undefi
   })
 
   mm.add('(max-width: 900px)', () => {
-    runShowcase({
-      itemDuration: 0.8,
-      gap: 0.16,
-      scrollMultiplier: 0.6,
-      perItem: 0.5,
-      scrub: 1.2,
-    })
+    showcaseSections.forEach((section) => buildMobileShowcaseSection(section))
+    setupMarquee(root, true)
   })
 
   return () => mm.revert()
@@ -320,12 +439,8 @@ export function initBelowFoldHomeSections(root: HTMLElement): (() => void) | und
   })
 
   mm.add('(max-width: 900px)', () => {
-    run({
-      itemDuration: 0.8,
-      gap: 0.16,
-      scrollMultiplier: 0.6,
-      perItem: 0.5,
-      scrub: 1.2,
+    sections.forEach((section) => {
+      gsap.context(() => buildMobileBelowFoldSection(section), section)
     })
   })
 

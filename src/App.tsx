@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
 import { preloadAuthCovers } from './lib/preloadAuthCovers'
+import { preloadCriticalAssets } from './lib/preloadCriticalAssets'
 import { ScrollToTop } from './components/layout/ScrollToTop'
 import { SiteIntro } from './components/intro/SiteIntro'
 import { Layout } from './components/layout/Layout'
@@ -24,6 +25,7 @@ import { AdminDashboard } from './pages/dashboard/AdminDashboard'
 
 export default function App() {
   useEffect(() => {
+    preloadCriticalAssets()
     preloadAuthCovers()
   }, [])
 

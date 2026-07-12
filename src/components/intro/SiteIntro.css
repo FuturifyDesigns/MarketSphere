@@ -35,15 +35,16 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 2rem;
-  max-width: 520px;
+  padding: clamp(1.5rem, 5vw, 2rem);
+  max-width: min(640px, 92vw);
+  width: 100%;
 }
 
 .site-intro__logo-wrap {
   position: relative;
-  width: 96px;
-  height: 96px;
-  margin-bottom: 2rem;
+  width: clamp(72px, 18vw, 96px);
+  height: clamp(72px, 18vw, 96px);
+  margin-bottom: clamp(1.25rem, 4vw, 2rem);
 }
 
 .site-intro__ring {
@@ -63,21 +64,44 @@
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 12px 40px rgba(201, 162, 75, 0.35));
+  opacity: 0.15;
+  transition: opacity 0.3s ease;
+}
+
+.site-intro__logo-wrap--ready .site-intro__logo {
+  opacity: 1;
 }
 
 .site-intro__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 6vw, 3.5rem);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-day);
-  line-height: 1;
-  margin-bottom: 1.25rem;
+  line-height: 0.95;
+  margin-bottom: clamp(1rem, 3vw, 1.35rem);
+  width: 100%;
+}
+
+.site-intro__brand-line {
+  display: block;
+  font-size: clamp(2.5rem, 11vw, 4.25rem);
+  width: 100%;
+}
+
+.site-intro__brand-line--accent {
+  font-size: clamp(2.75rem, 12vw, 4.75rem);
+  color: var(--color-gold);
+  letter-spacing: 0.08em;
+  text-shadow: 0 4px 32px rgba(201, 162, 75, 0.35);
 }
 
 .site-intro__line {
-  width: 72px;
+  width: min(120px, 28vw);
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
   transform-origin: center;
@@ -86,12 +110,14 @@
 
 .site-intro__tagline {
   font-family: var(--font-ui);
-  font-size: 0.8125rem;
+  font-size: clamp(0.75rem, 2.8vw, 0.875rem);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(250, 248, 244, 0.62);
-  margin-bottom: 2.5rem;
+  margin-bottom: clamp(1.75rem, 5vw, 2.5rem);
+  max-width: 28ch;
+  line-height: 1.5;
 }
 
 .site-intro__progress {
@@ -121,4 +147,24 @@
 
 body.intro-active {
   overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .site-intro__brand-line {
+    font-size: clamp(2.15rem, 10.5vw, 2.75rem);
+  }
+
+  .site-intro__brand-line--accent {
+    font-size: clamp(2.35rem, 11.5vw, 3rem);
+  }
+
+  .site-intro__logo-wrap {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-intro__ring {
+    animation: none;
+  }
 }

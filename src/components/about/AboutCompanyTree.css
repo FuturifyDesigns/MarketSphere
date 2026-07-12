@@ -489,6 +489,54 @@
 }
 
 @media (max-width: 900px) {
+  .about-tree__pin {
+    min-height: auto;
+    display: block;
+    padding: calc(var(--nav-height) + 1rem) 0 2rem;
+  }
+
+  .about-tree__canvas {
+    position: relative;
+    height: auto;
+    max-height: none;
+  }
+
+  .about-tree__steps {
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 0 1rem;
+  }
+
+  .about-tree__step {
+    position: relative;
+    inset: auto;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .about-tree__node {
+    max-height: none;
+    width: 100%;
+  }
+
+  .about-tree__card {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .about-tree__card-scroll {
+    overflow: visible;
+    max-height: none;
+    padding-right: 0;
+  }
+
+  .about-tree__svg {
+    display: none;
+  }
+
   .about-tree__spine-hub {
     left: 1.35rem;
     transform: translateY(-50%);
@@ -534,7 +582,7 @@
 
 @media (max-width: 520px) {
   .about-tree__canvas {
-    height: calc(100dvh - var(--nav-height) - 1.5rem);
-    max-height: calc(100dvh - var(--nav-height) - 1.5rem);
+    height: auto;
+    max-height: none;
   }
 }

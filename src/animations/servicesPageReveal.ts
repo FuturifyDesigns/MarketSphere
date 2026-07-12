@@ -1,6 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
+import { isMobileViewport } from '../lib/nativeScroll'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -19,6 +20,47 @@ function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: st
   )
 }
 
+function initMobileServicesPage(root: HTMLElement) {
+  const intro = root.querySelector<HTMLElement>('.svc-page__intro')
+  const slides = gsap.utils.toArray<HTMLElement>('.svc-page__slide', root)
+
+  gsap.set(slides, { opacity: 1, pointerEvents: 'auto', visibility: 'visible' })
+  gsap.set(root.querySelectorAll('.svc-page__media, .svc-page__copy > *'), {
+    opacity: 1,
+    y: 0,
+    clearProps: 'transform',
+  })
+
+  if (intro) {
+    gsap.from(intro.children, {
+      opacity: 0,
+      y: 24,
+      duration: 0.55,
+      stagger: 0.07,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: intro,
+        start: 'top 88%',
+        once: true,
+      },
+    })
+  }
+
+  slides.forEach((slide) => {
+    gsap.from(slide, {
+      opacity: 0,
+      y: 32,
+      duration: 0.5,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: slide,
+        start: 'top 90%',
+        once: true,
+      },
+    })
+  })
+}
+
 export function initServicesPageShowcase(root: HTMLElement) {
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__intro'), {
@@ -32,6 +74,14 @@ export function initServicesPageShowcase(root: HTMLElement) {
       clearProps: 'transform',
     })
     return () => {}
+  }
+
+  if (isMobileViewport()) {
+    const ctx = gsap.context(() => {
+      initMobileServicesPage(root)
+      flushScrollRefresh()
+    }, root)
+    return () => ctx.revert()
   }
 
   const ctx = gsap.context(() => {

@@ -11,9 +11,11 @@ import {
 import './SiteIntro.css'
 
 const INTRO_FAILSAFE_MS = 3800
+const base = import.meta.env.BASE_URL
 
 export function SiteIntro() {
   const [done, setDone] = useState(() => hasSeenIntro())
+  const [logoReady, setLogoReady] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const finishedRef = useRef(false)
 
@@ -66,9 +68,9 @@ export function SiteIntro() {
           '-=0.5',
         )
         .fromTo(
-          '.site-intro__brand',
-          { y: 36, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.75, ease: 'power4.out' },
+          '.site-intro__brand-line',
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.1, ease: 'power4.out' },
           '-=0.35',
         )
         .fromTo(
@@ -125,15 +127,22 @@ export function SiteIntro() {
       <div className="site-intro__bg" />
       <div className="site-intro__glow" />
       <div className="site-intro__panel">
-        <div className="site-intro__logo-wrap">
+        <div className={`site-intro__logo-wrap ${logoReady ? 'site-intro__logo-wrap--ready' : ''}`}>
           <div className="site-intro__ring" />
           <img
-            src={`${import.meta.env.BASE_URL}logo.png`}
+            src={`${base}logo.png`}
             alt=""
             className="site-intro__logo"
+            decoding="async"
+            fetchPriority="high"
+            loading="eager"
+            onLoad={() => setLogoReady(true)}
           />
         </div>
-        <h1 className="site-intro__brand">{COMPANY.shortName}</h1>
+        <h1 className="site-intro__brand" aria-label={COMPANY.shortName}>
+          <span className="site-intro__brand-line">Market Sphere</span>
+          <span className="site-intro__brand-line site-intro__brand-line--accent">Group</span>
+        </h1>
         <div className="site-intro__line" />
         <p className="site-intro__tagline">{COMPANY.tagline}</p>
         <div className="site-intro__progress">

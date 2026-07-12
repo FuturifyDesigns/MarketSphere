@@ -1,5 +1,6 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { isMobileViewport } from '../lib/nativeScroll'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -7,12 +8,75 @@ gsap.registerPlugin(ScrollTrigger)
 const REVEAL_EASE = 'power2.out'
 const SCRUB = 1.35
 
+function initMobileSectionReveal(section: HTMLElement, triggerId: string): (() => void) | undefined {
+  const ctx = gsap.context(() => {
+    const label = section.querySelector<HTMLElement>('.home-section__label')
+    const titleWord = section.querySelector<HTMLElement>('.home-section__title-word')
+    const title = section.querySelector<HTMLElement>('.home-section__title')
+    const lead = section.querySelector<HTMLElement>('.home-section__lead')
+    const items = gsap.utils.toArray<HTMLElement>('.home-section__item', section)
+    const footer = section.querySelector<HTMLElement>('.home-section__footer')
+    const titleEl = titleWord || title
+
+    const headerTargets = [label, titleEl, lead].filter(Boolean) as HTMLElement[]
+    if (headerTargets.length) {
+      gsap.from(headerTargets, {
+        opacity: 0,
+        y: 20,
+        duration: 0.5,
+        stagger: 0.08,
+        ease: REVEAL_EASE,
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 88%',
+          once: true,
+          id: triggerId,
+        },
+      })
+    }
+
+    items.forEach((item) => {
+      gsap.from(item, {
+        opacity: 0,
+        y: 24,
+        duration: 0.5,
+        ease: REVEAL_EASE,
+        scrollTrigger: {
+          trigger: item,
+          start: 'top 90%',
+          once: true,
+        },
+      })
+    })
+
+    if (footer) {
+      gsap.from(footer, {
+        opacity: 0,
+        y: 16,
+        duration: 0.45,
+        ease: REVEAL_EASE,
+        scrollTrigger: {
+          trigger: footer,
+          start: 'top 92%',
+          once: true,
+        },
+      })
+    }
+  }, section)
+
+  return () => ctx.revert()
+}
+
 function initSectionScrollReveal(
   section: HTMLElement,
   triggerId: string,
   scrollMultiplier = 1.15,
 ): (() => void) | undefined {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+
+  if (isMobileViewport()) {
+    return initMobileSectionReveal(section, triggerId)
+  }
 
   ScrollTrigger.getById(triggerId)?.kill()
 

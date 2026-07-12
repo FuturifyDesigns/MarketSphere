@@ -75,6 +75,11 @@
 @media (max-width: 900px) {
   .about-hero__inner {
     grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .about-hero__content {
+    align-items: center;
   }
 
   .about-hero__logo-wrap {
@@ -86,6 +91,11 @@
   .about-hero__logo {
     width: min(220px, 58vw);
     height: min(220px, 58vw);
+  }
+
+  .about-hero__logo,
+  .about-hero__logo-glow {
+    animation: none;
   }
 }
 

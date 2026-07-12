@@ -31,6 +31,12 @@
   to { transform: translateX(-50%); }
 }
 
+@media (max-width: 900px) {
+  .marquee__track {
+    animation-duration: 80s;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee__track {
     animation: none;

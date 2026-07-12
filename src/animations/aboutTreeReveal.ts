@@ -1,6 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
+import { isMobileViewport } from '../lib/nativeScroll'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -122,6 +123,28 @@ function debounce(fn: () => void, ms: number) {
   }
 }
 
+function initMobileAboutTree(root: HTMLElement) {
+  const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
+
+  gsap.set(steps, { autoAlpha: 1, pointerEvents: 'auto' })
+  gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 1, y: 0 })
+  gsap.set(root.querySelectorAll('.about-tree__card-scroll'), { opacity: 1 })
+
+  steps.forEach((step) => {
+    gsap.from(step, {
+      opacity: 0,
+      y: 28,
+      duration: 0.5,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: step,
+        start: 'top 90%',
+        once: true,
+      },
+    })
+  })
+}
+
 export function initAboutTreeAnimation(root: HTMLElement) {
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.about-tree__step'), { autoAlpha: 1, pointerEvents: 'auto' })
@@ -136,6 +159,14 @@ export function initAboutTreeAnimation(root: HTMLElement) {
       strokeDashoffset: 0,
     })
     return () => {}
+  }
+
+  if (isMobileViewport()) {
+    const ctx = gsap.context(() => {
+      initMobileAboutTree(root)
+      scheduleScrollRefresh()
+    }, root)
+    return () => ctx.revert()
   }
 
   let resizeHandler: (() => void) | undefined

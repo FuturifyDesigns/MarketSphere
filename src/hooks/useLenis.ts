@@ -3,23 +3,45 @@ import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
+import { shouldUseNativeScroll } from '../lib/nativeScroll'
 
 gsap.registerPlugin(ScrollTrigger)
 
 let lenisInstance: Lenis | null = null
+let usingNativeScroll = shouldUseNativeScroll()
 
 export function getLenis() {
   return lenisInstance
 }
 
+export function isUsingNativeScroll() {
+  return usingNativeScroll
+}
+
 export function useLenis() {
   useEffect(() => {
+    usingNativeScroll = shouldUseNativeScroll()
+    ScrollTrigger.config({
+      ignoreMobileResize: true,
+      limitCallbacks: true,
+    })
+
+    if (usingNativeScroll) {
+      document.documentElement.classList.remove('lenis')
+      scheduleScrollRefresh()
+      return () => {
+        lenisInstance = null
+      }
+    }
+
+    document.documentElement.classList.add('lenis')
+
     const lenis = new Lenis({
       duration: 1.05,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       syncTouch: false,
-      touchMultiplier: 1.2,
+      touchMultiplier: 1,
       prevent: (node) => {
         if (!(node instanceof HTMLElement)) return false
         return Boolean(node.closest('[data-lenis-prevent]'))
@@ -60,6 +82,7 @@ export function useLenis() {
       ScrollTrigger.removeEventListener('refresh', onRefresh)
       lenis.destroy()
       lenisInstance = null
+      document.documentElement.classList.remove('lenis')
     }
   }, [])
 }

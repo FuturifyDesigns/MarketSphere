@@ -145,11 +145,18 @@
     top: var(--nav-height);
     left: 0;
     right: 0;
+    z-index: 99;
     padding: 1rem;
     transform: translateY(-120%);
     opacity: 0;
     pointer-events: none;
     transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    background: color-mix(in srgb, var(--bg-primary) 96%, transparent);
+    backdrop-filter: blur(16px) saturate(1.4);
+    border-bottom: 1px solid var(--border-subtle);
+    max-height: calc(100dvh - var(--nav-height));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar__nav--open {
@@ -174,5 +181,9 @@
 
   .navbar__dash {
     display: none;
+  }
+
+  .navbar__name {
+    max-width: 11rem;
   }
 }

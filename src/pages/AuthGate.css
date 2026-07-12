@@ -385,13 +385,83 @@
   max-width: 36ch;
 }
 
+@media (max-width: 900px) {
+  .auth-gate {
+    min-height: 100svh;
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: auto;
+    justify-content: flex-start;
+    padding: 1.25rem 1rem 1.5rem;
+    touch-action: pan-y;
+  }
+
+  .auth-gate__bg--base::before,
+  .auth-gate__bg--base::after {
+    animation: none;
+    filter: blur(48px);
+  }
+
+  .auth-gate__card {
+    aspect-ratio: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .auth-gate__divider {
+    display: none;
+  }
+
+  .auth-gate__half {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    min-height: 150px;
+    clip-path: none;
+    overflow: visible;
+  }
+
+  .auth-gate__half--signin {
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .auth-gate__panel {
+    position: relative;
+    inset: auto !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    align-items: center !important;
+    text-align: center !important;
+    max-width: none;
+    width: 100%;
+    padding: 1.35rem 1rem;
+  }
+
+  .auth-gate__panel--hover {
+    display: none;
+  }
+
+  .auth-gate__panel--default {
+    opacity: 1;
+    transform: none;
+  }
+
+  .auth-gate__icon {
+    animation: none;
+  }
+}
+
 @media (max-width: 520px) {
   .auth-gate__stack {
     width: min(100%, 420px);
   }
 
   .auth-gate__card {
-    aspect-ratio: 0.95;
+    border-radius: 16px;
   }
 
   .auth-gate__brand {

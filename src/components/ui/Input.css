@@ -56,7 +56,10 @@
   color: var(--text-secondary);
 }
 
-textarea.input-field {
-  min-height: 120px;
-  resize: vertical;
+@media (max-width: 900px) {
+  .input-group input,
+  .input-group textarea,
+  .input-group select {
+    font-size: 16px;
+  }
 }

@@ -14,10 +14,8 @@ export function Layout() {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual'
     }
-    document.documentElement.classList.add('lenis')
     document.documentElement.setAttribute('data-theme', 'day')
     resetIntroActiveClass()
-    return () => document.documentElement.classList.remove('lenis')
   }, [])
 
   return (

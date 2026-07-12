@@ -1,6 +1,7 @@
 /* ─── Hero ─── */
 .hero {
-  min-height: clamp(480px, 86vh, 820px);
+  min-height: clamp(480px, 86svh, 820px);
+  min-height: clamp(480px, 86dvh, 820px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -97,9 +98,10 @@
   align-items: center;
 }
 
-.hero__visual .hero-demo {
-  max-width: min(300px, 100%);
-  transform: scale(0.92);
+.hero__visual .hero-video {
+  position: relative;
+  z-index: 1;
+  transform: scale(0.96);
   transform-origin: center center;
 }
 
@@ -610,6 +612,67 @@
 }
 
 @media (max-width: 900px) {
+  .hero {
+    min-height: auto;
+    padding-bottom: 3.5rem;
+  }
+
+  .hero__welcome-eyebrow,
+  .hero__welcome-brand {
+    white-space: normal;
+  }
+
+  .hero__visual-ring {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .hero__visual .hero-video {
+    transform: none;
+    max-width: min(300px, 90vw);
+  }
+
+  .hero__scroll-hint {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-top: 1.5rem;
+    animation: none;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .home-showcase__pin {
+    position: relative;
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+    display: block;
+    padding-bottom: 2rem;
+  }
+
+  .home-showcase__intro {
+    position: relative;
+    inset: auto;
+    padding: calc(var(--nav-height) + 1.5rem) 1.25rem 1.5rem;
+    pointer-events: auto;
+  }
+
+  .home-showcase__stage {
+    position: relative;
+    inset: auto;
+    padding: 0 1.25rem 1rem;
+  }
+
   .hero__inner {
     grid-template-columns: 1fr;
     text-align: center;
@@ -650,5 +713,34 @@
   .service-panel {
     width: 100%;
     min-height: auto;
+  }
+
+  .providers-grid,
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-panel {
+    padding: 2rem 1.25rem;
+  }
+
+  .cta-panel__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cta-panel__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .home-section {
+    padding-top: 2.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .section--vision .home-showcase__mega--vision .home-section__title-word {
+    font-size: clamp(2rem, 9vw, 2.85rem);
+    max-width: none;
   }
 }
