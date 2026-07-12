@@ -1,7 +1,8 @@
-import { useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, UserPlus, ArrowRight } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
+import { preloadAuthCovers } from '../lib/preloadAuthCovers'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './AuthGate.css'
@@ -12,6 +13,10 @@ export function AuthGate() {
   const pageRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   useAuthPageEnter(pageRef)
+
+  useEffect(() => {
+    preloadAuthCovers()
+  }, [])
 
   const gateStyle = {
     '--auth-cover-signin': `url(${base}auth/sign-in.png)`,

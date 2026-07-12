@@ -1,9 +1,10 @@
-import { useState, useRef, type CSSProperties, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { COMPANY } from '../lib/constants'
+import { AuthPageCover } from '../components/auth/AuthPageCover'
 import {
   clearFieldError,
   collectErrors,
@@ -61,17 +62,9 @@ export function Login() {
     }
   }
 
-  const coverStyle = {
-    '--auth-cover': `url(${import.meta.env.BASE_URL}auth/sign-in.png)`,
-  } as CSSProperties
-
   return (
     <div className="auth-page auth-page--signin" ref={pageRef}>
-      <div
-        className="auth-page__bg auth-page__bg--cover auth-theme-bg--signin"
-        style={coverStyle}
-        aria-hidden="true"
-      />
+      <AuthPageCover variant="signin" />
       <div className="auth-shell">
         <aside className="auth-shell__aside auth-shell__aside--login">
           <Link to="/" className="auth-shell__brand">
@@ -122,7 +115,9 @@ export function Login() {
                 hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
-              {error && <p className="auth-error" role="alert">{error}</p>}
+              <div className="auth-form__feedback" aria-live="polite">
+                {error ? <p className="auth-error" role="alert">{error}</p> : null}
+              </div>
               <Button type="submit" size="lg" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'} <ArrowRight size={16} />
               </Button>

@@ -1,8 +1,9 @@
-import { useState, useRef, type CSSProperties, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { COMPANY } from '../lib/constants'
+import { AuthPageCover } from '../components/auth/AuthPageCover'
 import {
   clearFieldError,
   collectErrors,
@@ -78,18 +79,10 @@ export function Register() {
     }
   }
 
-  const coverStyle = {
-    '--auth-cover': `url(${import.meta.env.BASE_URL}auth/sign-up.png)`,
-  } as CSSProperties
-
   if (success) {
     return (
       <div className="auth-page auth-page--signup" ref={pageRef}>
-        <div
-          className="auth-page__bg auth-page__bg--cover auth-theme-bg--signup"
-          style={coverStyle}
-          aria-hidden="true"
-        />
+        <AuthPageCover variant="signup" />
         <div className="auth-shell auth-shell--centered">
           <div className="auth-card auth-card--success">
             <div className="auth-card__success-icon" aria-hidden="true">✓</div>
@@ -107,11 +100,7 @@ export function Register() {
 
   return (
     <div className="auth-page auth-page--signup" ref={pageRef}>
-      <div
-        className="auth-page__bg auth-page__bg--cover auth-theme-bg--signup"
-        style={coverStyle}
-        aria-hidden="true"
-      />
+      <AuthPageCover variant="signup" />
       <div className="auth-shell">
         <aside className="auth-shell__aside auth-shell__aside--register">
           <Link to="/" className="auth-shell__brand">
@@ -191,8 +180,12 @@ export function Register() {
                 hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
-              <PasswordStrengthBar password={form.password} />
-              {error && <p className="auth-error" role="alert">{error}</p>}
+              <div className="auth-form__strength">
+                <PasswordStrengthBar password={form.password} />
+              </div>
+              <div className="auth-form__feedback" aria-live="polite">
+                {error ? <p className="auth-error" role="alert">{error}</p> : null}
+              </div>
               <Button type="submit" size="lg" disabled={loading}>
                 {loading ? 'Creating account...' : 'Create Account'} <ArrowRight size={16} />
               </Button>

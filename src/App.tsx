@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
+import { preloadAuthCovers } from './lib/preloadAuthCovers'
 import { ScrollToTop } from './components/layout/ScrollToTop'
 import { SiteIntro } from './components/intro/SiteIntro'
 import { Layout } from './components/layout/Layout'
@@ -22,6 +23,10 @@ import { ProviderDashboard } from './pages/dashboard/ProviderDashboard'
 import { AdminDashboard } from './pages/dashboard/AdminDashboard'
 
 export default function App() {
+  useEffect(() => {
+    preloadAuthCovers()
+  }, [])
+
   useEffect(() => {
     let idleId: number | undefined
     let timeoutId: number | undefined
