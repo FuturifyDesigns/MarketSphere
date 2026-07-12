@@ -10,7 +10,9 @@ import { Textarea } from '../../components/ui/Textarea'
 import {
   clearFieldError,
   collectErrors,
+  FIELD_HINTS,
   hasErrors,
+  sanitizePhone,
   validateBusinessName,
   validateDescription,
   validateLocation,
@@ -310,6 +312,7 @@ export function ProviderDashboard() {
                   setForm({ ...form, business_name: e.target.value })
                   setProfileErrors((prev) => clearFieldError(prev, 'business_name'))
                 }}
+                hint={FIELD_HINTS.businessName}
                 error={profileErrors.business_name}
               />
               <Textarea
@@ -320,6 +323,7 @@ export function ProviderDashboard() {
                   setForm({ ...form, description: e.target.value })
                   setProfileErrors((prev) => clearFieldError(prev, 'description'))
                 }}
+                hint={FIELD_HINTS.description}
                 error={profileErrors.description}
               />
               <Input
@@ -329,6 +333,7 @@ export function ProviderDashboard() {
                   setForm({ ...form, location: e.target.value })
                   setProfileErrors((prev) => clearFieldError(prev, 'location'))
                 }}
+                hint={FIELD_HINTS.location}
                 error={profileErrors.location}
               />
               <Input
@@ -339,16 +344,19 @@ export function ProviderDashboard() {
                   setForm({ ...form, contact_email: e.target.value })
                   setProfileErrors((prev) => clearFieldError(prev, 'contact_email'))
                 }}
+                hint={FIELD_HINTS.contactEmail}
                 error={profileErrors.contact_email}
               />
               <Input
                 label="Contact Phone"
                 type="tel"
+                inputMode="tel"
                 value={form.contact_phone}
                 onChange={(e) => {
-                  setForm({ ...form, contact_phone: e.target.value })
+                  setForm({ ...form, contact_phone: sanitizePhone(e.target.value) })
                   setProfileErrors((prev) => clearFieldError(prev, 'contact_phone'))
                 }}
+                hint={FIELD_HINTS.contactPhone}
                 error={profileErrors.contact_phone}
               />
               {saveError && tab === 'profile' && <p className="upload-error" role="alert">{saveError}</p>}
@@ -380,6 +388,7 @@ export function ProviderDashboard() {
                     setNewService({ ...newService, title: e.target.value })
                     setServiceErrors((prev) => clearFieldError(prev, 'title'))
                   }}
+                  hint={FIELD_HINTS.serviceTitle}
                   error={serviceErrors.title}
                 />
                 <div className="input-group">
@@ -401,6 +410,7 @@ export function ProviderDashboard() {
                     setNewService({ ...newService, description: e.target.value })
                     setServiceErrors((prev) => clearFieldError(prev, 'description'))
                   }}
+                  hint={FIELD_HINTS.serviceDescription}
                   error={serviceErrors.description}
                 />
                 {saveError && tab === 'services' && <p className="upload-error" role="alert">{saveError}</p>}

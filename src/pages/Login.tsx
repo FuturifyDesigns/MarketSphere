@@ -7,6 +7,7 @@ import { COMPANY } from '../lib/constants'
 import {
   clearFieldError,
   collectErrors,
+  FIELD_HINTS,
   hasErrors,
   validateEmail,
   validatePassword,
@@ -106,6 +107,7 @@ export function Login() {
                   setEmail(e.target.value)
                   setFieldErrors((prev) => clearFieldError(prev, 'email'))
                 }}
+                hint={FIELD_HINTS.email}
                 error={fieldErrors.email}
               />
               <Input
@@ -117,6 +119,7 @@ export function Login() {
                   setPassword(e.target.value)
                   setFieldErrors((prev) => clearFieldError(prev, 'password'))
                 }}
+                hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
               {error && <p className="auth-error" role="alert">{error}</p>}

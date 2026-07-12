@@ -8,11 +8,15 @@ import { Textarea } from '../../components/ui/Textarea'
 import {
   clearFieldError,
   collectErrors,
+  FIELD_HINTS,
   hasErrors,
+  sanitizePersonName,
+  sanitizeSlug,
   slugify,
   validateCategoryName,
   validateClientName,
   validateDescription,
+  validateServiceType,
   validateSlug,
   validateTestimonialContent,
   type FieldErrors,
@@ -108,7 +112,7 @@ export function AdminDashboard() {
 
     const errors = collectErrors<TestimonialFields>([
       ['client_name', validateClientName(newTestimonial.client_name)],
-      ['service_type', newTestimonial.service_type.trim().length > 80 ? 'Service type is too long' : null],
+      ['service_type', validateServiceType(newTestimonial.service_type)],
       ['content', validateTestimonialContent(newTestimonial.content)],
     ])
     setTestimonialErrors(errors)
@@ -286,15 +290,17 @@ export function AdminDashboard() {
                 }))
                 setCategoryErrors((prev) => clearFieldError(prev, 'name'))
               }}
+              hint={FIELD_HINTS.categoryName}
               error={categoryErrors.name}
             />
             <Input
               label="Slug"
               value={newCategory.slug}
               onChange={(e) => {
-                setNewCategory({ ...newCategory, slug: e.target.value })
+                setNewCategory({ ...newCategory, slug: sanitizeSlug(e.target.value) })
                 setCategoryErrors((prev) => clearFieldError(prev, 'slug'))
               }}
+              hint={FIELD_HINTS.categorySlug}
               error={categoryErrors.slug}
             />
             <Textarea
@@ -305,6 +311,7 @@ export function AdminDashboard() {
                 setNewCategory({ ...newCategory, description: e.target.value })
                 setCategoryErrors((prev) => clearFieldError(prev, 'description'))
               }}
+              hint={FIELD_HINTS.categoryDescription}
               error={categoryErrors.description}
             />
             {formError && tab === 'categories' && <p className="upload-error" role="alert">{formError}</p>}
@@ -333,9 +340,10 @@ export function AdminDashboard() {
               label="Client Name"
               value={newTestimonial.client_name}
               onChange={(e) => {
-                setNewTestimonial({ ...newTestimonial, client_name: e.target.value })
+                setNewTestimonial({ ...newTestimonial, client_name: sanitizePersonName(e.target.value) })
                 setTestimonialErrors((prev) => clearFieldError(prev, 'client_name'))
               }}
+              hint={FIELD_HINTS.clientName}
               error={testimonialErrors.client_name}
             />
             <Input
@@ -345,6 +353,7 @@ export function AdminDashboard() {
                 setNewTestimonial({ ...newTestimonial, service_type: e.target.value })
                 setTestimonialErrors((prev) => clearFieldError(prev, 'service_type'))
               }}
+              hint={FIELD_HINTS.serviceType}
               error={testimonialErrors.service_type}
             />
             <Textarea
@@ -355,6 +364,7 @@ export function AdminDashboard() {
                 setNewTestimonial({ ...newTestimonial, content: e.target.value })
                 setTestimonialErrors((prev) => clearFieldError(prev, 'content'))
               }}
+              hint={FIELD_HINTS.testimonialContent}
               error={testimonialErrors.content}
             />
             {formError && tab === 'testimonials' && <p className="upload-error" role="alert">{formError}</p>}

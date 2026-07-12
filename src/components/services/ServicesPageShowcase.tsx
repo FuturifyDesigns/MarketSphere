@@ -65,8 +65,14 @@ export function ServicesPageShowcase() {
               <article
                 key={service.title}
                 className={`svc-page__slide ${isRight ? 'svc-page__slide--right' : 'svc-page__slide--left'}`}
-                style={{ '--svc-accent': service.accent } as CSSProperties}
+                style={
+                  {
+                    '--svc-accent': service.accent,
+                    '--svc-gradient': service.gradient,
+                  } as CSSProperties
+                }
               >
+                <div className="svc-page__slide-bg" aria-hidden="true" />
                 <div className="svc-page__slide-inner container">
                   <div className="svc-page__media-wrap">
                     <div className="svc-page__media-glow" aria-hidden="true" />

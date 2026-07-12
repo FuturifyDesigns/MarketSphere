@@ -7,9 +7,24 @@
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.svc-page__slide-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--svc-gradient, var(--bg-primary));
+  pointer-events: none;
+}
+
+.svc-page__slide-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--color-gold) 8%, transparent), transparent 60%),
-    var(--bg-primary);
+    radial-gradient(ellipse 70% 55% at 18% 12%, color-mix(in srgb, var(--svc-accent, var(--color-gold)) 18%, transparent), transparent 62%),
+    radial-gradient(ellipse 60% 50% at 88% 88%, color-mix(in srgb, var(--color-gold) 12%, transparent), transparent 58%);
 }
 
 .svc-page__progress {
@@ -99,6 +114,8 @@
 }
 
 .svc-page__slide-inner {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: clamp(1.5rem, 4vw, 3rem);

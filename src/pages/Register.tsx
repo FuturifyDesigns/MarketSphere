@@ -6,7 +6,10 @@ import { COMPANY } from '../lib/constants'
 import {
   clearFieldError,
   collectErrors,
+  FIELD_HINTS,
   hasErrors,
+  sanitizePersonName,
+  sanitizePhone,
   validateEmail,
   validateName,
   validatePassword,
@@ -15,6 +18,7 @@ import {
 } from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './Auth.css'
@@ -155,7 +159,8 @@ export function Register() {
                 label="Full Name"
                 autoComplete="name"
                 value={form.full_name}
-                onChange={(e) => updateField('full_name', e.target.value)}
+                onChange={(e) => updateField('full_name', sanitizePersonName(e.target.value))}
+                hint={FIELD_HINTS.fullName}
                 error={fieldErrors.full_name}
               />
               <Input
@@ -164,14 +169,17 @@ export function Register() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(e) => updateField('email', e.target.value)}
+                hint={FIELD_HINTS.email}
                 error={fieldErrors.email}
               />
               <Input
                 label="Phone (optional)"
                 type="tel"
+                inputMode="tel"
                 autoComplete="tel"
                 value={form.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
+                onChange={(e) => updateField('phone', sanitizePhone(e.target.value))}
+                hint={FIELD_HINTS.phone}
                 error={fieldErrors.phone}
               />
               <Input
@@ -180,9 +188,10 @@ export function Register() {
                 autoComplete="new-password"
                 value={form.password}
                 onChange={(e) => updateField('password', e.target.value)}
+                hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
-              <p className="auth-hint">At least 8 characters with a letter and a number.</p>
+              <PasswordStrengthBar password={form.password} />
               {error && <p className="auth-error" role="alert">{error}</p>}
               <Button type="submit" size="lg" disabled={loading}>
                 {loading ? 'Creating account...' : 'Create Account'} <ArrowRight size={16} />

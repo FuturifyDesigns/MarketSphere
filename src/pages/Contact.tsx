@@ -5,7 +5,10 @@ import { supabase } from '../lib/supabase'
 import {
   clearFieldError,
   collectErrors,
+  FIELD_HINTS,
   hasErrors,
+  sanitizePersonName,
+  sanitizePhone,
   validateEmail,
   validateMessage,
   validateName,
@@ -187,7 +190,8 @@ export function Contact() {
                     label="Full Name"
                     autoComplete="name"
                     value={form.name}
-                    onChange={(e) => updateField('name', e.target.value)}
+                    onChange={(e) => updateField('name', sanitizePersonName(e.target.value))}
+                    hint={FIELD_HINTS.fullName}
                     error={fieldErrors.name}
                   />
                   <Input
@@ -196,14 +200,17 @@ export function Contact() {
                     autoComplete="email"
                     value={form.email}
                     onChange={(e) => updateField('email', e.target.value)}
+                    hint={FIELD_HINTS.email}
                     error={fieldErrors.email}
                   />
                   <Input
                     label="Phone (optional)"
                     type="tel"
+                    inputMode="tel"
                     autoComplete="tel"
                     value={form.phone}
-                    onChange={(e) => updateField('phone', e.target.value)}
+                    onChange={(e) => updateField('phone', sanitizePhone(e.target.value))}
+                    hint={FIELD_HINTS.phone}
                     error={fieldErrors.phone}
                   />
                   <Textarea
@@ -212,6 +219,7 @@ export function Contact() {
                     rows={5}
                     value={form.message}
                     onChange={(e) => updateField('message', e.target.value)}
+                    hint={FIELD_HINTS.message}
                     error={fieldErrors.message}
                   />
                 </div>

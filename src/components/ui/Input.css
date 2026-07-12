@@ -50,6 +50,12 @@
   color: #c44;
 }
 
+.input-hint {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
 textarea.input-field {
   min-height: 120px;
   resize: vertical;

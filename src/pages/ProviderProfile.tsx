@@ -9,6 +9,7 @@ import { Textarea } from '../components/ui/Textarea'
 import {
   clearFieldError,
   collectErrors,
+  FIELD_HINTS,
   hasErrors,
   validateMessage,
   validateSubject,
@@ -197,6 +198,7 @@ export function ProviderProfile() {
                   setEnquiry({ ...enquiry, subject: e.target.value })
                   setEnquiryErrors((prev) => clearFieldError(prev, 'subject'))
                 }}
+                hint={FIELD_HINTS.subject}
                 error={enquiryErrors.subject}
               />
               <Textarea
@@ -207,6 +209,7 @@ export function ProviderProfile() {
                   setEnquiry({ ...enquiry, message: e.target.value })
                   setEnquiryErrors((prev) => clearFieldError(prev, 'message'))
                 }}
+                hint={FIELD_HINTS.message}
                 error={enquiryErrors.message}
               />
               {enquiryError && <p className="upload-error" role="alert">{enquiryError}</p>}

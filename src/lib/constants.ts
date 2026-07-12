@@ -49,6 +49,8 @@ export const SERVICES = [
     image: 'services/youth-empowerment.png',
     video: 'services/youth-empowerment.mp4',
     accent: '#6B5A3E',
+    gradient:
+      'linear-gradient(145deg, #eef4ff 0%, #f7f0e4 42%, #e8f0ff 100%)',
   },
   {
     title: 'Academic Tuition',
@@ -59,6 +61,8 @@ export const SERVICES = [
     image: 'services/academic-tuition.png',
     video: 'services/academic-tuition.mp4',
     accent: '#4A5D4A',
+    gradient:
+      'linear-gradient(145deg, #edf7f0 0%, #f4f8ef 45%, #e7f2ea 100%)',
   },
   {
     title: 'Platform Marketing',
@@ -69,6 +73,8 @@ export const SERVICES = [
     image: 'services/platform-marketing.png',
     video: 'services/platform-marketing.mp4',
     accent: '#5C5040',
+    gradient:
+      'linear-gradient(145deg, #f3eefc 0%, #f8f2e8 48%, #ebe4ff 100%)',
   },
   {
     title: 'Real Estate Consultancy',
@@ -79,6 +85,8 @@ export const SERVICES = [
     image: 'services/real-estate.png',
     video: 'services/real-estate.mp4',
     accent: '#4A4034',
+    gradient:
+      'linear-gradient(145deg, #f8f1e8 0%, #f3ebe0 50%, #efe4d4 100%)',
   },
   {
     title: 'Entrepreneurship Development',
@@ -89,6 +97,8 @@ export const SERVICES = [
     image: 'services/entrepreneurship.png',
     video: 'services/entrepreneurship.mp4',
     accent: '#1A1510',
+    gradient:
+      'linear-gradient(145deg, #fff6e8 0%, #f7edd8 46%, #efe2c4 100%)',
   },
 ] as const
 
