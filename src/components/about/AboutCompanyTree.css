@@ -490,43 +490,43 @@
 
 @media (max-width: 900px) {
   .about-tree__pin {
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    padding: calc(var(--nav-height) + 0.5rem) 0 1rem;
+    min-height: auto;
+    display: block;
+    padding: 0 0 2rem;
   }
 
   .about-tree__canvas {
     position: relative;
     width: 100%;
-    height: calc(100dvh - var(--nav-height) - 1.5rem);
-    max-height: calc(100dvh - var(--nav-height) - 1.5rem);
+    height: auto;
+    max-height: none;
   }
 
   .about-tree__steps {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    padding: 0 1rem;
   }
 
   .about-tree__step,
   .about-tree__step--left,
   .about-tree__step--right {
-    display: grid;
-    grid-template-columns: 1fr;
-    align-items: center;
-    justify-items: stretch;
-    gap: 0;
-    padding: 0 0.75rem;
+    position: relative;
+    inset: auto;
+    display: block;
+    padding: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .about-tree__node {
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: stretch;
     width: 100%;
     max-width: none;
-    max-height: calc(100dvh - var(--nav-height) - 4rem);
+    max-height: none;
   }
 
   .about-tree__node--root,
@@ -536,17 +536,15 @@
   }
 
   .about-tree__card {
-    max-height: 100%;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
   }
 
   .about-tree__card-scroll {
-    overflow-y: auto;
-    overflow-x: hidden;
-    max-height: calc(100dvh - var(--nav-height) - 11rem);
-    padding-right: 0.25rem;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    overflow: visible;
+    max-height: none;
+    padding-right: 0;
+    touch-action: auto;
   }
 
   .about-tree__svg,

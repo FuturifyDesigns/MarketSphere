@@ -127,6 +127,55 @@ function debounce(fn: () => void, ms: number) {
   }
 }
 
+function runMobileAboutTreeStack(root: HTMLElement) {
+  const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
+
+  gsap.set(steps, {
+    autoAlpha: 1,
+    pointerEvents: 'auto',
+    clearProps: 'transform,x,y,scale',
+  })
+  gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 1, y: 0 })
+  gsap.set(root.querySelectorAll('.about-tree__card-scroll'), {
+    opacity: 1,
+    scrollTop: 0,
+    clearProps: 'transform,y',
+  })
+
+  steps.forEach((step) => {
+    gsap.from(step, {
+      opacity: 0,
+      y: 28,
+      duration: 0.55,
+      ease: REVEAL_EASE,
+      scrollTrigger: {
+        trigger: step,
+        start: 'top 88%',
+        once: true,
+      },
+    })
+
+    const items = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
+    if (items.length) {
+      gsap.from(items, {
+        opacity: 0,
+        y: 16,
+        duration: 0.45,
+        stagger: 0.05,
+        ease: REVEAL_EASE,
+        scrollTrigger: {
+          trigger: step,
+          start: 'top 85%',
+          once: true,
+        },
+      })
+    }
+  })
+
+  scheduleScrollRefresh()
+  return () => {}
+}
+
 function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
   let resizeHandler: (() => void) | undefined
   let treeTrigger: ScrollTrigger | undefined
@@ -316,14 +365,13 @@ export function initAboutTreeAnimation(root: HTMLElement) {
 
   const ctx = gsap.context(() => {
     const mm = gsap.matchMedia()
-    const cleanups: Array<() => void> = []
 
     mm.add('(min-width: 901px)', () => {
-      cleanups.push(runAboutTreePin(root, { scrub: 1.35, scrollUnit: 0.42, enterX: 72 }))
+      return runAboutTreePin(root, { scrub: 1.35, scrollUnit: 0.42, enterX: 72 })
     })
 
     mm.add('(max-width: 900px)', () => {
-      cleanups.push(runAboutTreePin(root, { scrub: 0.7, scrollUnit: 0.58, enterX: 40 }))
+      return runMobileAboutTreeStack(root)
     })
   }, root)
 

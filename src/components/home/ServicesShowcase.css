@@ -427,16 +427,17 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: auto;
   min-height: 0;
   max-height: none;
+  height: auto;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   box-shadow:
     0 16px 40px rgba(74, 63, 47, 0.14),
@@ -452,16 +453,18 @@
 
 .services-showcase__mobile-visual .services-showcase__visual-tilt-wrap {
   width: 100%;
-  min-height: 0;
+  height: auto;
 }
 
 .services-showcase__mobile-visual .services-showcase__visual-poster {
+  display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   max-height: none;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
   margin: 0;
+  border-radius: var(--radius-lg);
 }
 
 .services-showcase__mobile-card .services-showcase__tagline {
