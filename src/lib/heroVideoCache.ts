@@ -21,20 +21,25 @@ function cdnUrl() {
   return `${CDN_BASE}${HERO_VIDEO_PATH}`
 }
 
-function waitForCanPlayThrough(video: HTMLVideoElement, timeoutMs = 12000) {
+function waitForEvent(video: HTMLVideoElement, event: 'canplay' | 'canplaythrough', timeoutMs: number) {
   return new Promise<void>((resolve) => {
     const finish = () => {
       window.clearTimeout(timer)
       resolve()
     }
 
-    if (video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+    if (event === 'canplay' && video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+      finish()
+      return
+    }
+
+    if (event === 'canplaythrough' && video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
       finish()
       return
     }
 
     const timer = window.setTimeout(finish, timeoutMs)
-    video.addEventListener('canplaythrough', finish, { once: true })
+    video.addEventListener(event, finish, { once: true })
     video.addEventListener('error', finish, { once: true })
   })
 }
@@ -67,7 +72,7 @@ async function warmDecoder(src: string) {
   document.body.appendChild(video)
   video.load()
   void video.play().catch(() => {})
-  await waitForCanPlayThrough(video)
+  await waitForEvent(video, 'canplay', 3500)
   video.pause()
   video.currentTime = 0
   video.remove()
@@ -80,6 +85,7 @@ export function preloadHeroVideo() {
 
   preloadPromise = (async () => {
     blobUrl = await fetchToBlob()
+    if (blobUrl) notify()
     await warmDecoder(blobUrl ?? localUrl())
   })()
 

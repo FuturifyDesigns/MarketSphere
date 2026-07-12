@@ -7,8 +7,10 @@ import {
 } from '../../lib/heroVideoCache'
 import './HeroVideo.css'
 
+const base = import.meta.env.BASE_URL
 const CDN_BASE =
   'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
+const POSTER = `${base}logo.png`
 
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -19,7 +21,7 @@ export function HeroVideo() {
     void preloadHeroVideo()
     return subscribeHeroVideoCache(() => {
       setSrc(getHeroVideoSrc())
-      setReady(isHeroVideoReady())
+      if (isHeroVideoReady()) setReady(true)
     })
   }, [])
 
@@ -31,22 +33,25 @@ export function HeroVideo() {
     el.loop = true
     el.playsInline = true
 
+    const markReady = () => setReady(true)
+
     const play = () => {
       if (el.paused) void el.play().catch(() => {})
-      setReady(true)
+      if (el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) markReady()
     }
 
     if (isHeroVideoReady()) play()
+
     void preloadHeroVideo().then(play)
 
     el.addEventListener('loadeddata', play)
     el.addEventListener('canplay', play)
-    el.addEventListener('canplaythrough', play)
+    el.addEventListener('playing', markReady)
 
     return () => {
       el.removeEventListener('loadeddata', play)
       el.removeEventListener('canplay', play)
-      el.removeEventListener('canplaythrough', play)
+      el.removeEventListener('playing', markReady)
     }
   }, [src])
 
@@ -54,10 +59,19 @@ export function HeroVideo() {
     <div className={`hero-video ${ready ? 'hero-video--ready' : ''}`}>
       <div className="hero-video__glow" aria-hidden="true" />
       <div className="hero-video__frame">
+        <img
+          className="hero-video__poster"
+          src={POSTER}
+          alt=""
+          decoding="async"
+          fetchPriority="high"
+          aria-hidden="true"
+        />
         <video
           ref={videoRef}
           className="hero-video__player"
           src={src}
+          poster={POSTER}
           loop
           muted
           autoPlay
@@ -65,7 +79,10 @@ export function HeroVideo() {
           preload="auto"
           aria-label="Market Sphere Group showcase"
           onPlaying={() => setReady(true)}
-          onLoadedData={() => setReady(true)}
+          onLoadedData={() => {
+            const el = videoRef.current
+            if (el && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) setReady(true)
+          }}
           onError={() => {
             if (!src.includes('media.githubusercontent.com') && !src.startsWith('blob:')) {
               setSrc(`${CDN_BASE}home/hero-video.mp4`)

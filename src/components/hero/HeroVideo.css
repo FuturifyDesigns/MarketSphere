@@ -1,34 +1,53 @@
 .hero-video {
   position: relative;
   width: 100%;
-  max-width: min(420px, 100%);
+  max-width: min(260px, 100%);
   margin: 0 auto;
 }
 
 .hero-video__glow {
   position: absolute;
-  inset: -8%;
+  inset: -6%;
   border-radius: var(--radius-lg);
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--color-gold) 22%, transparent) 0%,
+    color-mix(in srgb, var(--color-gold) 20%, transparent) 0%,
     transparent 68%
   );
-  opacity: 0.7;
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .hero-video__frame {
   position: relative;
   z-index: 1;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-gold) 28%, transparent);
-  background: var(--color-night);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--color-gold) 18%, var(--color-night)) 0%, var(--color-night) 70%);
   box-shadow:
-    0 24px 64px color-mix(in srgb, var(--color-bronze) 18%, transparent),
+    0 16px 40px color-mix(in srgb, var(--color-bronze) 14%, transparent),
     0 0 0 1px color-mix(in srgb, var(--color-gold) 10%, transparent) inset;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 3 / 4;
+  max-height: min(320px, 48vh);
+}
+
+.hero-video__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  padding: 1.25rem;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.hero-video--ready .hero-video__poster {
+  opacity: 0;
 }
 
 .hero-video__player {
@@ -38,22 +57,22 @@
   object-fit: cover;
   object-position: center center;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.25s ease;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-.hero-video--ready .hero-video__player,
-.hero-video__player[data-playing='true'] {
+.hero-video--ready .hero-video__player {
   opacity: 1;
 }
 
 @media (max-width: 900px) {
   .hero-video {
-    max-width: min(320px, 88vw);
+    max-width: min(220px, 68vw);
   }
 
   .hero-video__frame {
-    aspect-ratio: 4 / 5;
+    max-height: min(280px, 42vh);
+    aspect-ratio: 3 / 4;
   }
 }

@@ -101,14 +101,14 @@
 .hero__visual .hero-video {
   position: relative;
   z-index: 1;
-  transform: scale(0.96);
-  transform-origin: center center;
 }
 
 .hero__visual-ring {
   position: absolute;
-  width: 110%;
-  height: 110%;
+  width: 108%;
+  height: 108%;
+  max-width: 300px;
+  max-height: 380px;
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--color-gold) 25%, transparent);
   animation: ring-pulse 4s ease-in-out infinite;
@@ -628,8 +628,12 @@
   }
 
   .hero__visual .hero-video {
-    transform: none;
-    max-width: min(300px, 90vw);
+    max-width: min(220px, 68vw);
+  }
+
+  .hero__visual-ring {
+    max-width: 250px;
+    max-height: 320px;
   }
 
   .hero__scroll-hint {
