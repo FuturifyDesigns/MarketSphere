@@ -239,43 +239,13 @@
 }
 
 @media (max-width: 900px) {
-  .svc-page__pin {
-    position: relative;
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-  }
-
-  .svc-page__intro {
-    position: relative;
-    inset: auto;
-    padding: calc(var(--nav-height) + 1.5rem) 1.25rem 2rem;
-  }
-
-  .svc-page__stage {
-    position: relative;
-    inset: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2.5rem;
-    padding: 0 0 3rem;
-  }
-
-  .svc-page__slide {
-    position: relative;
-    inset: auto;
-    min-height: auto;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-
   .svc-page__slide-inner {
     grid-template-columns: 1fr;
     align-content: center;
-    text-align: center;
-    height: auto;
-    padding-block: 2rem 0;
+    text-align: left;
+    height: 100%;
+    padding: calc(var(--nav-height) + 0.5rem) 1rem 1.25rem;
+    gap: 1rem;
   }
 
   .svc-page__slide--right .svc-page__slide-inner {
@@ -283,8 +253,29 @@
   }
 
   .svc-page__copy {
-    margin: 0 auto;
-    align-items: center;
+    margin: 0;
+    align-items: flex-start;
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--color-bronze) 10%, transparent);
+    position: relative;
+    z-index: 2;
+    width: 100%;
+  }
+
+  .svc-page__title {
+    color: var(--text-primary);
+  }
+
+  .svc-page__tagline {
+    color: var(--text-secondary);
+  }
+
+  .svc-page__desc {
+    color: var(--text-secondary);
   }
 
   .svc-page__media-wrap {
@@ -292,13 +283,16 @@
   }
 
   .svc-page__media {
-    width: min(100%, 340px);
+    width: min(100%, 300px);
+    margin: 0 auto;
+    background: transparent;
+    border-radius: var(--radius-md);
   }
 
   .svc-page__video,
   .svc-page__fallback-img {
-    object-fit: contain;
-    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    background: transparent;
   }
 
   .svc-page__media-glow {

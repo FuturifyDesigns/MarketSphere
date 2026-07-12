@@ -1,7 +1,6 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
-import { isMobileViewport } from '../lib/nativeScroll'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -10,7 +9,12 @@ const PATH_CLASS = 'about-tree__path'
 const TRUNK_CLASS = 'about-tree__trunk'
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
-const SCROLL_UNIT = 0.42
+
+type TreeConfig = {
+  scrub: number
+  scrollUnit: number
+  enterX: number
+}
 
 type Point = { x: number; y: number }
 
@@ -103,12 +107,12 @@ function getStepScrollDuration(step: HTMLElement) {
   const revealItems = step.querySelectorAll('.about-tree__reveal-item').length
   const scrollBody = step.querySelector<HTMLElement>('.about-tree__card-scroll')
   const scrollMax = scrollBody ? getScrollMax(scrollBody) : 0
-  const scrollBoost = scrollMax > 0 ? 0.65 + scrollMax / 320 : 0
+  const scrollBoost = scrollMax > 0 ? 0.65 + scrollMax / 280 : 0
 
-  if (scrollBody && scrollMax > 0) return 1.35 + scrollBoost + revealItems * 0.04
-  if (revealItems > 4) return 1.2 + revealItems * 0.06
-  if (revealItems > 1) return 1.05 + revealItems * 0.05
-  return 1.05
+  if (scrollBody && scrollMax > 0) return 1.45 + scrollBoost + revealItems * 0.04
+  if (revealItems > 4) return 1.25 + revealItems * 0.06
+  if (revealItems > 1) return 1.1 + revealItems * 0.05
+  return 1.1
 }
 
 function getBranchPath(root: HTMLElement, stepIndex: string) {
@@ -123,26 +127,175 @@ function debounce(fn: () => void, ms: number) {
   }
 }
 
-function initMobileAboutTree(root: HTMLElement) {
+function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
+  let resizeHandler: (() => void) | undefined
+  let treeTrigger: ScrollTrigger | undefined
+
+  const pin = root.querySelector<HTMLElement>('.about-tree__pin')
   const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
 
-  gsap.set(steps, { autoAlpha: 1, pointerEvents: 'auto' })
-  gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 1, y: 0 })
-  gsap.set(root.querySelectorAll('.about-tree__card-scroll'), { opacity: 1 })
+  if (!pin || steps.length === 0) return () => {}
 
-  steps.forEach((step) => {
-    gsap.from(step, {
-      opacity: 0,
-      y: 28,
-      duration: 0.5,
-      ease: REVEAL_EASE,
-      scrollTrigger: {
-        trigger: step,
-        start: 'top 90%',
-        once: true,
-      },
-    })
+  const syncPaths = () => {
+    rebuildPaths(root)
+  }
+
+  syncPaths()
+
+  const stepPlans = steps.map((step) => {
+    const scrollBody = step.querySelector<HTMLElement>('.about-tree__card-scroll')
+    return {
+      segment: getStepScrollDuration(step),
+      scrollMax: scrollBody ? getScrollMax(scrollBody) : 0,
+    }
   })
+
+  resizeHandler = debounce(() => {
+    if (treeTrigger) {
+      const progress = treeTrigger.progress
+      syncPaths()
+      treeTrigger.animation?.progress(progress)
+    } else {
+      syncPaths()
+    }
+  }, 180)
+
+  window.addEventListener('resize', resizeHandler)
+
+  const trunk = () => root.querySelector<SVGPathElement>(`.${TRUNK_CLASS}`)
+  let trunkScheduled = false
+
+  gsap.set(steps, { autoAlpha: 0, pointerEvents: 'none' })
+  gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 0, y: 18 })
+  gsap.set(root.querySelectorAll('.about-tree__card-scroll'), { opacity: 0, scrollTop: 0 })
+
+  const tl = gsap.timeline({
+    defaults: { ease: REVEAL_EASE },
+    paused: true,
+  })
+
+  steps.forEach((step, index) => {
+    const side = (step.dataset.side as 'left' | 'right') || 'left'
+    const stepIndex = step.dataset.stepIndex || String(index)
+    const node = step.querySelector<HTMLElement>('.about-tree__node')
+    const revealItems = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
+    const scrollBody = step.querySelector<HTMLElement>('.about-tree__card-scroll')
+    const branchPath = getBranchPath(root, stepIndex)
+    const trunkPath = trunk()
+    const { segment, scrollMax } = stepPlans[index]
+    const label = `tree-step-${index}`
+
+    if (index > 0) {
+      const prev = steps[index - 1]
+      const prevStepIndex = prev.dataset.stepIndex || String(index - 1)
+      const prevBranch = getBranchPath(root, prevStepIndex)
+      const prevScrollBody = prev.querySelector<HTMLElement>('.about-tree__card-scroll')
+      tl.to(prev, { autoAlpha: 0, duration: 0.22, ease: FADE_EASE })
+      tl.set(prev, { pointerEvents: 'none' })
+      if (prevBranch) {
+        tl.to(prevBranch, { opacity: 0.18, duration: 0.18, ease: FADE_EASE }, '<')
+      }
+      if (prevScrollBody) {
+        tl.set(prevScrollBody, { scrollTop: 0 }, '<')
+      }
+    }
+
+    tl.addLabel(label)
+    tl.set(step, { autoAlpha: 1, pointerEvents: 'auto' }, label)
+    if (scrollBody) {
+      tl.set(scrollBody, { scrollTop: 0 }, label)
+    }
+
+    if (trunkPath && !trunkScheduled) {
+      trunkScheduled = true
+      tl.to(
+        trunkPath,
+        {
+          strokeDashoffset: 0,
+          opacity: 0.65,
+          duration: segment * 0.28,
+          ease: 'none',
+        },
+        label,
+      )
+    }
+
+    if (branchPath) {
+      tl.to(
+        branchPath,
+        { strokeDashoffset: 0, opacity: 0.65, duration: segment * 0.24, ease: 'none' },
+        label,
+      )
+    }
+
+    if (node) {
+      const enterX = side === 'left' ? -config.enterX : config.enterX
+      const branchOffset = branchPath ? segment * 0.08 : 0
+      tl.fromTo(
+        node,
+        { opacity: 0, x: enterX, y: 28, scale: 0.96 },
+        { opacity: 1, x: 0, y: 0, scale: 1, duration: segment * 0.28 },
+        branchOffset ? `${label}+=${branchOffset}` : label,
+      )
+    }
+
+    if (revealItems.length) {
+      tl.fromTo(
+        revealItems,
+        { opacity: 0, y: 18 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: segment * 0.2,
+          stagger: segment * 0.04,
+          ease: REVEAL_EASE,
+        },
+        `${label}+=${segment * 0.12}`,
+      )
+    }
+
+    if (scrollBody) {
+      tl.fromTo(
+        scrollBody,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: segment * 0.14, ease: REVEAL_EASE },
+        `${label}+=${segment * 0.2}`,
+      )
+
+      if (scrollMax > 8) {
+        tl.fromTo(
+          scrollBody,
+          { scrollTop: 0 },
+          { scrollTop: scrollMax, duration: segment * 0.48, ease: 'none' },
+          `${label}+=${segment * 0.3}`,
+        )
+      }
+    }
+
+    tl.to({}, { duration: segment * 0.1 })
+  })
+
+  treeTrigger = ScrollTrigger.create({
+    trigger: pin,
+    start: 'top top',
+    end: () => `+=${tl.duration() * window.innerHeight * config.scrollUnit}`,
+    pin: true,
+    pinSpacing: true,
+    scrub: config.scrub,
+    anticipatePin: 0,
+    invalidateOnRefresh: true,
+    fastScrollEnd: true,
+    animation: tl,
+    id: 'about-tree-pin',
+  })
+
+  gsap.set(steps[0], { autoAlpha: 1, pointerEvents: 'auto' })
+  scheduleScrollRefresh()
+
+  return () => {
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+    treeTrigger = undefined
+  }
 }
 
 export function initAboutTreeAnimation(root: HTMLElement) {
@@ -161,186 +314,18 @@ export function initAboutTreeAnimation(root: HTMLElement) {
     return () => {}
   }
 
-  if (isMobileViewport()) {
-    const ctx = gsap.context(() => {
-      initMobileAboutTree(root)
-      scheduleScrollRefresh()
-    }, root)
-    return () => ctx.revert()
-  }
-
-  let resizeHandler: (() => void) | undefined
-  let treeTrigger: ScrollTrigger | undefined
-
   const ctx = gsap.context(() => {
-    const pin = root.querySelector<HTMLElement>('.about-tree__pin')
-    const steps = gsap.utils.toArray<HTMLElement>('.about-tree__step', root)
+    const mm = gsap.matchMedia()
+    const cleanups: Array<() => void> = []
 
-    if (!pin || steps.length === 0) return
-
-    const syncPaths = () => {
-      rebuildPaths(root)
-    }
-
-    syncPaths()
-
-    gsap.set(steps, { autoAlpha: 1, pointerEvents: 'none' })
-    syncPaths()
-
-    const stepPlans = steps.map((step) => {
-      const scrollBody = step.querySelector<HTMLElement>('.about-tree__card-scroll')
-      return {
-        segment: getStepScrollDuration(step),
-        scrollMax: scrollBody ? getScrollMax(scrollBody) : 0,
-      }
+    mm.add('(min-width: 901px)', () => {
+      cleanups.push(runAboutTreePin(root, { scrub: 1.35, scrollUnit: 0.42, enterX: 72 }))
     })
 
-    resizeHandler = debounce(() => {
-      if (treeTrigger) {
-        const progress = treeTrigger.progress
-        syncPaths()
-        treeTrigger.animation?.progress(progress)
-      } else {
-        syncPaths()
-      }
-    }, 180)
-
-    window.addEventListener('resize', resizeHandler)
-
-    const trunk = () => root.querySelector<SVGPathElement>(`.${TRUNK_CLASS}`)
-    let trunkScheduled = false
-
-    gsap.set(steps, { autoAlpha: 0, pointerEvents: 'none' })
-    gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 0, y: 18 })
-    gsap.set(root.querySelectorAll('.about-tree__card-scroll'), { opacity: 0, scrollTop: 0 })
-
-    const tl = gsap.timeline({
-      defaults: { ease: REVEAL_EASE },
-      paused: true,
+    mm.add('(max-width: 900px)', () => {
+      cleanups.push(runAboutTreePin(root, { scrub: 0.7, scrollUnit: 0.58, enterX: 40 }))
     })
-
-    steps.forEach((step, index) => {
-      const side = (step.dataset.side as 'left' | 'right') || 'left'
-      const stepIndex = step.dataset.stepIndex || String(index)
-      const node = step.querySelector<HTMLElement>('.about-tree__node')
-      const revealItems = gsap.utils.toArray<HTMLElement>('.about-tree__reveal-item', step)
-      const scrollBody = step.querySelector<HTMLElement>('.about-tree__card-scroll')
-      const branchPath = getBranchPath(root, stepIndex)
-      const trunkPath = trunk()
-      const { segment, scrollMax } = stepPlans[index]
-      const label = `tree-step-${index}`
-
-      if (index > 0) {
-        const prev = steps[index - 1]
-        const prevStepIndex = prev.dataset.stepIndex || String(index - 1)
-        const prevBranch = getBranchPath(root, prevStepIndex)
-        const prevScrollBody = prev.querySelector<HTMLElement>('.about-tree__card-scroll')
-        tl.to(prev, { autoAlpha: 0, duration: 0.22, ease: FADE_EASE })
-        tl.set(prev, { pointerEvents: 'none' })
-        if (prevBranch) {
-          tl.to(prevBranch, { opacity: 0.18, duration: 0.18, ease: FADE_EASE }, '<')
-        }
-        if (prevScrollBody) {
-          tl.set(prevScrollBody, { scrollTop: 0 }, '<')
-        }
-      }
-
-      tl.addLabel(label)
-      tl.set(step, { autoAlpha: 1, pointerEvents: 'auto' }, label)
-      if (scrollBody) {
-        tl.set(scrollBody, { scrollTop: 0 }, label)
-      }
-
-      if (trunkPath && !trunkScheduled) {
-        trunkScheduled = true
-        tl.to(
-          trunkPath,
-          {
-            strokeDashoffset: 0,
-            opacity: 0.65,
-            duration: segment * 0.28,
-            ease: 'none',
-          },
-          label,
-        )
-      }
-
-      if (branchPath) {
-        tl.to(
-          branchPath,
-          { strokeDashoffset: 0, opacity: 0.65, duration: segment * 0.24, ease: 'none' },
-          label,
-        )
-      }
-
-      if (node) {
-        const enterX = side === 'left' ? -72 : 72
-        const branchOffset = branchPath ? segment * 0.08 : 0
-        tl.fromTo(
-          node,
-          { opacity: 0, x: enterX, y: 28, scale: 0.96 },
-          { opacity: 1, x: 0, y: 0, scale: 1, duration: segment * 0.28 },
-          branchOffset ? `${label}+=${branchOffset}` : label,
-        )
-      }
-
-      if (revealItems.length) {
-        tl.fromTo(
-          revealItems,
-          { opacity: 0, y: 18 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: segment * 0.2,
-            stagger: segment * 0.04,
-            ease: REVEAL_EASE,
-          },
-          `${label}+=${segment * 0.12}`,
-        )
-      }
-
-      if (scrollBody) {
-        tl.fromTo(
-          scrollBody,
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, duration: segment * 0.14, ease: REVEAL_EASE },
-          `${label}+=${segment * 0.2}`,
-        )
-
-        if (scrollMax > 8) {
-          tl.fromTo(
-            scrollBody,
-            { scrollTop: 0 },
-            { scrollTop: scrollMax, duration: segment * 0.42, ease: 'none' },
-            `${label}+=${segment * 0.3}`,
-          )
-        }
-      }
-
-      tl.to({}, { duration: segment * 0.1 })
-    })
-
-    treeTrigger = ScrollTrigger.create({
-      trigger: pin,
-      start: 'top top',
-      end: () => `+=${tl.duration() * window.innerHeight * SCROLL_UNIT}`,
-      pin: true,
-      pinSpacing: true,
-      scrub: 1.35,
-      anticipatePin: 0,
-      invalidateOnRefresh: true,
-      fastScrollEnd: true,
-      animation: tl,
-      id: 'about-tree-pin',
-    })
-
-    gsap.set(steps[0], { autoAlpha: 1, pointerEvents: 'auto' })
-    scheduleScrollRefresh()
   }, root)
 
-  return () => {
-    if (resizeHandler) window.removeEventListener('resize', resizeHandler)
-    treeTrigger = undefined
-    ctx.revert()
-  }
+  return () => ctx.revert()
 }

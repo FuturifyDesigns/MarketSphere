@@ -1,15 +1,18 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
-import { isMobileViewport } from '../lib/nativeScroll'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
-const SCROLL_UNIT = 0.85
-const SLIDE_SEGMENT = 1.45
+
+type ServicesPageConfig = {
+  scrub: number
+  scrollUnit: number
+  slideSegment: number
+}
 
 function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: string) {
   tl.fromTo(
@@ -20,45 +23,95 @@ function addMediaAnimation(tl: gsap.core.Timeline, slide: HTMLElement, label: st
   )
 }
 
-function initMobileServicesPage(root: HTMLElement) {
+function runServicesPagePin(root: HTMLElement, config: ServicesPageConfig) {
+  const pin = root.querySelector<HTMLElement>('.svc-page__pin')
   const intro = root.querySelector<HTMLElement>('.svc-page__intro')
   const slides = gsap.utils.toArray<HTMLElement>('.svc-page__slide', root)
+  const dots = gsap.utils.toArray<HTMLElement>('.svc-page__dot', root)
+  const progress = root.querySelector<HTMLElement>('.svc-page__progress-fill')
 
-  gsap.set(slides, { opacity: 1, pointerEvents: 'auto', visibility: 'visible' })
-  gsap.set(root.querySelectorAll('.svc-page__media, .svc-page__copy > *'), {
-    opacity: 1,
-    y: 0,
-    clearProps: 'transform',
-  })
+  if (!pin || !intro || slides.length === 0) return
 
-  if (intro) {
-    gsap.from(intro.children, {
-      opacity: 0,
-      y: 24,
-      duration: 0.55,
-      stagger: 0.07,
-      ease: REVEAL_EASE,
-      scrollTrigger: {
-        trigger: intro,
-        start: 'top 88%',
-        once: true,
-      },
-    })
-  }
+  gsap.set(slides, { opacity: 0, pointerEvents: 'none', visibility: 'visible', zIndex: 1 })
+  gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
+  gsap.set(dots, { scale: 1, opacity: 0.35 })
+  if (dots[0]) gsap.set(dots[0], { scale: 1.2, opacity: 1 })
+  if (progress) gsap.set(progress, { scaleY: 1 / slides.length })
 
   slides.forEach((slide) => {
-    gsap.from(slide, {
-      opacity: 0,
-      y: 32,
-      duration: 0.5,
-      ease: REVEAL_EASE,
-      scrollTrigger: {
-        trigger: slide,
-        start: 'top 90%',
-        once: true,
-      },
-    })
+    gsap.set(slide.querySelectorAll('.svc-page__copy > *'), { opacity: 0, y: 22 })
+    gsap.set(slide.querySelector('.svc-page__media'), { opacity: 1, scale: 0.96, y: 16 })
   })
+
+  const tl = gsap.timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
+
+  tl.addLabel('intro')
+  tl.fromTo(
+    gsap.utils.toArray(intro.children),
+    { opacity: 0, y: 28 },
+    { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: REVEAL_EASE },
+    'intro',
+  )
+  tl.to({}, { duration: 0.45 })
+
+  slides.forEach((slide, index) => {
+    const label = `service-${index}`
+    const copyItems = slide.querySelectorAll('.svc-page__copy > *')
+
+    if (index === 0) {
+      tl.to(intro, { autoAlpha: 0, duration: 0.28, ease: FADE_EASE })
+      tl.set(intro, { pointerEvents: 'none' })
+    } else {
+      const prev = slides[index - 1]
+      tl.to(prev, { opacity: 0, duration: 0.24, ease: FADE_EASE })
+      tl.set(prev, { pointerEvents: 'none', zIndex: 1 })
+    }
+
+    tl.addLabel(label)
+    tl.set(slide, { opacity: 1, pointerEvents: 'auto', zIndex: 2 }, label)
+    tl.to(dots, { scale: 1, opacity: 0.35, duration: 0.15 }, label)
+    if (dots[index]) {
+      tl.to(dots[index], { scale: 1.25, opacity: 1, duration: 0.2 }, label)
+    }
+    if (progress) {
+      tl.to(
+        progress,
+        { scaleY: (index + 1) / slides.length, duration: config.slideSegment * 0.18, ease: 'none' },
+        label,
+      )
+    }
+
+    addMediaAnimation(tl, slide, label)
+
+    tl.fromTo(
+      copyItems,
+      { opacity: 0, y: 22 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: config.slideSegment * 0.22,
+        stagger: config.slideSegment * 0.05,
+      },
+      `${label}+=0.08`,
+    )
+    tl.to({}, { duration: config.slideSegment * 0.55 })
+  })
+
+  ScrollTrigger.create({
+    trigger: pin,
+    start: 'top top',
+    end: () => `+=${tl.duration() * window.innerHeight * config.scrollUnit}`,
+    pin: true,
+    pinSpacing: true,
+    scrub: config.scrub,
+    anticipatePin: 0,
+    invalidateOnRefresh: true,
+    fastScrollEnd: true,
+    animation: tl,
+    id: 'services-page-showcase',
+  })
+
+  gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
 }
 
 export function initServicesPageShowcase(root: HTMLElement) {
@@ -76,98 +129,17 @@ export function initServicesPageShowcase(root: HTMLElement) {
     return () => {}
   }
 
-  if (isMobileViewport()) {
-    const ctx = gsap.context(() => {
-      initMobileServicesPage(root)
-      flushScrollRefresh()
-    }, root)
-    return () => ctx.revert()
-  }
-
   const ctx = gsap.context(() => {
-    const pin = root.querySelector<HTMLElement>('.svc-page__pin')
-    const intro = root.querySelector<HTMLElement>('.svc-page__intro')
-    const slides = gsap.utils.toArray<HTMLElement>('.svc-page__slide', root)
-    const dots = gsap.utils.toArray<HTMLElement>('.svc-page__dot', root)
-    const progress = root.querySelector<HTMLElement>('.svc-page__progress-fill')
+    const mm = gsap.matchMedia()
 
-    if (!pin || !intro || slides.length === 0) return
-
-    gsap.set(slides, { opacity: 0, pointerEvents: 'none', visibility: 'visible', zIndex: 1 })
-    gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
-    gsap.set(dots, { scale: 1, opacity: 0.35 })
-    if (dots[0]) gsap.set(dots[0], { scale: 1.2, opacity: 1 })
-    if (progress) gsap.set(progress, { scaleY: 1 / slides.length })
-
-    slides.forEach((slide) => {
-      gsap.set(slide.querySelectorAll('.svc-page__copy > *'), { opacity: 0, y: 22 })
-      gsap.set(slide.querySelector('.svc-page__media'), { opacity: 1, scale: 0.96, y: 16 })
+    mm.add('(min-width: 901px)', () => {
+      runServicesPagePin(root, { scrub: 1, scrollUnit: 0.85, slideSegment: 1.45 })
     })
 
-    const tl = gsap.timeline({ paused: true, defaults: { ease: REVEAL_EASE } })
-
-    tl.addLabel('intro')
-    tl.fromTo(
-      gsap.utils.toArray(intro.children),
-      { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: REVEAL_EASE },
-      'intro',
-    )
-    tl.to({}, { duration: 0.45 })
-
-    slides.forEach((slide, index) => {
-      const label = `service-${index}`
-      const copyItems = slide.querySelectorAll('.svc-page__copy > *')
-
-      if (index === 0) {
-        tl.to(intro, { autoAlpha: 0, duration: 0.28, ease: FADE_EASE })
-        tl.set(intro, { pointerEvents: 'none' })
-      } else {
-        const prev = slides[index - 1]
-        tl.to(prev, { opacity: 0, duration: 0.24, ease: FADE_EASE })
-        tl.set(prev, { pointerEvents: 'none', zIndex: 1 })
-      }
-
-      tl.addLabel(label)
-      tl.set(slide, { opacity: 1, pointerEvents: 'auto', zIndex: 2 }, label)
-      tl.to(dots, { scale: 1, opacity: 0.35, duration: 0.15 }, label)
-      if (dots[index]) {
-        tl.to(dots[index], { scale: 1.25, opacity: 1, duration: 0.2 }, label)
-      }
-      if (progress) {
-        tl.to(
-          progress,
-          { scaleY: (index + 1) / slides.length, duration: SLIDE_SEGMENT * 0.18, ease: 'none' },
-          label,
-        )
-      }
-
-      addMediaAnimation(tl, slide, label)
-
-      tl.fromTo(
-        copyItems,
-        { opacity: 0, y: 22 },
-        { opacity: 1, y: 0, duration: SLIDE_SEGMENT * 0.22, stagger: SLIDE_SEGMENT * 0.05 },
-        `${label}+=0.08`,
-      )
-      tl.to({}, { duration: SLIDE_SEGMENT * 0.55 })
+    mm.add('(max-width: 900px)', () => {
+      runServicesPagePin(root, { scrub: 0.65, scrollUnit: 0.72, slideSegment: 1.15 })
     })
 
-    ScrollTrigger.create({
-      trigger: pin,
-      start: 'top top',
-      end: () => `+=${tl.duration() * window.innerHeight * SCROLL_UNIT}`,
-      pin: true,
-      pinSpacing: true,
-      scrub: 1,
-      anticipatePin: 0,
-      invalidateOnRefresh: true,
-      fastScrollEnd: true,
-      animation: tl,
-      id: 'services-page-showcase',
-    })
-
-    gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
     flushScrollRefresh()
   }, root)
 

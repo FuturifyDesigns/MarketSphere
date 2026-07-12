@@ -401,7 +401,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
-  padding: 1rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  background: rgba(250, 248, 244, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 36px rgba(74, 63, 47, 0.1);
 }
 
 .services-showcase__mobile-card {
@@ -415,10 +420,7 @@
 }
 
 .services-showcase__mobile-card .services-showcase__slide-backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  display: none;
 }
 
 .services-showcase__mobile-visual {
@@ -430,12 +432,12 @@
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 16 / 10;
   min-height: 0;
   max-height: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #faf8f4;
+  background: transparent;
   box-shadow:
     0 16px 40px rgba(74, 63, 47, 0.14),
     0 0 0 1px rgba(201, 162, 75, 0.1);
@@ -457,9 +459,21 @@
   width: 100%;
   height: 100%;
   max-height: none;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center center;
   margin: 0;
+}
+
+.services-showcase__mobile-card .services-showcase__tagline {
+  color: #9a7b2e;
+}
+
+.services-showcase__mobile-card .services-showcase__title {
+  color: #1a1510;
+}
+
+.services-showcase__mobile-card .services-showcase__desc {
+  color: #2a231c;
 }
 
 @media (max-width: 900px) {
