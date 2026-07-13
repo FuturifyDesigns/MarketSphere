@@ -6,6 +6,7 @@ import { isIntroComplete, onIntroComplete } from '../../lib/intro'
 import { hasSeenWelcome, markWelcomeSeen } from '../../lib/onboarding'
 import { lockBodyScroll, unlockBodyScroll } from '../../lib/bodyScrollLock'
 import { MASCOT_PATHS, preloadMascots } from '../../lib/mascots'
+import { useModalWheelScroll } from '../../hooks/useModalWheelScroll'
 import { Button } from '../ui/Button'
 import './Onboarding.css'
 
@@ -13,6 +14,7 @@ const WELCOME_DELAY_MS = 500
 
 export function WelcomeModal() {
   const [open, setOpen] = useState(false)
+  const modalRef = useModalWheelScroll<HTMLDivElement>(open)
 
   useEffect(() => {
     preloadMascots()
@@ -59,6 +61,7 @@ export function WelcomeModal() {
           role="presentation"
         >
           <motion.div
+            ref={modalRef}
             className="welcome-message"
             role="dialog"
             aria-modal="true"
@@ -78,7 +81,7 @@ export function WelcomeModal() {
               <X size={18} aria-hidden="true" />
             </button>
 
-            <div className="welcome-message__scroll">
+            <div className="welcome-message__scroll" data-modal-scroll>
               <span className="welcome-message__eyebrow">Welcome</span>
 
               <div className="welcome-message__mascot-wrap">

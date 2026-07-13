@@ -12,6 +12,22 @@ interface ShowcaseCarouselProps<T> {
   className?: string
 }
 
+function useMobileCarouselMotion() {
+  const [mobileMotion, setMobileMotion] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const onChange = () => setMobileMotion(mq.matches)
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  return mobileMotion
+}
+
 export function ShowcaseCarousel<T>({
   items,
   renderItem,
@@ -22,6 +38,7 @@ export function ShowcaseCarousel<T>({
 }: ShowcaseCarouselProps<T>) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
+  const mobileMotion = useMobileCarouselMotion()
 
   useEffect(() => {
     setIndex(0)
@@ -41,6 +58,18 @@ export function ShowcaseCarousel<T>({
   const goNext = () => setIndex((current) => (current + 1) % items.length)
   const currentItem = items[index]
 
+  const slideVariants = mobileMotion
+    ? {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+      }
+    : {
+        initial: { opacity: 0, x: 36 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -36 },
+      }
+
   return (
     <div
       className={`showcase-carousel ${className}`.trim()}
@@ -54,10 +83,10 @@ export function ShowcaseCarousel<T>({
           <motion.div
             key={getKey(currentItem)}
             className="showcase-carousel__slide"
-            initial={{ opacity: 0, x: 36 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -36 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            initial={slideVariants.initial}
+            animate={slideVariants.animate}
+            exit={slideVariants.exit}
+            transition={{ duration: mobileMotion ? 0.28 : 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             {renderItem(currentItem)}
           </motion.div>

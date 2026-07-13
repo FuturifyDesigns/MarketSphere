@@ -558,6 +558,12 @@
     width: 100%;
   }
 
+  .auth-card {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
   .auth-shell--centered {
     display: flex;
     flex-direction: column;

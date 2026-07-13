@@ -204,6 +204,38 @@ h1, h2, h3, h4, h5, h6 {
   [data-allow-horizontal-scroll] {
     touch-action: pan-x pan-y;
   }
+
+  .provider-card,
+  .provider-card__link,
+  .bento-card,
+  .auth-card,
+  .testimonial-card,
+  .stat-card,
+  .dashboard-panel,
+  .welcome-message,
+  .showcase-carousel,
+  .showcase-carousel__slide,
+  .showcase-carousel__slide > *,
+  .home-providers-stage,
+  .home-providers-grid {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .home-providers-grid,
+  .providers-grid,
+  .testimonials-grid {
+    justify-items: stretch;
+  }
+
+  .container,
+  .container--wide {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 html.cookie-banner-open .main {

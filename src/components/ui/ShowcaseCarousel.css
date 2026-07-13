@@ -1,5 +1,6 @@
 .showcase-carousel {
   position: relative;
+  width: 100%;
   max-width: 42rem;
   margin-inline: auto;
   overflow: hidden;
@@ -12,10 +13,13 @@
 .showcase-carousel__viewport {
   overflow: hidden;
   min-height: 100%;
+  width: 100%;
 }
 
 .showcase-carousel__slide {
   width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
 }
 
 .showcase-carousel__nav {
@@ -73,19 +77,35 @@
 
 @media (max-width: 768px) {
   .showcase-carousel {
-    padding-inline: 0.25rem;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  .showcase-carousel--wide {
+    max-width: 100%;
   }
 
   .showcase-carousel__viewport {
+    width: 100%;
+    max-width: 100%;
     border-radius: 12px;
   }
 
+  .showcase-carousel__slide,
+  .showcase-carousel__slide > * {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
   .showcase-carousel__nav--prev {
-    left: 0.35rem;
+    left: 0.5rem;
   }
 
   .showcase-carousel__nav--next {
-    right: 0.35rem;
+    right: 0.5rem;
   }
 
   .showcase-carousel__nav {

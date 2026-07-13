@@ -12,13 +12,21 @@
     max(1rem, env(safe-area-inset-left));
   overflow: hidden;
   overscroll-behavior: none;
-  touch-action: none;
   background: rgba(10, 12, 16, 0.62);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
+@media (pointer: coarse) {
+  .exit-intent-overlay {
+    touch-action: none;
+  }
+}
+
 .exit-intent-modal.welcome-message {
+  width: 100%;
+  max-width: min(100%, 28rem);
+  margin-inline: auto;
   max-height: min(90dvh, calc(100dvh - 2rem));
   touch-action: pan-y;
 }

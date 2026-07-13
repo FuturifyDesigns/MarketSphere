@@ -183,7 +183,11 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
-      whileHover={{ y: -4, rotateX: 2, rotateY: -2 }}
+      whileHover={
+        typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches
+          ? { y: -4, rotateX: 2, rotateY: -2 }
+          : undefined
+      }
     >
       {content}
     </motion.article>

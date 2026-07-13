@@ -355,10 +355,15 @@
     max(1rem, env(safe-area-inset-left));
   overflow: hidden;
   overscroll-behavior: none;
-  touch-action: none;
   background: rgba(10, 12, 16, 0.58);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+@media (pointer: coarse) {
+  .welcome-message-overlay {
+    touch-action: none;
+  }
 }
 
 .welcome-message {
@@ -387,6 +392,7 @@
   overscroll-behavior: contain;
   padding: 1.75rem 1.75rem 0.5rem;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .welcome-message__footer {
@@ -527,6 +533,9 @@
 
 @media (max-width: 640px) {
   .welcome-message {
+    width: 100%;
+    max-width: min(100%, 28rem);
+    margin-inline: auto;
     max-height: min(94dvh, calc(100dvh - 1.5rem));
     border-radius: 18px;
   }

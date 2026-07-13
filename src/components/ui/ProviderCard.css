@@ -1,5 +1,8 @@
 .provider-card {
   perspective: 800px;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
 }
 
 .provider-card__link {
@@ -498,6 +501,10 @@
 }
 
 @media (max-width: 768px) {
+  .provider-card {
+    perspective: none;
+  }
+
   .provider-card--showcase .provider-card__link {
     grid-template-columns: 1fr;
     min-height: auto;

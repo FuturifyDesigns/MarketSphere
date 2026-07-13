@@ -6,6 +6,7 @@ import { COMPANY } from '../../lib/constants'
 import { hasDismissedExitIntent, markExitIntentDismissed } from '../../lib/exitIntent'
 import { lockBodyScroll, unlockBodyScroll } from '../../lib/bodyScrollLock'
 import { MASCOT_PATHS } from '../../lib/mascots'
+import { useModalWheelScroll } from '../../hooks/useModalWheelScroll'
 import { Button } from '../ui/Button'
 import '../onboarding/Onboarding.css'
 import './ExitIntentModal.css'
@@ -27,6 +28,7 @@ function isBlockedPath(pathname: string) {
 export function ExitIntentModal() {
   const location = useLocation()
   const [open, setOpen] = useState(false)
+  const modalRef = useModalWheelScroll<HTMLDivElement>(open)
 
   const close = () => {
     markExitIntentDismissed()
@@ -78,6 +80,7 @@ export function ExitIntentModal() {
           role="presentation"
         >
           <motion.div
+            ref={modalRef}
             className="welcome-message exit-intent-modal"
             role="dialog"
             aria-modal="true"
@@ -92,7 +95,7 @@ export function ExitIntentModal() {
               <X size={18} aria-hidden="true" />
             </button>
 
-            <div className="welcome-message__scroll">
+            <div className="welcome-message__scroll" data-modal-scroll>
               <span className="welcome-message__eyebrow">Before you go</span>
 
               <div className="welcome-message__mascot-wrap">

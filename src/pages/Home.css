@@ -916,6 +916,15 @@
   .home-providers-stage {
     padding: 1rem;
     border-radius: 18px;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  .home-providers-carousel.showcase-carousel {
+    max-width: 100%;
+    width: 100%;
   }
 
   .home-providers-grid--count-2,
@@ -925,10 +934,6 @@
 
   .home-providers-footer__text {
     font-size: 0.875rem;
-  }
-
-  .home-providers-carousel.showcase-carousel {
-    max-width: 100%;
   }
 
   .home-testimonials-carousel.showcase-carousel {
