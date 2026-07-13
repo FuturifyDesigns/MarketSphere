@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { Mail, MapPin, Phone, Clock, ArrowRight, MessageSquare, Building2, Send } from 'lucide-react'
-import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
+import { useSiteContent } from '../context/SiteContentContext'
+import type { CmsStringItem } from '../lib/cmsTypes'
+import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { CmsStringList } from '../components/cms/CmsStringList'
+import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useToast } from '../context/ToastContext'
 import {
   clearFieldError,
@@ -27,6 +30,17 @@ type ContactFields = 'name' | 'email' | 'phone' | 'message'
 
 export function Contact() {
   const { showToast } = useToast()
+  const { getBlock } = useSiteContent()
+  const company = getBlock<{
+    headOffice: string
+    registration: string
+    companyType: string
+    email: string
+    address: string
+    operationalArea: string
+    phones: CmsStringItem[]
+  }>('company')
+  const phones = company.phones || []
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<ContactFields>>({})
   const [submitted, setSubmitted] = useState(false)
@@ -75,7 +89,7 @@ export function Contact() {
 
   return (
     <div className="page contact-page">
-      <section className="contact-hero">
+      <EditableSection id="contact-hero" label="Hero" className="contact-hero">
         <div className="container contact-hero__inner">
           <div className="contact-hero__content page-enter-hero">
             <EditableText contentKey="contact" path="hero.eyebrow" as="span" className="section-label" />
@@ -99,8 +113,10 @@ export function Contact() {
             <div className="contact-hero__card bento-card">
               <div className="contact-hero__card-glow" aria-hidden="true" />
               <MessageSquare size={32} strokeWidth={1.25} />
-              <h3>We&apos;re here to help</h3>
-              <p>Reach out for enquiries, partnerships, or provider onboarding.</p>
+              <h3>
+                <EditableText contentKey="contact" path="hero.cardTitle" as="span" />
+              </h3>
+              <EditableText contentKey="contact" path="hero.cardBody" as="p" multiline />
             </div>
             <div className="contact-quick bento-card">
               <div className="contact-quick__item">
@@ -113,53 +129,62 @@ export function Contact() {
               <div className="contact-quick__item">
                 <MapPin size={18} />
                 <div>
-                  <strong>Head office</strong>
-                  <p>{COMPANY.headOffice}</p>
+                  <strong>
+                    <EditableText contentKey="contact" path="hero.headOfficeLabel" as="span" />
+                  </strong>
+                  <p><EditableText contentKey="company" path="headOffice" as="span" multiline /></p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
 
-      <section className="section contact-main">
+      <EditableSection id="contact-details" label="Contact details" className="section contact-main">
         <div className="container contact-grid">
           <div className="contact-info">
             <div className="section-header page-reveal">
-              <span className="section-label">Reach Us</span>
-              <h2 className="display-lg">Contact details</h2>
-              <p className="contact-info__lead">
-                Visit our office, send an email, or call — we&apos;d love to hear from you.
-              </p>
+              <EditableText contentKey="contact" path="details.sectionEyebrow" as="span" className="section-label" />
+              <EditableText contentKey="contact" path="details.sectionTitle" as="h2" className="display-lg" />
+              <EditableText contentKey="contact" path="details.sectionLead" as="p" className="contact-info__lead" multiline />
             </div>
 
             <div className="contact-cards">
-              <a href={`mailto:${COMPANY.email}`} className="contact-card bento-card page-reveal">
+              <a href={`mailto:${company.email}`} className="contact-card bento-card page-reveal">
                 <div className="contact-card__icon"><Mail size={20} /></div>
                 <div>
-                  <strong>Email us</strong>
+                  <strong><EditableText contentKey="contact" path="details.emailLabel" as="span" /></strong>
                   <p>
-                    <a href={`mailto:${COMPANY.email}`}>
+                    <a href={`mailto:${company.email}`}>
                       <EditableText contentKey="company" path="email" as="span" />
                     </a>
                   </p>
-                  <span className="contact-card__hint">Best for detailed enquiries</span>
+                  <span className="contact-card__hint">
+                    <EditableText contentKey="contact" path="details.emailHint" as="span" />
+                  </span>
                 </div>
               </a>
               <div className="contact-card bento-card page-reveal">
                 <div className="contact-card__icon"><Phone size={20} /></div>
                 <div>
-                  <strong>Call us</strong>
-                  {COMPANY.phones.map((p) => (
-                    <p key={p}><a href={`tel:${p.replace(/\s/g, '')}`}>{p}</a></p>
+                  <strong><EditableText contentKey="contact" path="details.phoneLabel" as="span" /></strong>
+                  {phones.map((phone, index) => (
+                    <p key={phone.id}>
+                      <a href={`tel:${phone.text.replace(/\s/g, '')}`}>
+                        <EditableText contentKey="company" path={`phones.${index}.text`} as="span" />
+                      </a>
+                    </p>
                   ))}
-                  <span className="contact-card__hint">Mon–Fri, business hours</span>
+                  <CmsStringList contentKey="company" path="phones" items={phones} placeholder="Phone number" />
+                  <span className="contact-card__hint">
+                    <EditableText contentKey="contact" path="details.phoneHint" as="span" />
+                  </span>
                 </div>
               </div>
               <div className="contact-card bento-card page-reveal">
                 <div className="contact-card__icon"><MapPin size={20} /></div>
                 <div>
-                  <strong>Visit us</strong>
+                  <strong><EditableText contentKey="contact" path="details.visitLabel" as="span" /></strong>
                   <p><EditableText contentKey="company" path="address" as="span" multiline /></p>
                   <span className="contact-card__hint">
                     <EditableText contentKey="company" path="operationalArea" as="span" />
@@ -171,8 +196,18 @@ export function Contact() {
             <div className="contact-meta bento-card page-reveal">
               <Building2 size={18} />
               <div>
-                <p><strong>Registration:</strong> {COMPANY.registration}</p>
-                <p><strong>Type:</strong> {COMPANY.companyType}</p>
+                <p>
+                  <strong>
+                    <EditableText contentKey="contact" path="details.registrationLabel" as="span" />
+                  </strong>{' '}
+                  <EditableText contentKey="company" path="registration" as="span" />
+                </p>
+                <p>
+                  <strong>
+                    <EditableText contentKey="contact" path="details.typeLabel" as="span" />
+                  </strong>{' '}
+                  <EditableText contentKey="company" path="companyType" as="span" />
+                </p>
               </div>
             </div>
           </div>
@@ -181,10 +216,10 @@ export function Contact() {
             {submitted ? (
               <div className="contact-success bento-card">
                 <div className="contact-success__icon" aria-hidden="true">✓</div>
-                <h3>Thank you!</h3>
-                <p>Your message has been noted. We&apos;ll get back to you within 1–2 business days.</p>
+                <h3><EditableText contentKey="contact" path="form.successTitle" as="span" /></h3>
+                <EditableText contentKey="contact" path="form.successBody" as="p" multiline />
                 <p className="contact-success__note">
-                  For urgent enquiries, please call us directly.
+                  <EditableText contentKey="contact" path="form.successNote" as="span" multiline />
                 </p>
                 <Button to="/" variant="secondary">Back to Home</Button>
               </div>
@@ -193,8 +228,8 @@ export function Contact() {
                 <div className="contact-form__header">
                   <div className="contact-form__icon"><Send size={20} /></div>
                   <div>
-                    <span className="section-label">Send a message</span>
-                    <h2>Tell us how we can help</h2>
+                    <EditableText contentKey="contact" path="form.eyebrow" as="span" className="section-label" />
+                    <EditableText contentKey="contact" path="form.title" as="h2" />
                   </div>
                 </div>
                 <div className="contact-form__fields">
@@ -236,19 +271,24 @@ export function Contact() {
                   />
                 </div>
                 <Button type="submit" size="lg" disabled={loading}>
-                  {loading ? 'Sending…' : 'Send Message'} <ArrowRight size={16} />
+                  {loading ? 'Sending…' : <EditableText contentKey="contact" path="form.submitLabel" as="span" />}{' '}
+                  <ArrowRight size={16} />
                 </Button>
                 <p className="contact-form__privacy">
-                  By submitting this form you agree to our{' '}
-                  <Link to="/privacy">Privacy Policy</Link>. We process your details to respond to
-                  your enquiry in line with Botswana&apos;s Data Protection Act, 2024.
+                  <EditableText contentKey="contact" path="form.privacyNote" as="span" multiline />
                 </p>
                 {error && <p className="contact-form__error" role="alert">{error}</p>}
               </form>
             )}
           </div>
         </div>
-      </section>
+      </EditableSection>
+
+      <EditableSection id="contact-extra" label="Extra sections" as="div">
+        <div className="container">
+          <CmsExtraSections contentKey="contact" />
+        </div>
+      </EditableSection>
     </div>
   )
 }

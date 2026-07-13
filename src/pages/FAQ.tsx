@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { ChevronDown, ArrowRight, Search, HelpCircle, Users, CreditCard, Building2, Layers, Pencil } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
+import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
 import { useSiteContent } from '../context/SiteContentContext'
-import { useSiteEdit } from '../context/SiteEditContext'
+import { useSectionFieldEdit } from '../context/SectionEditContext'
 import type { FaqItem } from '../lib/siteContentDefaults'
+import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useToast } from '../context/ToastContext'
 import './FAQ.css'
 
@@ -33,7 +35,7 @@ const CATEGORY_META: Record<string, { icon: typeof HelpCircle; label: string }> 
 
 export function FAQ() {
   const { getBlock, updateField } = useSiteContent()
-  const { editMode } = useSiteEdit()
+  const canEditFaqList = useSectionFieldEdit()
   const { showToast } = useToast()
   const faq = getBlock<FaqBlock>('faq')
   const items = faq.items || []
@@ -104,7 +106,7 @@ export function FAQ() {
 
   return (
     <div className="page faq-page">
-      <section className="faq-hero">
+      <EditableSection id="faq-hero" label="Hero" className="faq-hero">
         <div className="faq-hero__glow" aria-hidden="true" />
         <div className="container faq-hero__inner">
           <div className="faq-hero__content page-enter-hero">
@@ -147,9 +149,9 @@ export function FAQ() {
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
 
-      <section className="section faq-body">
+      <EditableSection id="faq-list" label="Questions" className="section faq-body">
         <div className="container faq-body__inner">
           <aside className="faq-sidebar page-reveal">
             <p className="faq-sidebar__title">Browse by topic</p>
@@ -193,7 +195,7 @@ export function FAQ() {
                 {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
                 {query ? ` for “${query}”` : ''}
               </p>
-              {editMode ? (
+              {canEditFaqList ? (
                 <Button type="button" size="sm" variant="secondary" onClick={() => void addItem()}>
                   Add FAQ item
                 </Button>
@@ -239,7 +241,7 @@ export function FAQ() {
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                             >
-                              {editMode ? (
+                              {canEditFaqList ? (
                                 <div className="cms-editable cms-editable--active" style={{ padding: '8px 0' }}>
                                   <label style={{ display: 'block', marginBottom: 8 }}>
                                     <small>Question</small>
@@ -284,7 +286,7 @@ export function FAQ() {
                             </motion.div>
                           )}
                         </AnimatePresence>
-                        {editMode && !isOpen ? (
+                        {canEditFaqList && !isOpen ? (
                           <button
                             type="button"
                             className="cms-editable__trigger"
@@ -324,25 +326,31 @@ export function FAQ() {
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
 
-      <section className="section section--accent">
+      <EditableSection id="faq-support" label="Support CTA" className="section section--accent">
         <div className="container">
           <div className="cta-panel bento-card page-reveal faq-cta">
-            <span className="section-label">Support</span>
-            <h2 className="display-lg">Can't find what you're looking for?</h2>
-            <p>Our team is ready to help with any questions about services, providers, or your account.</p>
+            <EditableText contentKey="faq" path="supportCta.eyebrow" as="span" className="section-label" />
+            <EditableText contentKey="faq" path="supportCta.title" as="h2" className="display-lg" />
+            <EditableText contentKey="faq" path="supportCta.body" as="p" multiline />
             <div className="cta-panel__actions">
               <Button to="/contact" size="lg">
-                Contact Us <ArrowRight size={16} />
+                <EditableText contentKey="faq" path="supportCta.primaryLabel" as="span" /> <ArrowRight size={16} />
               </Button>
               <Button to="/register" variant="secondary" size="lg">
-                Create Account
+                <EditableText contentKey="faq" path="supportCta.secondaryLabel" as="span" />
               </Button>
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
+
+      <EditableSection id="faq-extra" label="Extra sections" as="div">
+        <div className="container">
+          <CmsExtraSections contentKey="faq" />
+        </div>
+      </EditableSection>
     </div>
   )
 }

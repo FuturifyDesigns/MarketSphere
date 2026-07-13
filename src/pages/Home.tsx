@@ -11,10 +11,15 @@ import { ProviderCard } from '../components/ui/ProviderCard'
 import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
 import { Button } from '../components/ui/Button'
 import { WelcomeModal } from '../components/onboarding/WelcomeModal'
+import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { CmsStringList, cmsStringTexts } from '../components/cms/CmsStringList'
+import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useSiteContent } from '../context/SiteContentContext'
-import { useSiteEdit } from '../context/SiteEditContext'
+import { useSectionFieldEdit } from '../context/SectionEditContext'
 import type { HomeStat } from '../lib/siteContentDefaults'
+import type { CmsStringItem } from '../lib/cmsTypes'
+import { createHomeStat } from '../lib/cmsTypes'
 import { supabase } from '../lib/supabase'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
@@ -52,7 +57,7 @@ type HomeBlock = {
     ctaProvider: string
   }
   stats: HomeStat[]
-  marquee: string[]
+  marquee: CmsStringItem[]
   providersSection: {
     eyebrow: string
     title: string
@@ -60,21 +65,37 @@ type HomeBlock = {
     lead: string
     cta: string
     footer: string
+    trustBadges: CmsStringItem[]
   }
   vision: {
     eyebrow: string
     title: string
     lead: string
   }
+  testimonialsSection: {
+    eyebrow: string
+    title: string
+    titleEmphasis: string
+  }
+  cta: {
+    title: string
+    body: string
+    primaryLabel: string
+    primaryHref: string
+    secondaryLabel: string
+    secondaryHref: string
+  }
 }
 
 export function Home() {
-  const { getBlock } = useSiteContent()
-  const { editMode } = useSiteEdit()
+  const { getBlock, updateField } = useSiteContent()
+  const canEditVision = useSectionFieldEdit()
   const home = getBlock<HomeBlock>('home')
   const company = getBlock<{ shortName: string }>('company')
-  const marqueeItems = home.marquee?.length ? home.marquee : MARQUEE_ITEMS_FALLBACK
+  const marqueeItems = cmsStringTexts(home.marquee?.length ? home.marquee : MARQUEE_ITEMS_FALLBACK.map((text, index) => ({ id: `m-${index}`, text })))
   const stats = home.stats?.length ? home.stats : []
+  const trustBadges = home.providersSection?.trustBadges || []
+  const trustIcons = [BadgeCheck, ShieldCheck, Users]
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const [providers, setProviders] = useState<Provider[]>([])
@@ -253,7 +274,7 @@ export function Home() {
       <SkyBackground />
 
       {/* Hero */}
-      <section className="hero" ref={heroRef}>
+      <EditableSection id="home-hero" label="Hero" className="hero" ref={heroRef}>
         <div className="container hero__inner">
           <div className="hero__content">
             <div className="hero__welcome" aria-label={`Welcome to ${company.shortName}`}>
@@ -294,14 +315,27 @@ export function Home() {
           <span>Scroll to explore</span>
           <ArrowDown size={16} />
         </div>
-      </section>
+      </EditableSection>
 
-      <div className="home-marquee">
+      <EditableSection id="home-marquee" label="Marquee" as="div" className="home-marquee">
         <Marquee items={marqueeItems} />
-      </div>
+        <div className="container">
+          <CmsStringList
+            contentKey="home"
+            path="marquee"
+            items={home.marquee || []}
+            placeholder="Marquee item"
+          />
+        </div>
+      </EditableSection>
 
       {/* Vision + Stats */}
-      <section className="section section--vision home-showcase" data-home-section="showcase">
+      <EditableSection
+        id="home-vision"
+        label="Vision & stats"
+        className="section section--vision home-showcase"
+        data-home-section="showcase"
+      >
         <div className="home-showcase__pin">
           <div className="home-showcase__intro">
             <EditableText contentKey="home" path="vision.eyebrow" as="span" className="section-label home-section__label" />
@@ -317,31 +351,42 @@ export function Home() {
               <div className="stats-row">
                 {stats.map((stat, index) => (
                   <div key={stat.id} className="stat-card home-section__item">
-                    {editMode ? (
-                      <>
-                        <EditableText contentKey="home" path={`stats.${index}.number`} as="span" className="stat-card__number" />
-                        <EditableText contentKey="home" path={`stats.${index}.label`} as="span" className="stat-card__label" />
-                        <EditableText contentKey="home" path={`stats.${index}.description`} as="p" multiline />
-                      </>
-                    ) : (
-                      <>
-                        <span className="stat-card__number">{stat.number}</span>
-                        <span className="stat-card__label">{stat.label}</span>
-                        <p>{stat.description}</p>
-                      </>
-                    )}
+                    <EditableText contentKey="home" path={`stats.${index}.number`} as="span" className="stat-card__number" />
+                    <EditableText contentKey="home" path={`stats.${index}.label`} as="span" className="stat-card__label" />
+                    <EditableText contentKey="home" path={`stats.${index}.description`} as="p" multiline />
+                    {canEditVision ? (
+                      <button
+                        type="button"
+                        className="cms-editable__cancel"
+                        onClick={() => void updateField('home', 'stats', stats.filter((row) => row.id !== stat.id))}
+                      >
+                        Remove stat
+                      </button>
+                    ) : null}
                   </div>
                 ))}
               </div>
+              {canEditVision ? (
+                <div className="cms-list-edit__add">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => void updateField('home', 'stats', [...stats, createHomeStat()])}
+                  >
+                    Add stat
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
 
       <ServicesShowcase />
 
       {/* Providers */}
-      <section className="section section--providers home-section">
+      <EditableSection id="home-providers" label="Featured providers" className="section section--providers home-section">
         <div className="container">
           <header className="home-section__header section-header section-header--center">
             <EditableText contentKey="home" path="providersSection.eyebrow" as="span" className="section-label home-section__label" />
@@ -354,19 +399,22 @@ export function Home() {
             </h2>
             <EditableText contentKey="home" path="providersSection.lead" as="p" className="home-section__lead" multiline />
             <div className="home-providers-trust" aria-label="Provider network highlights">
-              <span className="home-providers-trust__item">
-                <BadgeCheck size={15} aria-hidden="true" />
-                Verified listings
-              </span>
-              <span className="home-providers-trust__item">
-                <ShieldCheck size={15} aria-hidden="true" />
-                Trusted across Botswana
-              </span>
-              <span className="home-providers-trust__item">
-                <Users size={15} aria-hidden="true" />
-                Growing provider network
-              </span>
+              {trustBadges.map((badge, index) => {
+                const Icon = trustIcons[index % trustIcons.length]
+                return (
+                  <span key={badge.id} className="home-providers-trust__item">
+                    <Icon size={15} aria-hidden="true" />
+                    <EditableText contentKey="home" path={`providersSection.trustBadges.${index}.text`} as="span" />
+                  </span>
+                )
+              })}
             </div>
+            <CmsStringList
+              contentKey="home"
+              path="providersSection.trustBadges"
+              items={trustBadges}
+              placeholder="Trust badge"
+            />
           </header>
 
           <div className="home-providers-stage">
@@ -412,16 +460,19 @@ export function Home() {
             </Button>
           </div>
         </div>
-      </section>
+      </EditableSection>
 
       {/* Testimonials */}
-      <section className="section section--testimonials home-section">
+      <EditableSection id="home-testimonials" label="Testimonials header" className="section section--testimonials home-section">
         <div className="container">
           <header className="home-section__header section-header section-header--center">
-            <span className="section-label home-section__label">Client Stories</span>
+            <EditableText contentKey="home" path="testimonialsSection.eyebrow" as="span" className="section-label home-section__label" />
             <h2 className="display-lg home-section__title">
               <span className="home-section__title-word">
-                Satisfied clients <em className="text-gold">across Botswana</em>
+                <EditableText contentKey="home" path="testimonialsSection.title" as="span" />{' '}
+                <em className="text-gold">
+                  <EditableText contentKey="home" path="testimonialsSection.titleEmphasis" as="span" />
+                </em>
               </span>
             </h2>
           </header>
@@ -442,25 +493,36 @@ export function Home() {
             )}
           />
         </div>
-      </section>
+      </EditableSection>
 
-      {/* CTA */}
-      <section className="section section--cta home-section" data-home-section="stack">
+      <EditableSection id="home-cta" label="Bottom CTA" className="section section--cta home-section" data-home-section="stack">
         <div className="container">
           <div className="cta-panel bento-card">
             <header className="home-section__header home-section__header--inline">
               <h2 className="display-lg home-section__title">
-                <span className="home-section__title-word">Ready to get started?</span>
+                <span className="home-section__title-word">
+                  <EditableText contentKey="home" path="cta.title" as="span" />
+                </span>
               </h2>
-              <p className="home-section__lead">Join {company.shortName} — whether you're looking for services or offering them.</p>
+              <EditableText contentKey="home" path="cta.body" as="p" className="home-section__lead" multiline />
             </header>
             <div className="cta-panel__actions home-section__footer">
-              <Button to="/register" size="lg">Create Account</Button>
-              <Button to="/contact" variant="secondary" size="lg">Contact Us</Button>
+              <Button to={home.cta?.primaryHref || '/register'} size="lg">
+                <EditableText contentKey="home" path="cta.primaryLabel" as="span" />
+              </Button>
+              <Button to={home.cta?.secondaryHref || '/contact'} variant="secondary" size="lg">
+                <EditableText contentKey="home" path="cta.secondaryLabel" as="span" />
+              </Button>
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
+
+      <EditableSection id="home-extra" label="Extra sections" as="div">
+        <div className="container">
+          <CmsExtraSections contentKey="home" />
+        </div>
+      </EditableSection>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
 import { Pencil } from 'lucide-react'
 import { useSiteContent } from '../../context/SiteContentContext'
-import { useSiteEdit } from '../../context/SiteEditContext'
+import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import type { SiteContentKey } from '../../lib/siteContentDefaults'
 import { useToast } from '../../context/ToastContext'
 import './cms.css'
@@ -24,7 +24,7 @@ export function EditableText({
   children,
 }: EditableTextProps) {
   const { getBlock, updateField } = useSiteContent()
-  const { editMode } = useSiteEdit()
+  const canEditField = useSectionFieldEdit()
   const { showToast } = useToast()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -106,7 +106,7 @@ export function EditableText({
   const lines = display.split('\n')
 
   return (
-    <Tag className={`cms-editable ${editMode ? 'cms-editable--active' : ''} ${className}`.trim()}>
+    <Tag className={`cms-editable ${canEditField ? 'cms-editable--active' : ''} ${className}`.trim()}>
       {children ??
         (lines.length > 1
           ? lines.map((line, index) => (
@@ -116,7 +116,7 @@ export function EditableText({
               </span>
             ))
           : display)}
-      {editMode ? (
+      {canEditField ? (
         <button type="button" className="cms-editable__trigger" onClick={startEdit} aria-label="Edit text">
           <Pencil size={12} />
           Edit

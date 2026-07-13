@@ -3,7 +3,9 @@ import { ArrowRight } from 'lucide-react'
 import { LOGO_PATH } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { AboutCompanyTree } from '../components/about/AboutCompanyTree'
+import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { initAboutTreeAnimation } from '../animations/aboutTreeReveal'
 import { onIntroComplete } from '../lib/intro'
 import './About.css'
@@ -34,7 +36,7 @@ export function About() {
 
   return (
     <div className="page about-page">
-      <section className="about-hero">
+      <EditableSection id="about-hero" label="Hero" className="about-hero">
         <div className="container about-hero__inner">
           <div className="about-hero__content page-enter-hero">
             <EditableText contentKey="about" path="hero.eyebrow" as="span" className="section-label" />
@@ -59,9 +61,16 @@ export function About() {
             />
           </div>
         </div>
-      </section>
+      </EditableSection>
 
-      <AboutCompanyTree ref={treeRef} />
+      <EditableSection id="about-company" label="Company profile" as="div">
+        <AboutCompanyTree ref={treeRef} />
+      </EditableSection>
+      <EditableSection id="about-extra" label="Extra sections" as="div">
+        <div className="container">
+          <CmsExtraSections contentKey="about" />
+        </div>
+      </EditableSection>
     </div>
   )
 }

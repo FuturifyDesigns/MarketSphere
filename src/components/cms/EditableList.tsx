@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useSiteContent } from '../../context/SiteContentContext'
-import { useSiteEdit } from '../../context/SiteEditContext'
+import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import type { SiteContentKey } from '../../lib/siteContentDefaults'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../ui/Button'
@@ -24,7 +24,7 @@ export function EditableList<T extends { id: string }>({
   emptyLabel = 'No items yet.',
 }: EditableListProps<T>) {
   const { updateField } = useSiteContent()
-  const { editMode } = useSiteEdit()
+  const canEdit = useSectionFieldEdit()
   const { showToast } = useToast()
 
   const persist = async (next: T[]) => {
@@ -40,7 +40,7 @@ export function EditableList<T extends { id: string }>({
 
   const removeItem = (id: string) => void persist(items.filter((item) => item.id !== id))
 
-  if (!items.length && !editMode) {
+  if (!items.length && !canEdit) {
     return <p>{emptyLabel}</p>
   }
 
@@ -49,7 +49,7 @@ export function EditableList<T extends { id: string }>({
       {items.map((item, index) => (
         <div key={item.id} className="cms-list-edit__item">
           {renderItem(item, index)}
-          {editMode ? (
+          {canEdit ? (
             <button
               type="button"
               className="cms-editable__trigger"
@@ -63,7 +63,7 @@ export function EditableList<T extends { id: string }>({
           ) : null}
         </div>
       ))}
-      {editMode ? (
+      {canEdit ? (
         <div className="cms-list-edit__add">
           <Button type="button" size="sm" variant="secondary" onClick={addItem}>
             <Plus size={14} />

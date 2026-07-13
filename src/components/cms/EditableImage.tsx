@@ -1,7 +1,7 @@
 import { useRef, useState, type ImgHTMLAttributes } from 'react'
 import { ImagePlus, Loader2 } from 'lucide-react'
 import { useSiteContent } from '../../context/SiteContentContext'
-import { useSiteEdit } from '../../context/SiteEditContext'
+import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import type { SiteContentKey } from '../../lib/siteContentDefaults'
 import { uploadSiteAsset } from '../../lib/siteAssetUpload'
 import { useToast } from '../../context/ToastContext'
@@ -24,7 +24,7 @@ export function EditableImage({
   ...imgProps
 }: EditableImageProps) {
   const { updateField } = useSiteContent()
-  const { editMode } = useSiteEdit()
+  const canEditField = useSectionFieldEdit()
   const { showToast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -45,9 +45,9 @@ export function EditableImage({
   }
 
   return (
-    <div className={`cms-image-edit ${editMode ? 'cms-image-edit--active' : ''}`}>
+    <div className={`cms-image-edit ${canEditField ? 'cms-image-edit--active' : ''}`}>
       <img src={src} alt={alt} className={className} {...imgProps} />
-      {editMode ? (
+      {canEditField ? (
         <>
           <input
             ref={inputRef}

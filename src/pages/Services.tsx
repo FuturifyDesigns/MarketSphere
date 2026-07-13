@@ -1,17 +1,30 @@
 import { ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/Button'
+import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useSiteContent } from '../context/SiteContentContext'
 import { ServicesPageShowcase } from '../components/services/ServicesPageShowcase'
 import './Services.css'
 
 export function Services() {
   const { getBlock } = useSiteContent()
-  const company = getBlock<{ shortName: string }>('company')
+  const services = getBlock<{
+    cta: {
+      eyebrow: string
+      title: string
+      body: string
+      primaryLabel: string
+      primaryHref: string
+      secondaryLabel: string
+      secondaryHref: string
+    }
+  }>('services')
+  const cta = services.cta
 
   return (
     <div className="page services-page">
-      <section className="services-hero">
+      <EditableSection id="services-hero" label="Hero" className="services-hero">
         <div className="container services-hero__inner page-enter-hero">
           <EditableText contentKey="services" path="hero.eyebrow" as="span" className="section-label" />
           <h1 className="display-xl">
@@ -24,27 +37,35 @@ export function Services() {
           <EditableText contentKey="services" path="hero.lead" as="p" className="lead services-hero__lead" multiline />
           <EditableText contentKey="services" path="hero.hint" as="p" className="services-hero__hint" />
         </div>
-      </section>
+      </EditableSection>
 
-      <ServicesPageShowcase />
+      <EditableSection id="services-showcase" label="Services showcase" as="div">
+        <ServicesPageShowcase />
+      </EditableSection>
 
-      <section className="section services-page-cta">
+      <EditableSection id="services-cta" label="Bottom CTA" className="section services-page-cta">
         <div className="container">
           <div className="cta-panel bento-card page-reveal">
-            <span className="section-label">Get Started</span>
-            <h2 className="display-lg">Looking for a specific service?</h2>
-            <p>Browse our network of verified providers or list your own business with {company.shortName}.</p>
+            <EditableText contentKey="services" path="cta.eyebrow" as="span" className="section-label" />
+            <EditableText contentKey="services" path="cta.title" as="h2" className="display-lg" />
+            <EditableText contentKey="services" path="cta.body" as="p" multiline />
             <div className="cta-panel__actions">
-              <Button to="/browse" size="lg">
-                Browse Providers <ArrowRight size={16} />
+              <Button to={cta?.primaryHref || '/browse'} size="lg">
+                <EditableText contentKey="services" path="cta.primaryLabel" as="span" /> <ArrowRight size={16} />
               </Button>
-              <Button to="/register?role=provider" variant="secondary" size="lg">
-                Become a Provider
+              <Button to={cta?.secondaryHref || '/register?role=provider'} variant="secondary" size="lg">
+                <EditableText contentKey="services" path="cta.secondaryLabel" as="span" />
               </Button>
             </div>
           </div>
         </div>
-      </section>
+      </EditableSection>
+
+      <EditableSection id="services-extra" label="Extra sections" as="div">
+        <div className="container">
+          <CmsExtraSections contentKey="services" />
+        </div>
+      </EditableSection>
     </div>
   )
 }

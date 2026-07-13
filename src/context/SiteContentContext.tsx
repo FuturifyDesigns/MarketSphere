@@ -3,8 +3,11 @@ import { supabase } from '../lib/supabase'
 import {
   cloneDefaults,
   DEFAULT_SITE_CONTENT,
+  normalizeStringItems,
   type SiteContentKey,
 } from '../lib/siteContentDefaults'
+import { COMPANY } from '../lib/constants'
+import type { CmsExtraSection } from '../lib/cmsTypes'
 import { setAtPath } from '../lib/siteContentUtils'
 import { useAuth } from './AuthContext'
 
@@ -21,48 +24,121 @@ type SiteContentContextValue = {
 
 const SiteContentContext = createContext<SiteContentContextValue | null>(null)
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function deepMerge<T>(defaults: T, stored: unknown): T {
+  if (stored == null) return defaults
+  if (Array.isArray(stored)) {
+    return (stored.length ? stored : defaults) as T
+  }
+  if (isPlainObject(defaults) && isPlainObject(stored)) {
+    const result = { ...defaults } as Record<string, unknown>
+    for (const key of Object.keys(defaults)) {
+      result[key] = deepMerge(defaults[key], stored[key])
+    }
+    for (const key of Object.keys(stored)) {
+      if (!(key in defaults)) {
+        result[key] = stored[key]
+      }
+    }
+    return result as T
+  }
+  return stored as T
+}
+
+function normalizeBlock(key: SiteContentKey, block: unknown) {
+  const defaults = DEFAULT_SITE_CONTENT[key]
+  const merged = deepMerge(defaults, block)
+
+  if (key === 'faq') {
+    const faq = merged as { items?: unknown[] }
+    if (!faq.items?.length) {
+      faq.items = (DEFAULT_SITE_CONTENT.faq as { items: unknown[] }).items
+    }
+  }
+
+  if (key === 'services') {
+    const services = merged as { items?: unknown[] }
+    if (!services.items?.length) {
+      services.items = (DEFAULT_SITE_CONTENT.services as { items: unknown[] }).items
+    }
+  }
+
+  if (key === 'home') {
+    const home = merged as {
+      stats?: unknown[]
+      marquee?: unknown
+      providersSection?: { trustBadges?: unknown }
+    }
+    if (!home.stats?.length) {
+      home.stats = (DEFAULT_SITE_CONTENT.home as { stats: unknown[] }).stats
+    }
+    home.marquee = normalizeStringItems(
+      home.marquee,
+      (DEFAULT_SITE_CONTENT.home as { marquee: unknown }).marquee as ReturnType<typeof normalizeStringItems>,
+    )
+    if (home.providersSection) {
+      const defaultProviders = (DEFAULT_SITE_CONTENT.home as { providersSection: { trustBadges: unknown } }).providersSection
+      home.providersSection.trustBadges = normalizeStringItems(
+        home.providersSection.trustBadges,
+        defaultProviders.trustBadges as ReturnType<typeof normalizeStringItems>,
+      )
+    }
+  }
+
+  if (key === 'about') {
+    const about = merged as { tree?: Record<string, unknown> }
+    const defaultTree = (DEFAULT_SITE_CONTENT.about as { tree: Record<string, unknown> }).tree
+    if (!about.tree) {
+      about.tree = structuredClone(defaultTree)
+    } else {
+      about.tree.coreValues = normalizeStringItems(about.tree.coreValues, defaultTree.coreValues as never)
+      about.tree.areas = normalizeStringItems(about.tree.areas, defaultTree.areas as never)
+    }
+  }
+
+  if (key === 'company') {
+    const company = merged as { footer?: unknown; extraSections?: CmsExtraSection[]; phones?: unknown }
+    const defaultCompany = DEFAULT_SITE_CONTENT.company as {
+      footer?: unknown
+      extraSections?: CmsExtraSection[]
+      phones?: unknown
+    }
+    if (!company.footer && defaultCompany.footer) {
+      company.footer = defaultCompany.footer
+    }
+    if (!company.extraSections) {
+      company.extraSections = defaultCompany.extraSections ?? []
+    }
+    company.phones = normalizeStringItems(
+      company.phones,
+      normalizeStringItems([...COMPANY.phones], []),
+    )
+  }
+
+  for (const pageKey of ['home', 'about', 'services', 'contact', 'faq', 'company'] as SiteContentKey[]) {
+    if (key !== pageKey) continue
+    const page = merged as { extraSections?: CmsExtraSection[] }
+    if (!page.extraSections) {
+      page.extraSections = []
+    }
+  }
+
+  return merged
+}
+
 function mergeWithDefaults(rows: Array<{ key: string; value: unknown }>) {
   const merged = cloneDefaults()
   for (const row of rows) {
     if (row.key in merged) {
-      const defaults = merged[row.key as SiteContentKey]
-      const stored = row.value
-      if (
-        stored &&
-        typeof stored === 'object' &&
-        defaults &&
-        typeof defaults === 'object' &&
-        !Array.isArray(stored) &&
-        !Array.isArray(defaults)
-      ) {
-        merged[row.key as SiteContentKey] = { ...defaults, ...stored }
-      } else if (Array.isArray(stored) && Array.isArray(defaults) && stored.length === 0) {
-        merged[row.key as SiteContentKey] = defaults
-      } else if (stored != null) {
-        merged[row.key as SiteContentKey] = stored
-      }
+      merged[row.key as SiteContentKey] = normalizeBlock(row.key as SiteContentKey, row.value)
     }
   }
 
-  const faq = merged.faq as { items?: unknown[] }
-  if (!faq.items?.length) {
-    faq.items = (DEFAULT_SITE_CONTENT.faq as { items: unknown[] }).items
-  }
-
-  const services = merged.services as { items?: unknown[] }
-  if (!services.items?.length) {
-    services.items = (DEFAULT_SITE_CONTENT.services as { items: unknown[] }).items
-  }
-
-  const home = merged.home as { stats?: unknown[] }
-  if (!home.stats?.length) {
-    home.stats = (DEFAULT_SITE_CONTENT.home as { stats: unknown[] }).stats
-  }
-
-  const company = merged.company as { footer?: unknown }
-  const defaultCompany = DEFAULT_SITE_CONTENT.company as { footer?: unknown }
-  if (!company.footer && defaultCompany.footer) {
-    company.footer = defaultCompany.footer
+  for (const key of Object.keys(merged) as SiteContentKey[]) {
+    merged[key] = normalizeBlock(key, merged[key])
   }
 
   return merged
@@ -108,12 +184,13 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
 
   const updateBlock = useCallback(
     async (key: SiteContentKey, value: unknown) => {
-      setContent((current) => ({ ...current, [key]: value }))
+      const normalized = normalizeBlock(key, value)
+      setContent((current) => ({ ...current, [key]: normalized }))
       if (!isAdmin) return
 
       const { error } = await supabase.rpc('admin_upsert_site_content', {
         content_key: key,
-        content_value: value,
+        content_value: normalized,
       })
 
       if (error) {
@@ -139,7 +216,7 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
 
   const getBlock = useCallback(
     <T,>(key: SiteContentKey): T => {
-      return (content[key] ?? cloneDefaults()[key]) as T
+      return normalizeBlock(key, content[key] ?? cloneDefaults()[key]) as T
     },
     [content],
   )

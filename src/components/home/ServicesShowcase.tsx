@@ -8,7 +8,13 @@ import { onHomeSectionsReady } from '../../lib/homeSectionsReady'
 import { flushScrollRefresh } from '../../lib/scrollRefresh'
 import { markServicesShowcaseReady } from '../../lib/servicesShowcaseReady'
 import { initBelowFoldSections } from '../../animations/belowFoldReveal'
-import { SERVICES } from '../../lib/constants'
+import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
+import { useSiteContent } from '../../context/SiteContentContext'
+import type { MarketingService } from '../../lib/siteContentDefaults'
+import { EditableSection } from '../cms/EditableSection'
+import { EditableText } from '../cms/EditableText'
+import { EditableImage } from '../cms/EditableImage'
+import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import './ServicesShowcase.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -16,8 +22,6 @@ gsap.registerPlugin(ScrollTrigger)
 const FADE_EASE = 'power2.inOut'
 const REVEAL_EASE = 'power2.out'
 const CROSSFADE = 0.48
-
-const base = import.meta.env.BASE_URL
 
 function splitTitle(title: string) {
   const words = title.split(' ')
@@ -83,10 +87,14 @@ function setSlideHidden(slide: HTMLElement, isRight: boolean) {
 
 export function ServicesShowcase() {
   const rootRef = useRef<HTMLElement>(null)
+  const { getBlock } = useSiteContent()
+  const canEditField = useSectionFieldEdit()
+  const servicesBlock = getBlock<{ items: MarketingService[] }>('services')
+  const items = servicesBlock.items || []
 
   useEffect(() => {
     const root = rootRef.current
-    if (!root) return
+    if (!root || items.length === 0) return
 
     let ctx: gsap.Context | undefined
     let belowFoldCleanup: (() => void) | undefined
@@ -97,9 +105,9 @@ export function ServicesShowcase() {
       if (started) return
       started = true
 
-      SERVICES.forEach((service) => {
+      items.forEach((service) => {
         const preload = new Image()
-        preload.src = `${base}${service.image}`
+        preload.src = cmsAssetUrl(service.image)
       })
 
       ctx = gsap.context(() => {
@@ -324,16 +332,16 @@ export function ServicesShowcase() {
       belowFoldCleanup?.()
       ctx?.revert()
     }
-  }, [])
+  }, [items.length])
 
   return (
-    <section className="services-showcase" ref={rootRef} aria-label="Our services">
+    <EditableSection id="home-services-showcase" label="Services showcase" as="section" className="services-showcase" ref={rootRef} aria-label="Our services">
       <div className="services-showcase__pin">
         <div className="services-showcase__bg-stack" aria-hidden="true">
-          {SERVICES.map((service) => (
-            <div key={`bg-${service.title}`} className="services-showcase__bg-layer">
+          {items.map((service) => (
+            <div key={`bg-${service.id}`} className="services-showcase__bg-layer">
               <img
-                src={`${base}${service.image}`}
+                src={cmsAssetUrl(service.image)}
                 alt=""
                 className="services-showcase__slide-blur"
                 loading="eager"
@@ -345,45 +353,65 @@ export function ServicesShowcase() {
         </div>
 
         <div className="services-showcase__intro">
-          <span className="section-label">What We Offer</span>
+          <EditableText contentKey="home" path="servicesShowcase.eyebrow" as="span" className="section-label" />
           <h2 className="services-showcase__mega">
-            <span className="services-showcase__mega-word">Services</span>
+            <EditableText contentKey="home" path="servicesShowcase.title" as="span" className="services-showcase__mega-word" />
           </h2>
           <p className="services-showcase__intro-tagline">
-            that empower <em className="text-gold">the nation</em>
+            <EditableText contentKey="home" path="servicesShowcase.taglineBefore" as="span" />{' '}
+            <em className="text-gold">
+              <EditableText contentKey="home" path="servicesShowcase.taglineEmphasis" as="span" />
+            </em>
           </p>
         </div>
 
         <div className="services-showcase__stage">
-          {SERVICES.map((service, i) => {
+          {items.map((service, i) => {
             const { first, second } = splitTitle(service.title)
             return (
               <article
-                key={service.title}
+                key={service.id}
                 className={`services-showcase__slide ${i % 2 === 1 ? 'is-right' : 'is-left'}`}
               >
                 <div className="services-showcase__slide-content">
                   <div className="services-showcase__copy">
                     <span className="services-showcase__index">0{i + 1}</span>
-                    <p className="services-showcase__tagline">{service.tagline}</p>
-                    <h3 className="services-showcase__title">
-                      {first && <span>{first}</span>}
-                      {second && <span className="text-gold"> {second}</span>}
-                    </h3>
-                    <p className="services-showcase__desc">{service.description}</p>
+                    <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="services-showcase__tagline" />
+                    {canEditField ? (
+                      <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="services-showcase__title" />
+                    ) : (
+                      <h3 className="services-showcase__title">
+                        {first && <span>{first}</span>}
+                        {second && <span className="text-gold"> {second}</span>}
+                      </h3>
+                    )}
+                    <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="services-showcase__desc" multiline />
                     <Link to="/services" className="services-showcase__cta">
-                      Learn more <ArrowRight size={14} />
+                      <EditableText contentKey="home" path="servicesShowcase.ctaLabel" as="span" /> <ArrowRight size={14} />
                     </Link>
                   </div>
                   <div className="services-showcase__visual">
                     <PosterTilt>
-                      <img
-                        src={`${base}${service.image}`}
-                        alt={service.title}
-                        className="services-showcase__visual-poster"
-                        loading="eager"
-                        decoding="async"
-                      />
+                      {canEditField ? (
+                        <EditableImage
+                          contentKey="services"
+                          path={`items.${i}.image`}
+                          src={cmsAssetUrl(service.image)}
+                          alt={service.title}
+                          uploadFolder="services"
+                          className="services-showcase__visual-poster"
+                          loading="eager"
+                          decoding="async"
+                        />
+                      ) : (
+                        <img
+                          src={cmsAssetUrl(service.image)}
+                          alt={service.title}
+                          className="services-showcase__visual-poster"
+                          loading="eager"
+                          decoding="async"
+                        />
+                      )}
                     </PosterTilt>
                   </div>
                 </div>
@@ -393,8 +421,8 @@ export function ServicesShowcase() {
         </div>
 
         <div className="services-showcase__progress" aria-hidden="true">
-          {SERVICES.map((service) => (
-            <span key={service.title} className="services-showcase__dot" />
+          {items.map((service) => (
+            <span key={service.id} className="services-showcase__dot" />
           ))}
         </div>
       </div>
@@ -402,19 +430,23 @@ export function ServicesShowcase() {
       <div className="services-showcase__mobile">
         <div className="container">
           <div className="section-header">
-            <span className="section-label">What We Offer</span>
+            <EditableText contentKey="home" path="servicesShowcase.eyebrow" as="span" className="section-label" />
             <h2 className="display-lg">
-              Services that empower<br />
-              <em className="text-gold">the nation</em>
+              <EditableText contentKey="home" path="servicesShowcase.title" as="span" />{' '}
+              <EditableText contentKey="home" path="servicesShowcase.taglineBefore" as="span" />
+              <br />
+              <em className="text-gold">
+                <EditableText contentKey="home" path="servicesShowcase.taglineEmphasis" as="span" />
+              </em>
             </h2>
           </div>
-          {SERVICES.map((service, i) => {
+          {items.map((service, i) => {
             const { first, second } = splitTitle(service.title)
             return (
-              <article key={service.title} className="services-showcase__mobile-card bento-card">
+              <article key={service.id} className="services-showcase__mobile-card bento-card">
                 <div className="services-showcase__slide-backdrop" aria-hidden="true">
                   <img
-                    src={`${base}${service.image}`}
+                    src={cmsAssetUrl(service.image)}
                     alt=""
                     className="services-showcase__slide-blur"
                     loading="lazy"
@@ -426,25 +458,25 @@ export function ServicesShowcase() {
                   <div className="services-showcase__mobile-visual">
                     <PosterTilt>
                       <img
-                        src={`${base}${service.image}`}
+                        src={cmsAssetUrl(service.image)}
                         alt={service.title}
                         className="services-showcase__visual-poster"
                         loading="lazy"
                       />
                     </PosterTilt>
                   </div>
-                  <p className="services-showcase__tagline">{service.tagline}</p>
+                  <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="services-showcase__tagline" />
                   <h3 className="services-showcase__title">
                     {first && <span>{first}</span>}
                     {second && <span className="text-gold"> {second}</span>}
                   </h3>
-                  <p className="services-showcase__desc">{service.description}</p>
+                  <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="services-showcase__desc" multiline />
                 </div>
               </article>
             )
           })}
         </div>
       </div>
-    </section>
+    </EditableSection>
   )
 }

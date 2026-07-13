@@ -3,22 +3,33 @@ import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { onIntroComplete } from '../../lib/intro'
 import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
+import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
+import { createMarketingService } from '../../lib/cmsTypes'
 import { useSiteContent } from '../../context/SiteContentContext'
-import { useSiteEdit } from '../../context/SiteEditContext'
+import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableText } from '../cms/EditableText'
 import { EditableImage } from '../cms/EditableImage'
+import { EditableAsset } from '../cms/EditableAsset'
+import { Button } from '../ui/Button'
 import { ServiceSlideMedia } from './ServiceSlideMedia'
 import './ServicesPageShowcase.css'
 
 type ServicesBlock = {
+  showcase: {
+    eyebrow: string
+    title: string
+    titleEmphasis: string
+    lead: string
+    ctaLabel: string
+  }
   items: MarketingService[]
 }
 
 export function ServicesPageShowcase() {
   const rootRef = useRef<HTMLElement>(null)
-  const { getBlock } = useSiteContent()
-  const { editMode } = useSiteEdit()
+  const { getBlock, updateField } = useSiteContent()
+  const canEditField = useSectionFieldEdit()
   const services = getBlock<ServicesBlock>('services')
   const items = services.items || []
 
@@ -60,13 +71,14 @@ export function ServicesPageShowcase() {
         </div>
 
         <div className="svc-page__intro">
-          <span className="section-label">What We Offer</span>
+          <EditableText contentKey="services" path="showcase.eyebrow" as="span" className="section-label" />
           <h2 className="svc-page__mega">
-            Services built for <em className="text-gold">impact</em>
+            <EditableText contentKey="services" path="showcase.title" as="span" />{' '}
+            <em className="text-gold">
+              <EditableText contentKey="services" path="showcase.titleEmphasis" as="span" />
+            </em>
           </h2>
-          <p className="svc-page__intro-lead">
-            Scroll to explore how Market Sphere Group empowers communities across Botswana.
-          </p>
+          <EditableText contentKey="services" path="showcase.lead" as="p" className="svc-page__intro-lead" multiline />
         </div>
 
         <div className="svc-page__stage">
@@ -89,15 +101,24 @@ export function ServicesPageShowcase() {
                   <div className="svc-page__media-wrap">
                     <div className="svc-page__media-glow" aria-hidden="true" />
                     <div className="svc-page__media">
-                      {editMode ? (
-                        <EditableImage
-                          contentKey="services"
-                          path={`items.${i}.image`}
-                          src={service.image}
-                          alt={service.title}
-                          uploadFolder="services"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                      {canEditField ? (
+                        <>
+                          <EditableImage
+                            contentKey="services"
+                            path={`items.${i}.image`}
+                            src={cmsAssetUrl(service.image)}
+                            alt={service.title}
+                            uploadFolder="services"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <EditableAsset
+                            contentKey="services"
+                            path={`items.${i}.video`}
+                            value={service.video}
+                            uploadFolder="services"
+                            label="Upload service video"
+                          />
+                        </>
                       ) : (
                         <ServiceSlideMedia
                           video={service.video}
@@ -114,7 +135,7 @@ export function ServicesPageShowcase() {
                     <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="svc-page__title" />
                     <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="svc-page__desc" multiline />
                     <Link to="/contact" className="svc-page__cta">
-                      Enquire now <ArrowRight size={14} />
+                      <EditableText contentKey="services" path="showcase.ctaLabel" as="span" /> <ArrowRight size={14} />
                     </Link>
                   </div>
                 </div>
@@ -123,6 +144,29 @@ export function ServicesPageShowcase() {
           })}
         </div>
       </div>
+
+      {canEditField ? (
+        <div className="container cms-list-edit__add">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => void updateField('services', 'items', [...items, createMarketingService()])}
+          >
+            Add service
+          </Button>
+          {items.length > 1 ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => void updateField('services', 'items', items.slice(0, -1))}
+            >
+              Remove last service
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   )
 }

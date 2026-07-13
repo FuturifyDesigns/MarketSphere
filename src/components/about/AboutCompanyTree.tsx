@@ -1,6 +1,11 @@
 import { forwardRef } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { COMPANY, LOGO_PATH } from '../../lib/constants'
+import { LOGO_PATH } from '../../lib/constants'
+import { useSiteContent } from '../../context/SiteContentContext'
+import type { CmsStringItem } from '../../lib/cmsTypes'
+import { EditableText } from '../cms/EditableText'
+import { CmsStringList } from '../cms/CmsStringList'
 import {
   ABOUT_TREE_SECTION_ICONS,
   AREA_ICONS,
@@ -13,16 +18,51 @@ import './AboutCompanyTree.css'
 
 const base = import.meta.env.BASE_URL
 
+type AboutTreeBlock = {
+  introEyebrow: string
+  introTitle: string
+  introLead: string
+  rootTitle: string
+  rootSubtitle: string
+  rootBody: string
+  missionLabel: string
+  mission: string
+  visionLabel: string
+  vision: string
+  valuesLabel: string
+  valuesHeading: string
+  coreValues: CmsStringItem[]
+  areasLabel: string
+  areasHeading: string
+  areas: CmsStringItem[]
+  detailsLabel: string
+  detailsHeading: string
+  companyType: string
+  businessType: string
+}
+
+function valueIcon(value: string): LucideIcon {
+  const icons = CORE_VALUE_ICONS as Record<string, LucideIcon>
+  return icons[value] ?? ABOUT_TREE_SECTION_ICONS.values
+}
+
+function areaIcon(area: string): LucideIcon {
+  const icons = AREA_ICONS as Record<string, LucideIcon>
+  return icons[area] ?? ABOUT_TREE_SECTION_ICONS.areas
+}
+
 export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTree(_, ref) {
+  const { getBlock } = useSiteContent()
+  const about = getBlock<{ tree: AboutTreeBlock }>('about')
+  const tree = about.tree
+
   return (
     <section ref={ref} className="about-tree" aria-label="Our company story">
       <div className="container">
         <header className="about-tree__intro">
-          <span className="section-label">Our Story</span>
-          <h2 className="display-lg">How we grow together</h2>
-          <p className="about-tree__intro-lead">
-            Scroll to grow each branch — every node opens fully before the next one appears.
-          </p>
+          <EditableText contentKey="about" path="tree.introEyebrow" as="span" className="section-label" />
+          <EditableText contentKey="about" path="tree.introTitle" as="h2" className="display-lg" />
+          <EditableText contentKey="about" path="tree.introLead" as="p" className="about-tree__intro-lead" multiline />
         </header>
       </div>
 
@@ -42,32 +82,32 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__card-head">
                       <img src={`${base}${LOGO_PATH}`} alt="" className="about-tree__logo about-tree__reveal-item" loading="eager" decoding="sync" />
                       <span className="about-tree__step-label about-tree__reveal-item">Root</span>
-                      <h3 className="about-tree__node-title about-tree__reveal-item">{COMPANY.shortName}</h3>
-                      <p className="about-tree__node-subtitle about-tree__reveal-item">{COMPANY.name}</p>
+                      <EditableText contentKey="about" path="tree.rootTitle" as="h3" className="about-tree__node-title about-tree__reveal-item" />
+                      <EditableText contentKey="about" path="tree.rootSubtitle" as="p" className="about-tree__node-subtitle about-tree__reveal-item" />
                     </div>
                     <div className="about-tree__card-scroll" data-lenis-prevent>
-                      <p className="about-tree__node-body">{COMPANY.overview}</p>
+                      <EditableText contentKey="about" path="tree.rootBody" as="p" className="about-tree__node-body" multiline />
                       <dl className="about-tree__meta">
                         <div>
                           <dt>
                             <TreeIcon icon={ROOT_META_ICONS.registration} size={14} />
                             Registration
                           </dt>
-                          <dd>{COMPANY.registration}</dd>
+                          <dd><EditableText contentKey="company" path="registration" as="span" /></dd>
                         </div>
                         <div>
                           <dt>
                             <TreeIcon icon={ROOT_META_ICONS.headOffice} size={14} />
                             Head Office
                           </dt>
-                          <dd>{COMPANY.headOffice}</dd>
+                          <dd><EditableText contentKey="company" path="headOffice" as="span" multiline /></dd>
                         </div>
                         <div>
                           <dt>
                             <TreeIcon icon={ROOT_META_ICONS.reach} size={14} />
                             Reach
                           </dt>
-                          <dd>{COMPANY.operationalArea}</dd>
+                          <dd><EditableText contentKey="company" path="operationalArea" as="span" /></dd>
                         </div>
                       </dl>
                     </div>
@@ -81,8 +121,8 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                       <TreeIcon icon={ABOUT_TREE_SECTION_ICONS.mission} />
                     </div>
-                    <span className="about-tree__step-label about-tree__reveal-item">Mission</span>
-                    <p className="about-tree__quote about-tree__reveal-item">{COMPANY.mission}</p>
+                    <EditableText contentKey="about" path="tree.missionLabel" as="span" className="about-tree__step-label about-tree__reveal-item" />
+                    <EditableText contentKey="about" path="tree.mission" as="p" className="about-tree__quote about-tree__reveal-item" multiline />
                   </div>
                 </article>
               </div>
@@ -93,8 +133,8 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                       <TreeIcon icon={ABOUT_TREE_SECTION_ICONS.vision} />
                     </div>
-                    <span className="about-tree__step-label about-tree__reveal-item">Vision</span>
-                    <p className="about-tree__node-body about-tree__reveal-item">{COMPANY.vision}</p>
+                    <EditableText contentKey="about" path="tree.visionLabel" as="span" className="about-tree__step-label about-tree__reveal-item" />
+                    <EditableText contentKey="about" path="tree.vision" as="p" className="about-tree__node-body about-tree__reveal-item" multiline />
                   </div>
                 </article>
               </div>
@@ -106,16 +146,16 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                       <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                         <TreeIcon icon={ABOUT_TREE_SECTION_ICONS.values} />
                       </div>
-                      <span className="about-tree__step-label about-tree__reveal-item">Core Values</span>
-                      <h3 className="about-tree__node-heading about-tree__reveal-item">What we stand for</h3>
+                      <EditableText contentKey="about" path="tree.valuesLabel" as="span" className="about-tree__step-label about-tree__reveal-item" />
+                      <EditableText contentKey="about" path="tree.valuesHeading" as="h3" className="about-tree__node-heading about-tree__reveal-item" />
                     </div>
                     <div className="about-tree__card-scroll" data-lenis-prevent>
                       <div className="about-tree__cluster about-tree__cluster--values">
-                        {COMPANY.coreValues.map((value, i) => {
-                          const ValueIcon = CORE_VALUE_ICONS[value]
+                        {(tree.coreValues || []).map((value, i) => {
+                          const ValueIcon = valueIcon(value.text)
                           return (
                             <div
-                              key={value}
+                              key={value.id}
                               className={`about-tree__cluster-item ${i === 0 ? 'about-tree__cluster-item--featured' : ''}`}
                             >
                               <span className="about-tree__cluster-icon" aria-hidden="true">
@@ -123,12 +163,13 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                               </span>
                               <div className="about-tree__cluster-copy">
                                 <span className="about-tree__cluster-num">0{i + 1}</span>
-                                <span className="about-tree__cluster-label">{value}</span>
+                                <EditableText contentKey="about" path={`tree.coreValues.${i}.text`} as="span" className="about-tree__cluster-label" />
                               </div>
                             </div>
                           )
                         })}
                       </div>
+                      <CmsStringList contentKey="about" path="tree.coreValues" items={tree.coreValues || []} placeholder="Core value" />
                     </div>
                   </div>
                 </article>
@@ -141,23 +182,24 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                       <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                         <TreeIcon icon={ABOUT_TREE_SECTION_ICONS.areas} />
                       </div>
-                      <span className="about-tree__step-label about-tree__reveal-item">Areas of Interest</span>
-                      <h3 className="about-tree__node-heading about-tree__reveal-item">What we do</h3>
+                      <EditableText contentKey="about" path="tree.areasLabel" as="span" className="about-tree__step-label about-tree__reveal-item" />
+                      <EditableText contentKey="about" path="tree.areasHeading" as="h3" className="about-tree__node-heading about-tree__reveal-item" />
                     </div>
                     <div className="about-tree__card-scroll" data-lenis-prevent>
                       <div className="about-tree__cluster about-tree__cluster--areas">
-                        {COMPANY.areasOfInterest.map((area) => {
-                          const AreaIcon = AREA_ICONS[area]
+                        {(tree.areas || []).map((area, areaIndex) => {
+                          const AreaIcon = areaIcon(area.text)
                           return (
-                            <div key={area} className="about-tree__cluster-item about-tree__cluster-item--area">
+                            <div key={area.id} className="about-tree__cluster-item about-tree__cluster-item--area">
                               <span className="about-tree__cluster-icon about-tree__cluster-icon--area" aria-hidden="true">
                                 <TreeIcon icon={AreaIcon} size={16} />
                               </span>
-                              <span className="about-tree__cluster-label">{area}</span>
+                              <EditableText contentKey="about" path={`tree.areas.${areaIndex}.text`} as="span" className="about-tree__cluster-label" />
                             </div>
                           )
                         })}
                       </div>
+                      <CmsStringList contentKey="about" path="tree.areas" items={tree.areas || []} placeholder="Area of interest" />
                     </div>
                   </div>
                 </article>
@@ -169,29 +211,29 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                     <div className="about-tree__node-icon about-tree__reveal-item" aria-hidden="true">
                       <TreeIcon icon={ABOUT_TREE_SECTION_ICONS.details} />
                     </div>
-                    <span className="about-tree__step-label about-tree__reveal-item">Company Details</span>
-                    <h3 className="about-tree__node-heading about-tree__reveal-item">Get in touch</h3>
+                    <EditableText contentKey="about" path="tree.detailsLabel" as="span" className="about-tree__step-label about-tree__reveal-item" />
+                    <EditableText contentKey="about" path="tree.detailsHeading" as="h3" className="about-tree__node-heading about-tree__reveal-item" />
                     <div className="about-tree__details">
                       <div className="about-tree__detail-tile">
                         <span>
                           <TreeIcon icon={DETAIL_ICONS.type} size={14} />
                           Type
                         </span>
-                        <strong>{COMPANY.companyType}</strong>
+                        <strong><EditableText contentKey="about" path="tree.companyType" as="span" /></strong>
                       </div>
                       <div className="about-tree__detail-tile">
                         <span>
                           <TreeIcon icon={DETAIL_ICONS.business} size={14} />
                           Business
                         </span>
-                        <strong>{COMPANY.businessType}</strong>
+                        <strong><EditableText contentKey="about" path="tree.businessType" as="span" /></strong>
                       </div>
                       <div className="about-tree__detail-tile">
                         <span>
                           <TreeIcon icon={DETAIL_ICONS.location} size={14} />
                           Location
                         </span>
-                        <strong>{COMPANY.address}</strong>
+                        <strong><EditableText contentKey="company" path="address" as="span" multiline /></strong>
                       </div>
                       <div className="about-tree__detail-tile">
                         <span>
@@ -199,7 +241,7 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                           Email
                         </span>
                         <strong>
-                          <Link to="/contact">{COMPANY.email}</Link>
+                          <Link to="/contact"><EditableText contentKey="company" path="email" as="span" /></Link>
                         </strong>
                       </div>
                     </div>

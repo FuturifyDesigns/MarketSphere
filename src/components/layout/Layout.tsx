@@ -4,14 +4,16 @@ import { Footer } from './Footer'
 import { PageTransition } from './PageTransition'
 import { AccountNoticeListener } from '../auth/AccountNoticeListener'
 import { ExitIntentModal } from '../marketing/ExitIntentModal'
-import { SiteEditToolbar } from '../cms/SiteEditToolbar'
+import { LiveEditorBar, LiveEditorEntry } from '../cms/LiveEditorBar'
 import { useLenis } from '../../hooks/useLenis'
 import { usePageTheme } from '../../hooks/usePageTheme'
+import { useSiteEdit } from '../../context/SiteEditContext'
 import { resetIntroActiveClass } from '../../lib/intro'
 
 export function Layout() {
   useLenis()
   usePageTheme()
+  const { editMode } = useSiteEdit()
 
   useEffect(() => {
     if ('scrollRestoration' in history) {
@@ -22,15 +24,16 @@ export function Layout() {
   }, [])
 
   return (
-    <div className="layout">
+    <div className={`layout ${editMode ? 'layout--live-edit' : ''}`}>
       <AccountNoticeListener />
       <Navbar />
+      <LiveEditorBar />
       <main className="main">
         <PageTransition />
       </main>
       <Footer />
       <ExitIntentModal />
-      <SiteEditToolbar />
+      <LiveEditorEntry />
     </div>
   )
 }
