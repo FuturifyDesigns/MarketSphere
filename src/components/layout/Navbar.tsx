@@ -8,6 +8,38 @@ import { preloadServiceVideos } from '../../lib/serviceVideoCache'
 import { Button } from '../ui/Button'
 import './Navbar.css'
 
+function profileInitials(name: string | null | undefined, email: string | undefined) {
+  if (name?.trim()) {
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('')
+  }
+  return email?.charAt(0).toUpperCase() || '?'
+}
+
+function SessionAvatar({
+  avatarUrl,
+  name,
+  email,
+}: {
+  avatarUrl: string | null | undefined
+  name: string | null | undefined
+  email: string | undefined
+}) {
+  if (avatarUrl) {
+    return <img src={avatarUrl} alt="" className="navbar__session-avatar" />
+  }
+
+  return (
+    <div className="navbar__session-avatar navbar__session-avatar--placeholder" aria-hidden="true">
+      {profileInitials(name, email)}
+    </div>
+  )
+}
+
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/about', label: 'About' },
@@ -60,8 +92,17 @@ export function Navbar() {
         <nav className={`navbar__nav ${open ? 'navbar__nav--open' : ''}`}>
           {profile ? (
             <div className="navbar__mobile-session">
-              <span className="navbar__session-label">Signed in as</span>
-              <span className="navbar__session-name">{signedInName}</span>
+              <div className="navbar__session-user">
+                <SessionAvatar
+                  avatarUrl={profile.avatar_url}
+                  name={profile.full_name}
+                  email={profile.email}
+                />
+                <div className="navbar__session-text">
+                  <span className="navbar__session-label">Signed in as</span>
+                  <span className="navbar__session-name">{signedInName}</span>
+                </div>
+              </div>
               <Link to={dashboardPath} className="navbar__mobile-dash" onClick={() => setOpen(false)}>
                 Go to Dashboard
               </Link>
@@ -87,8 +128,15 @@ export function Navbar() {
           {profile ? (
             <>
               <div className="navbar__session" title={`Signed in as ${signedInName}`}>
-                <span className="navbar__session-label">Signed in as</span>
-                <span className="navbar__session-name">{signedInName}</span>
+                <SessionAvatar
+                  avatarUrl={profile.avatar_url}
+                  name={profile.full_name}
+                  email={profile.email}
+                />
+                <div className="navbar__session-text">
+                  <span className="navbar__session-label">Signed in as</span>
+                  <span className="navbar__session-name">{signedInName}</span>
+                </div>
               </div>
               <Link to={dashboardPath} className="navbar__dash" onClick={() => setOpen(false)}>
                 Dashboard
