@@ -12,9 +12,12 @@ export function ScrollToTop() {
 
     const isAuthRoute =
       location.pathname === '/get-started' || location.pathname === '/login' || location.pathname === '/register'
-    if (!isAuthRoute) {
-      scheduleScrollRefresh()
-    }
+
+    const refreshTimer = window.setTimeout(() => {
+      if (!isAuthRoute) scheduleScrollRefresh()
+    }, 0)
+
+    return () => window.clearTimeout(refreshTimer)
   }, [location.pathname, location.key])
 
   return null

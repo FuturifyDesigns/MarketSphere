@@ -13,29 +13,13 @@ export function scrollToTop(immediate = true) {
   document.body.scrollTop = 0
 }
 
-/** Reset scroll position and GSAP scroll memory when the route changes. */
+/** Reset scroll position once when the route changes (call from useLayoutEffect only). */
 export function resetScrollOnRouteChange() {
-  const apply = () => {
-    const lenis = getLenis()
-    if (lenis) {
-      lenis.scrollTo(0, { immediate: true, force: true })
-      lenis.resize()
-    }
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    document.documentElement.scrollTop = 0
-    document.body.scrollTop = 0
-  }
-
-  apply()
-  requestAnimationFrame(apply)
-  window.setTimeout(apply, 0)
-  window.setTimeout(apply, 100)
-  window.setTimeout(apply, 300)
+  scrollToTop(true)
 
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual'
   }
 
   ScrollTrigger.clearScrollMemory?.()
-  ScrollTrigger.refresh()
 }

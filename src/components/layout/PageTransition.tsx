@@ -1,11 +1,10 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { runPageEnterAnimation } from '../../animations/pageEnter'
 import { onIntroComplete, isIntroComplete } from '../../lib/intro'
 import { scheduleScrollRefresh } from '../../lib/scrollRefresh'
-import { resetScrollOnRouteChange } from '../../lib/scrollToTop'
 import './PageTransition.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -13,10 +12,6 @@ gsap.registerPlugin(ScrollTrigger)
 export function PageTransition() {
   const location = useLocation()
   const wrapRef = useRef<HTMLDivElement>(null)
-
-  useLayoutEffect(() => {
-    resetScrollOnRouteChange()
-  }, [location.pathname, location.key])
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -39,17 +34,7 @@ export function PageTransition() {
         if (cancelled) return
 
         cleanupEnter = runPageEnterAnimation(pageRoot, isHome)
-
-        if (!isHome) {
-          gsap.fromTo(
-            '.navbar',
-            { y: -12, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.05 },
-          )
-        }
-
         scheduleScrollRefresh()
-        window.setTimeout(() => resetScrollOnRouteChange(), 350)
       })
     }
 
@@ -62,7 +47,7 @@ export function PageTransition() {
       removeIntroListener()
       cleanupEnter()
     }
-  }, [location.pathname])
+  }, [location.pathname, location.key])
 
   return (
     <div ref={wrapRef} className="page-transition">

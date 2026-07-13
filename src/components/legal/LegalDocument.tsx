@@ -28,6 +28,7 @@ export function LegalDocument({
   const tocNavRef = useRef<HTMLElement>(null)
   const scrollLockRef = useRef(false)
   const scrollLockTimerRef = useRef<number | undefined>(undefined)
+  const tocScrollReadyRef = useRef(false)
   const [activeId, setActiveId] = useState(() => sections[0]?.id ?? '')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(sections.map((section, index) => [section.id, index === 0])),
@@ -62,24 +63,41 @@ export function LegalDocument({
       window.requestAnimationFrame(syncActiveFromScroll)
     }
 
-    onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
 
     const lenis = getLenis()
     lenis?.on('scroll', onScroll)
 
+    const readyTimer = window.setTimeout(() => {
+      tocScrollReadyRef.current = true
+      syncActiveFromScroll()
+    }, 400)
+
     return () => {
+      window.clearTimeout(readyTimer)
       window.removeEventListener('scroll', onScroll)
       lenis?.off('scroll', onScroll)
     }
   }, [syncActiveFromScroll])
 
   useEffect(() => {
+    if (!tocScrollReadyRef.current || scrollLockRef.current) return
+
     const nav = tocNavRef.current
     if (!nav || !activeId) return
 
     const activeLink = nav.querySelector<HTMLElement>(`[data-section-id="${activeId}"]`)
-    activeLink?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const card = nav.closest<HTMLElement>('.legal-doc-sidebar__card')
+    if (!activeLink || !card) return
+
+    const cardRect = card.getBoundingClientRect()
+    const linkRect = activeLink.getBoundingClientRect()
+
+    if (linkRect.top < cardRect.top + 8) {
+      card.scrollTop -= cardRect.top - linkRect.top + 8
+    } else if (linkRect.bottom > cardRect.bottom - 8) {
+      card.scrollTop += linkRect.bottom - cardRect.bottom + 8
+    }
   }, [activeId])
 
   const selectSection = useCallback((id: string) => {

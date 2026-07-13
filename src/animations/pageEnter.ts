@@ -2,7 +2,6 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
-import { scrollToTop } from '../lib/scrollToTop'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -34,32 +33,29 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
 
     const pageTl = gsap.timeline({
       defaults: { ease: 'power3.out' },
-      onComplete: () => {
-        scrollToTop(true)
-        scheduleScrollRefresh()
-      },
+      onComplete: () => scheduleScrollRefresh(),
     })
 
     pageTl.fromTo(
       root,
-      { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.75, clearProps: 'transform' },
+      { opacity: 0 },
+      { opacity: 1, duration: 0.45, clearProps: 'opacity' },
     )
 
     const heroItems = root.querySelectorAll(HERO_CHILD_SELECTORS)
     if (heroItems.length) {
       pageTl.fromTo(
         heroItems,
-        { y: 36, opacity: 0 },
+        { y: 14, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.85,
-          stagger: 0.09,
-          ease: 'power4.out',
+          duration: 0.65,
+          stagger: 0.07,
+          ease: 'power3.out',
           clearProps: 'transform,opacity',
         },
-        0.12,
+        0.08,
       )
     }
 
