@@ -4,6 +4,11 @@ export const APP_URL = 'https://futurifydesigns.github.io/MarketSphere/'
 /** Optimized logo (WebP). */
 export const LOGO_PATH = 'logo.webp'
 
+export const FUTURIFY_DESIGNS = {
+  name: 'Futurify Designs',
+  url: 'https://github.com/FuturifyDesigns',
+} as const
+
 export const COMPANY = {
   name: 'Market Sphere Group (Pty) Ltd',
   shortName: 'Market Sphere Group',
@@ -132,6 +137,12 @@ export const FAQ_ITEMS = [
     question: 'Is payment handled on the platform?',
     answer:
       'No. Market Sphere Group facilitates connections and enquiries only. Any payment arrangements happen directly between you and the service provider.',
+  },
+  {
+    category: 'Company',
+    question: 'How does Market Sphere Group protect my personal data?',
+    answer:
+      'We process personal data in line with Botswana\'s Data Protection Act, 2024. Read our Privacy Policy for details on your rights, cookies, retention, and how to contact us or the Information and Data Protection Commission.',
   },
   {
     category: 'Company',

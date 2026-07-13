@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Mail, MapPin, Phone, Clock, ArrowRight, MessageSquare, Building2, Send } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
@@ -230,6 +231,11 @@ export function Contact() {
                 <Button type="submit" size="lg" disabled={loading}>
                   {loading ? 'Sending…' : 'Send Message'} <ArrowRight size={16} />
                 </Button>
+                <p className="contact-form__privacy">
+                  By submitting this form you agree to our{' '}
+                  <Link to="/privacy">Privacy Policy</Link>. We process your details to respond to
+                  your enquiry in line with Botswana&apos;s Data Protection Act, 2024.
+                </p>
                 {error && <p className="contact-form__error" role="alert">{error}</p>}
               </form>
             )}

@@ -83,7 +83,8 @@ export function AuthGate() {
       </div>
 
       <p className="auth-gate__footer">
-        By continuing you agree to our terms of service and privacy policy.
+        By continuing you agree to our <Link to="/terms">Terms of Service</Link> and{' '}
+        <Link to="/privacy">Privacy Policy</Link>.
       </p>
     </div>
   )

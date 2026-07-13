@@ -242,6 +242,23 @@ a.contact-card:hover {
   min-height: 120px;
 }
 
+.contact-form__privacy {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.contact-form__privacy a {
+  color: var(--color-gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.contact-form__privacy a:hover {
+  text-decoration: underline;
+}
+
 .contact-success {
   text-align: center;
   display: flex;

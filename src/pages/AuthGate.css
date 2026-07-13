@@ -385,6 +385,16 @@
   max-width: 36ch;
 }
 
+.auth-gate__footer a {
+  color: var(--color-gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-gate__footer a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 900px) {
   .auth-gate {
     min-height: 100svh;

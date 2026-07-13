@@ -328,6 +328,31 @@
   opacity: 0.4;
 }
 
+.auth-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.auth-consent input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  accent-color: var(--color-gold);
+}
+
+.auth-consent a {
+  color: var(--color-gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-consent a:hover {
+  text-decoration: underline;
+}
+
 .role-toggle {
   display: grid;
   grid-template-columns: 1fr 1fr;

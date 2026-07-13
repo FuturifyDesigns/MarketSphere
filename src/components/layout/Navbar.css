@@ -38,6 +38,25 @@
   color: #fff;
 }
 
+.navbar--inverse .navbar__dash,
+.navbar--inverse .navbar__signout {
+  color: rgba(250, 248, 244, 0.96);
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(14, 17, 22, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.navbar--inverse .navbar__dash:hover,
+.navbar--inverse .navbar__signout:hover {
+  color: #fff;
+  border-color: rgba(201, 162, 75, 0.45);
+}
+
+.navbar--inverse .navbar__session-label {
+  color: rgba(250, 248, 244, 0.68);
+}
+
 .navbar--inverse .navbar__pill {
   background: rgba(14, 17, 22, 0.42);
   border-color: rgba(255, 255, 255, 0.14);
@@ -57,8 +76,18 @@
   box-shadow: 0 8px 24px rgba(74, 63, 47, 0.08);
 }
 
-.navbar--scrolled .navbar__dash,
-.navbar--scrolled .navbar__signout {
+.navbar--inverse .navbar__pill {
+  background: rgba(14, 17, 22, 0.42);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.navbar--inverse.navbar--scrolled .navbar__dash,
+.navbar--inverse.navbar--scrolled .navbar__signout {
+  color: rgba(250, 248, 244, 0.96);
+}
+
+.navbar--scrolled:not(.navbar--inverse) .navbar__dash,
+.navbar--scrolled:not(.navbar--inverse) .navbar__signout {
   color: var(--text-primary);
 }
 

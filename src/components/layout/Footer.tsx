@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react'
-import { COMPANY, LOGO_PATH } from '../../lib/constants'
+import { COMPANY, FUTURIFY_DESIGNS, LOGO_PATH } from '../../lib/constants'
+import { useCookieConsent } from '../../context/CookieConsentContext'
 import { Button } from '../ui/Button'
 import './Footer.css'
 
 export function Footer() {
+  const { openCookieSettings } = useCookieConsent()
+
   return (
     <footer className="footer">
       <div className="footer__cta-band">
@@ -45,6 +48,15 @@ export function Footer() {
             <Link to="/login">Sign In</Link>
           </div>
 
+          <div className="footer__col">
+            <h4>Legal</h4>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
+            <button type="button" className="footer__link-btn" onClick={openCookieSettings}>
+              Cookie Settings
+            </button>
+          </div>
+
           <div className="footer__col footer__contact">
             <h4>Reach Us</h4>
             <p><MapPin size={15} /> {COMPANY.address}</p>
@@ -58,8 +70,16 @@ export function Footer() {
 
       <div className="footer__bottom">
         <div className="container footer__bottom-inner">
-          <p>&copy; {new Date().getFullYear()} {COMPANY.name}</p>
-          <p>Serving {COMPANY.operationalArea}</p>
+          <div className="footer__bottom-copy">
+            <p>&copy; {new Date().getFullYear()} {COMPANY.name}</p>
+            <p>Serving {COMPANY.operationalArea}</p>
+          </div>
+          <p className="footer__credit">
+            Built by{' '}
+            <a href={FUTURIFY_DESIGNS.url} target="_blank" rel="noopener noreferrer">
+              {FUTURIFY_DESIGNS.name}
+            </a>
+          </p>
         </div>
       </div>
     </footer>

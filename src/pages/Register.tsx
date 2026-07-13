@@ -50,6 +50,7 @@ export function Register() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [privacyConsent, setPrivacyConsent] = useState(false)
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -76,6 +77,12 @@ export function Register() {
     ])
     setFieldErrors(errors)
     if (hasErrors(errors)) return
+
+    if (!privacyConsent) {
+      setError('Please accept the Privacy Policy and Terms of Service to continue.')
+      showToast('Please accept the Privacy Policy and Terms of Service to continue.', 'error')
+      return
+    }
 
     const phone = formatPhoneWithCountry(form.phoneCountry, form.phoneLocal)
 
@@ -218,6 +225,18 @@ export function Register() {
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
+              <label className="auth-consent">
+                <input
+                  type="checkbox"
+                  checked={privacyConsent}
+                  onChange={(e) => setPrivacyConsent(e.target.checked)}
+                />
+                <span>
+                  I agree to the <Link to="/terms">Terms of Service</Link> and{' '}
+                  <Link to="/privacy">Privacy Policy</Link>, and consent to the processing of my
+                  personal data in accordance with Botswana&apos;s Data Protection Act, 2024.
+                </span>
+              </label>
               <Button type="submit" size="lg" disabled={loading}>
                 {loading
                   ? 'Submitting application...'

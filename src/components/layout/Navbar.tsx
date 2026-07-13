@@ -76,7 +76,7 @@ export function Navbar() {
 
   const signedInName = profile?.full_name?.trim() || profile?.email || 'Account'
   const useInverseNav = isProviderProfile && !scrolled
-  const useSolidNav = scrolled || !isHome
+  const useSolidNav = isProviderProfile ? scrolled : (scrolled || !isHome)
 
   const handleSignOut = async () => {
     setOpen(false)

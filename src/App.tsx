@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { CookieConsentProvider } from './context/CookieConsentContext'
 import { ToastProvider } from './context/ToastContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
@@ -27,6 +28,9 @@ import { CustomerDashboard } from './pages/dashboard/CustomerDashboard'
 import { ProviderDashboard } from './pages/dashboard/ProviderDashboard'
 import { AdminDashboard } from './pages/dashboard/AdminDashboard'
 import { NotFound } from './pages/NotFound'
+import { Privacy } from './pages/Privacy'
+import { Terms } from './pages/Terms'
+import { CookieBanner } from './components/legal/CookieBanner'
 
 export default function App() {
   useEffect(() => {
@@ -69,16 +73,20 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-      <SiteIntro />
-      <HashRouter>
-        <ScrollToTop />
-        <Routes>
+        <CookieConsentProvider>
+          <SiteIntro />
+          <HashRouter>
+            <ScrollToTop />
+            <CookieBanner />
+            <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="services" element={<Services />} />
             <Route path="contact" element={<Contact />} />
             <Route path="faq" element={<FAQ />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="terms" element={<Terms />} />
             <Route path="browse" element={<Browse />} />
             <Route path="provider/:id" element={<ProviderProfile />} />
             <Route
@@ -115,6 +123,7 @@ export default function App() {
           <Route path="auth/reset-password" element={<ResetPassword />} />
         </Routes>
       </HashRouter>
+        </CookieConsentProvider>
       </ToastProvider>
     </AuthProvider>
   )
