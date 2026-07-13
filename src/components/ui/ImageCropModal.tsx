@@ -35,27 +35,54 @@ export function ImageCropModal({
   onConfirm,
 }: ImageCropModalProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState('')
   const [transform, setTransform] = useState<CropTransform>(DEFAULT_TRANSFORM)
   const [loading, setLoading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 })
+  const previewUrlRef = useRef<string | null>(null)
+
+  const revokePreviewUrl = useCallback(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     if (!open || !file) {
+      revokePreviewUrl()
       setImage(null)
+      setPreviewUrl(null)
+      setLoadError('')
       setTransform(DEFAULT_TRANSFORM)
       return
     }
 
     let cancelled = false
-    void loadImageFile(file).then((img) => {
-      if (!cancelled) setImage(img)
-    })
+    revokePreviewUrl()
+    setLoadError('')
+
+    void loadImageFile(file)
+      .then(({ image: loadedImage, objectUrl }) => {
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl)
+          return
+        }
+        previewUrlRef.current = objectUrl
+        setImage(loadedImage)
+        setPreviewUrl(objectUrl)
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError('Could not load this image. Try another file.')
+      })
 
     return () => {
       cancelled = true
+      revokePreviewUrl()
     }
-  }, [open, file])
+  }, [open, file, revokePreviewUrl])
 
   useEffect(() => {
     if (!open) return
@@ -133,9 +160,11 @@ export function ImageCropModal({
           onPointerCancel={onPointerUp}
         >
           <div className="image-crop-modal__frame" aria-hidden="true" />
-          {image ? (
+          {loadError ? (
+            <p className="image-crop-modal__loading">{loadError}</p>
+          ) : previewUrl && image ? (
             <img
-              src={image.src}
+              src={previewUrl}
               alt=""
               className="image-crop-modal__image"
               draggable={false}

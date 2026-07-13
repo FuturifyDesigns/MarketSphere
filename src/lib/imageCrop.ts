@@ -6,19 +6,16 @@ export function assertImageFile(file: File) {
   }
 }
 
-export function loadImageFile(file: File): Promise<HTMLImageElement> {
+export function loadImageFile(file: File): Promise<{ image: HTMLImageElement; objectUrl: string }> {
   return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file)
+    const objectUrl = URL.createObjectURL(file)
     const img = new Image()
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve(img)
-    }
+    img.onload = () => resolve({ image: img, objectUrl })
     img.onerror = () => {
-      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(objectUrl)
       reject(new Error('Could not read image file'))
     }
-    img.src = url
+    img.src = objectUrl
   })
 }
 
