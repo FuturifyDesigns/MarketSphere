@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowRight,
   BadgeCheck,
@@ -11,6 +11,8 @@ import {
   MapPin,
   MessageSquare,
   Phone,
+  Send,
+  ShieldCheck,
   X,
 } from 'lucide-react'
 import {
@@ -388,43 +390,117 @@ export function ProviderProfile() {
         </div>
       ) : null}
 
-      {showEnquiry ? (
-        <div className="modal-overlay" onClick={() => setShowEnquiry(false)}>
-          <div className="modal provider-enquiry-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Send enquiry to {provider.business_name}</h2>
-            <form onSubmit={submitEnquiry} noValidate>
-              <Input
-                label="Subject"
-                value={enquiry.subject}
-                onChange={(e) => {
-                  setEnquiry({ ...enquiry, subject: e.target.value })
-                  setEnquiryErrors((prev) => clearFieldError(prev, 'subject'))
-                }}
-                hint={FIELD_HINTS.subject}
-                error={enquiryErrors.subject}
-              />
-              <Textarea
-                label="Message"
-                rows={4}
-                value={enquiry.message}
-                onChange={(e) => {
-                  setEnquiry({ ...enquiry, message: e.target.value })
-                  setEnquiryErrors((prev) => clearFieldError(prev, 'message'))
-                }}
-                hint={FIELD_HINTS.message}
-                error={enquiryErrors.message}
-              />
-              {enquiryError ? <p className="upload-error" role="alert">{enquiryError}</p> : null}
-              <div className="modal-actions">
-                <Button type="button" variant="ghost" onClick={() => setShowEnquiry(false)}>Cancel</Button>
-                <Button type="submit" disabled={submittingEnquiry}>
-                  {submittingEnquiry ? 'Sending…' : 'Send enquiry'}
-                </Button>
+      <AnimatePresence>
+        {showEnquiry ? (
+          <motion.div
+            className="modal-overlay provider-enquiry-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowEnquiry(false)}
+          >
+            <motion.div
+              className="provider-enquiry-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="enquiry-modal-title"
+              initial={{ opacity: 0, y: 28, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="provider-enquiry-modal__close"
+                onClick={() => setShowEnquiry(false)}
+                aria-label="Close enquiry form"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+
+              <div className="provider-enquiry-modal__header">
+                <div className="provider-enquiry-modal__provider">
+                  <div className="provider-enquiry-modal__avatar" aria-hidden="true">
+                    {provider.logo_url ? (
+                      <img src={provider.logo_url} alt="" decoding="async" />
+                    ) : (
+                      <span>{provider.business_name.charAt(0)}</span>
+                    )}
+                  </div>
+                  <div className="provider-enquiry-modal__intro">
+                    <span className="provider-enquiry-modal__eyebrow">
+                      <MessageSquare size={14} aria-hidden="true" />
+                      Send enquiry
+                    </span>
+                    <h2 id="enquiry-modal-title">{provider.business_name}</h2>
+                    {provider.location ? (
+                      <p className="provider-enquiry-modal__location">
+                        <MapPin size={14} aria-hidden="true" />
+                        {provider.location}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <p className="provider-enquiry-modal__lead">
+                  Share what you&apos;re looking for — {provider.business_name} will be notified
+                  instantly and you can track the reply in your dashboard.
+                </p>
               </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+
+              <form className="provider-enquiry-modal__form" onSubmit={submitEnquiry} noValidate>
+                <Input
+                  className="provider-enquiry-modal__field"
+                  label="Subject"
+                  placeholder="e.g. Quote for bedroom set"
+                  value={enquiry.subject}
+                  onChange={(e) => {
+                    setEnquiry({ ...enquiry, subject: e.target.value })
+                    setEnquiryErrors((prev) => clearFieldError(prev, 'subject'))
+                  }}
+                  hint={FIELD_HINTS.subject}
+                  error={enquiryErrors.subject}
+                />
+                <Textarea
+                  className="provider-enquiry-modal__field"
+                  label="Your message"
+                  rows={5}
+                  placeholder="Tell them about your needs, timeline, or any questions you have…"
+                  value={enquiry.message}
+                  onChange={(e) => {
+                    setEnquiry({ ...enquiry, message: e.target.value })
+                    setEnquiryErrors((prev) => clearFieldError(prev, 'message'))
+                  }}
+                  hint={FIELD_HINTS.message}
+                  error={enquiryErrors.message}
+                />
+                {enquiryError ? <p className="provider-enquiry-modal__error" role="alert">{enquiryError}</p> : null}
+                <div className="provider-enquiry-modal__actions">
+                  <Button type="button" variant="ghost" onClick={() => setShowEnquiry(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" size="lg" disabled={submittingEnquiry} className="provider-enquiry-modal__submit">
+                    {submittingEnquiry ? (
+                      'Sending…'
+                    ) : (
+                      <>
+                        <Send size={17} aria-hidden="true" />
+                        Send enquiry
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+
+              <p className="provider-enquiry-modal__trust">
+                <ShieldCheck size={15} aria-hidden="true" />
+                Secure &amp; private · Delivered through Market Sphere Group
+              </p>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {lightboxIndex !== null && gallery[lightboxIndex] ? (
         <div className="provider-lightbox" role="dialog" aria-modal="true" aria-label="Gallery preview">
