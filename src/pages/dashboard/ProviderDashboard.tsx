@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useLocation } from 'react-router-dom'
 import { BriefcaseBusiness, ImagePlus, Inbox, Settings, Store, Image } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -37,6 +38,7 @@ type ProviderTab = 'profile' | 'inbox' | 'services'
 
 export function ProviderDashboard() {
   const { user, profile, refreshProfile } = useAuth()
+  const location = useLocation()
   const { showToast } = useToast()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -104,14 +106,45 @@ export function ProviderDashboard() {
   }, [user])
 
   useEffect(() => {
+    const nextTab = (location.state as { tab?: ProviderTab } | null)?.tab
+    if (nextTab) setTab(nextTab)
+  }, [location.state])
+
+  useEffect(() => {
     if (!provider) return
-    supabase
-      .from('enquiries')
-      .select('*, profiles(full_name, email)')
-      .eq('provider_id', provider.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => setEnquiries(data || []))
-  }, [provider])
+
+    const loadEnquiries = () => {
+      void supabase
+        .from('enquiries')
+        .select('*, profiles(full_name, email)')
+        .eq('provider_id', provider.id)
+        .order('created_at', { ascending: false })
+        .then(({ data }) => setEnquiries(data || []))
+    }
+
+    loadEnquiries()
+
+    const channel = supabase
+      .channel(`provider-enquiries-${provider.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'enquiries', filter: `provider_id=eq.${provider.id}` },
+        () => {
+          loadEnquiries()
+          showToast('New enquiry received.', 'info')
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'enquiries', filter: `provider_id=eq.${provider.id}` },
+        () => loadEnquiries(),
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [provider, showToast])
 
   const reloadProvider = async (providerId: string) => {
     const { data } = await supabase

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Search, MapPin, ShieldCheck, Users, ArrowRight, Sparkles } from 'lucide-react'
+import { Search, MapPin, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { ProviderCard } from '../components/ui/ProviderCard'
+import {
+  MarketIconCategories,
+  MarketIconNetwork,
+  MarketIconVerified,
+} from '../components/icons/MarketIcons'
 import type { Provider, Category } from '../lib/types'
 import { ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
 import './Browse.css'
@@ -61,6 +66,7 @@ export function Browse() {
   }, [search, category, location, categories])
 
   const hasFilters = Boolean(search || category || location)
+  const categoryLabel = categories.length > 0 ? `${categories.length}+ categories` : '8+ categories'
 
   return (
     <div className="page browse-page">
@@ -77,23 +83,29 @@ export function Browse() {
           </p>
           <div className="browse-hero__stats">
             <div className="browse-stat bento-card">
-              <ShieldCheck size={20} />
+              <span className="browse-stat__icon" aria-hidden="true">
+                <MarketIconVerified size={22} />
+              </span>
               <div>
                 <strong>Verified</strong>
                 <span>Every provider reviewed</span>
               </div>
             </div>
             <div className="browse-stat bento-card">
-              <Users size={20} />
+              <span className="browse-stat__icon" aria-hidden="true">
+                <MarketIconNetwork size={22} />
+              </span>
               <div>
                 <strong>Growing</strong>
                 <span>Nationwide network</span>
               </div>
             </div>
             <div className="browse-stat bento-card">
-              <Sparkles size={20} />
+              <span className="browse-stat__icon" aria-hidden="true">
+                <MarketIconCategories size={22} />
+              </span>
               <div>
-                <strong>8+ categories</strong>
+                <strong>{categoryLabel}</strong>
                 <span>Services for every need</span>
               </div>
             </div>

@@ -1,20 +1,25 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
+  ArrowRight,
   BadgeCheck,
-  BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
   Heart,
-  Images,
   Mail,
   MapPin,
   MessageSquare,
   Phone,
-  Sparkles,
   X,
 } from 'lucide-react'
+import {
+  MarketIconExplore,
+  MarketIconGallery,
+  MarketIconLive,
+  MarketIconServices,
+  MarketIconVerifiedTrust,
+} from '../components/icons/MarketIcons'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -31,6 +36,7 @@ import {
   validateSubject,
   type FieldErrors,
 } from '../lib/validation'
+import { isProfileBanned } from '../lib/accountGuard'
 import type { Provider } from '../lib/types'
 import { getProviderPrimaryCategory, ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
 import './ProviderProfile.css'
@@ -40,6 +46,7 @@ type EnquiryFields = 'subject' | 'message'
 
 export function ProviderProfile() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const { showToast } = useToast()
   const [provider, setProvider] = useState<Provider | null>(null)
@@ -139,6 +146,10 @@ export function ProviderProfile() {
   const submitEnquiry = async (e: FormEvent) => {
     e.preventDefault()
     if (!user || !id) return
+    if (isProfileBanned(profile)) {
+      setEnquiryError('Your account is suspended and cannot send enquiries.')
+      return
+    }
     setEnquiryError('')
 
     const errors = collectErrors<EnquiryFields>([
@@ -166,13 +177,14 @@ export function ProviderProfile() {
     setEnquiry({ subject: '', message: '' })
     setEnquiryErrors({})
     setShowEnquiry(false)
-    showToast('Enquiry sent successfully. The provider will be in touch soon.')
+    showToast('Enquiry sent successfully. The provider has been notified.')
+    navigate('/dashboard/customer', { state: { enquirySent: true } })
   }
 
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>
   if (!provider) return <div className="container section"><p>Provider not found.</p></div>
 
-  const canEnquire = user && profile?.role === 'customer'
+  const canEnquire = user && profile?.role === 'customer' && !isProfileBanned(profile)
 
   return (
     <div className="page provider-profile-page">
@@ -230,21 +242,21 @@ export function ProviderProfile() {
             <div className="provider-showcase-hero__stats">
               <div className="provider-showcase-hero__stat">
                 <span className="provider-showcase-hero__stat-icon" aria-hidden="true">
-                  <BriefcaseBusiness size={18} strokeWidth={2} />
+                  <MarketIconServices size={18} />
                 </span>
                 <strong>{serviceCount}</strong>
                 <span>Services</span>
               </div>
               <div className="provider-showcase-hero__stat">
                 <span className="provider-showcase-hero__stat-icon" aria-hidden="true">
-                  <Images size={18} strokeWidth={2} />
+                  <MarketIconGallery size={18} />
                 </span>
                 <strong>{gallery.length}</strong>
                 <span>Gallery</span>
               </div>
               <div className="provider-showcase-hero__stat">
                 <span className="provider-showcase-hero__stat-icon" aria-hidden="true">
-                  <Sparkles size={18} strokeWidth={2} />
+                  <MarketIconLive size={18} />
                 </span>
                 <strong>Live</strong>
                 <span>Listing</span>
@@ -356,11 +368,15 @@ export function ProviderProfile() {
 
             <div className="provider-showcase-promo">
               <span className="provider-showcase-promo__icon" aria-hidden="true">
-                <Sparkles size={18} strokeWidth={2} />
+                <MarketIconVerifiedTrust size={20} />
               </span>
               <strong>Trusted on Market Sphere Group</strong>
               <p>Verified listings help customers discover quality services across Botswana.</p>
-              <Link to="/browse">Explore more providers</Link>
+              <Link to="/browse" className="provider-showcase-promo__link">
+                <MarketIconExplore size={16} />
+                Explore more providers
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
             </div>
           </aside>
         </div>

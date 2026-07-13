@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navbar } from './Navbar'
 import { Footer } from './Footer'
 import { PageTransition } from './PageTransition'
+import { AccountNoticeListener } from '../auth/AccountNoticeListener'
 import { useLenis } from '../../hooks/useLenis'
 import { usePageTheme } from '../../hooks/usePageTheme'
 import { resetIntroActiveClass } from '../../lib/intro'
@@ -20,6 +21,7 @@ export function Layout() {
 
   return (
     <div className="layout">
+      <AccountNoticeListener />
       <Navbar />
       <main className="main">
         <PageTransition />

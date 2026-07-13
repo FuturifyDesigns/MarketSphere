@@ -69,7 +69,7 @@ export function Contact() {
 
     setForm({ name: '', email: '', phone: '', message: '' })
     setSubmitted(true)
-    showToast('Message sent. We will get back to you soon.')
+    showToast('Message sent. Our team has been notified and will get back to you soon.')
   }
 
   return (

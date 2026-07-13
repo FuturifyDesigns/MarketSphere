@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CookieConsentProvider } from './context/CookieConsentContext'
+import { NotificationProvider } from './context/NotificationContext'
 import { ToastProvider } from './context/ToastContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
@@ -78,6 +79,7 @@ export default function App() {
           <HashRouter>
             <ScrollToTop />
             <CookieBanner />
+            <NotificationProvider>
             <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
@@ -122,6 +124,7 @@ export default function App() {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="auth/reset-password" element={<ResetPassword />} />
         </Routes>
+            </NotificationProvider>
       </HashRouter>
         </CookieConsentProvider>
       </ToastProvider>

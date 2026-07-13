@@ -9,6 +9,30 @@ export interface Profile {
   phone: string | null
   role: UserRole
   avatar_url: string | null
+  banned_at: string | null
+  ban_reason: string | null
+  banned_by: string | null
+  created_at: string
+}
+
+export type NotificationType =
+  | 'enquiry_new'
+  | 'enquiry_sent'
+  | 'enquiry_updated'
+  | 'enquiry_new_admin'
+  | 'contact_new'
+  | 'account_banned'
+  | 'account_unbanned'
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: NotificationType | string
+  title: string
+  body: string
+  link: string | null
+  metadata: Record<string, unknown>
+  read_at: string | null
   created_at: string
 }
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   BarChart3,
   Check,
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { banUser, deleteUser, unbanUser } from '../../lib/adminUsers'
+import { isProfileBanned } from '../../lib/accountGuard'
 import { supabase } from '../../lib/supabase'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
@@ -77,7 +80,8 @@ const ADMIN_TABS: Array<{ id: AdminTab; label: string; icon: typeof Users }> = [
 ]
 
 export function AdminDashboard() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
+  const location = useLocation()
   const { showToast } = useToast()
   const [users, setUsers] = useState<Profile[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
@@ -92,6 +96,10 @@ export function AdminDashboard() {
   const [testimonialErrors, setTestimonialErrors] = useState<FieldErrors<TestimonialFields>>({})
   const [formError, setFormError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [banTarget, setBanTarget] = useState<Profile | null>(null)
+  const [banReason, setBanReason] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null)
+  const [userActionLoading, setUserActionLoading] = useState(false)
 
   const stats = useMemo(
     () => computeStats(users, providers, enquiries, contactMessages),
@@ -131,12 +139,71 @@ export function AdminDashboard() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => void loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, () => void loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, () => void loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => void loadData())
       .subscribe()
 
     return () => {
       void supabase.removeChannel(channel)
     }
   }, [loadData])
+
+  useEffect(() => {
+    const nextTab = (location.state as { tab?: AdminTab } | null)?.tab
+    if (nextTab) setTab(nextTab)
+  }, [location.state])
+
+  const confirmBanUser = async () => {
+    if (!banTarget) return
+    if (!banReason.trim()) {
+      showToast('Add a ban reason so the user knows why they were suspended.', 'error')
+      return
+    }
+
+    setUserActionLoading(true)
+    const { error } = await banUser(banTarget.id, banReason.trim())
+    setUserActionLoading(false)
+
+    if (error) {
+      showToast(error.message || 'Could not ban user.', 'error')
+      return
+    }
+
+    showToast(`${banTarget.full_name || banTarget.email} has been banned.`)
+    setBanTarget(null)
+    setBanReason('')
+    void loadData()
+  }
+
+  const handleUnbanUser = async (target: Profile) => {
+    setUserActionLoading(true)
+    const { error } = await unbanUser(target.id)
+    setUserActionLoading(false)
+
+    if (error) {
+      showToast(error.message || 'Could not lift ban.', 'error')
+      return
+    }
+
+    showToast(`${target.full_name || target.email} can sign in again.`)
+    void loadData()
+  }
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return
+
+    setUserActionLoading(true)
+    const { error } = await deleteUser(deleteTarget.id)
+    setUserActionLoading(false)
+
+    if (error) {
+      showToast(error.message || 'Could not delete user.', 'error')
+      return
+    }
+
+    showToast(`${deleteTarget.full_name || deleteTarget.email} was deleted.`)
+    setDeleteTarget(null)
+    void loadData()
+  }
 
   const updateProviderStatus = async (id: string, status: Provider['status']) => {
     setProviders((current) =>
@@ -410,22 +477,48 @@ export function AdminDashboard() {
               <span className="admin-dashboard__count">{users.length} total</span>
             </div>
             <div className="admin-card-list">
-              {users.map((user) => (
-                <article key={user.id} className="admin-card">
+              {users.map((account) => (
+                <article key={account.id} className="admin-card">
                   <div className="admin-card__main">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt="" className="admin-card__avatar" />
+                    {account.avatar_url ? (
+                      <img src={account.avatar_url} alt="" className="admin-card__avatar" />
                     ) : (
                       <div className="admin-card__avatar admin-card__avatar--placeholder" aria-hidden="true">
-                        {(user.full_name || user.email).charAt(0).toUpperCase()}
+                        {(account.full_name || account.email).charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <strong>{user.full_name || 'Unnamed user'}</strong>
-                      <p>{user.email}</p>
+                      <strong>{account.full_name || 'Unnamed user'}</strong>
+                      <p>{account.email}</p>
+                      <div className="admin-card__badges">
+                        <span className="status-badge">{formatStatusLabel(account.role)}</span>
+                        {isProfileBanned(account) ? (
+                          <span className="status-badge status-badge--rejected">Banned</span>
+                        ) : null}
+                      </div>
+                      {isProfileBanned(account) && account.ban_reason ? (
+                        <p className="admin-card__note">{account.ban_reason}</p>
+                      ) : null}
                     </div>
                   </div>
-                  <span className="status-badge">{formatStatusLabel(user.role)}</span>
+                  {account.id !== user?.id ? (
+                    <div className="admin-card__actions">
+                      {isProfileBanned(account) ? (
+                        <Button size="sm" onClick={() => void handleUnbanUser(account)} disabled={userActionLoading}>
+                          Lift ban
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="ghost" onClick={() => { setBanTarget(account); setBanReason('') }}>
+                          Ban user
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(account)} disabled={userActionLoading}>
+                        Delete
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="admin-card__note">This is your account</span>
+                  )}
                 </article>
               ))}
             </div>
@@ -653,6 +746,45 @@ export function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {banTarget ? (
+        <div className="modal-overlay" onClick={() => setBanTarget(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Ban {banTarget.full_name || banTarget.email}</h2>
+            <p className="admin-modal__copy">The user will be signed out immediately and cannot log in until the ban is lifted.</p>
+            <Textarea
+              label="Reason shown to the user"
+              rows={4}
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              hint="Explain why this account is being suspended."
+            />
+            <div className="modal-actions">
+              <Button variant="ghost" onClick={() => setBanTarget(null)}>Cancel</Button>
+              <Button onClick={() => void confirmBanUser()} disabled={userActionLoading}>
+                {userActionLoading ? 'Banning…' : 'Confirm ban'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete {deleteTarget.full_name || deleteTarget.email}</h2>
+            <p className="admin-modal__copy">
+              This permanently removes the account and signs the user out if they are currently active.
+            </p>
+            <div className="modal-actions">
+              <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button onClick={() => void confirmDeleteUser()} disabled={userActionLoading}>
+                {userActionLoading ? 'Deleting…' : 'Delete account'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

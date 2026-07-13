@@ -1,40 +1,82 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ArrowRight, Heart, MessageSquare, Search } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
 import { ProviderCard } from '../../components/ui/ProviderCard'
 import { Button } from '../../components/ui/Button'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
+import { formatStatusLabel } from '../../lib/validation'
 import type { Enquiry, Provider } from '../../lib/types'
 import './Dashboard.css'
 
 export function CustomerDashboard() {
   const { user, profile } = useAuth()
+  const location = useLocation()
+  const { showToast } = useToast()
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
   const [favorites, setFavorites] = useState<Provider[]>([])
+
+  const loadDashboardData = useCallback(async () => {
+    if (!user) return
+
+    const [enquiriesRes, favoritesRes] = await Promise.all([
+      supabase
+        .from('enquiries')
+        .select('*, providers(business_name)')
+        .eq('customer_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('favorites')
+        .select('providers(*)')
+        .eq('customer_id', user.id),
+    ])
+
+    setEnquiries(enquiriesRes.data || [])
+    setFavorites(
+      (favoritesRes.data || [])
+        .map((favorite) => favorite.providers as unknown as Provider)
+        .filter(Boolean),
+    )
+  }, [user])
+
+  useEffect(() => {
+    void loadDashboardData()
+  }, [loadDashboardData])
 
   useEffect(() => {
     if (!user) return
 
-    supabase
-      .from('enquiries')
-      .select('*, providers(business_name)')
-      .eq('customer_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => setEnquiries(data || []))
+    const channel = supabase
+      .channel(`customer-dashboard-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'enquiries', filter: `customer_id=eq.${user.id}` },
+        () => {
+          void loadDashboardData()
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'favorites', filter: `customer_id=eq.${user.id}` },
+        () => {
+          void loadDashboardData()
+        },
+      )
+      .subscribe()
 
-    supabase
-      .from('favorites')
-      .select('providers(*)')
-      .eq('customer_id', user.id)
-      .then(({ data }) => {
-        setFavorites(
-          (data || [])
-            .map((f) => f.providers as unknown as Provider)
-            .filter(Boolean)
-        )
-      })
-  }, [user])
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [loadDashboardData, user])
+
+  useEffect(() => {
+    const highlight = (location.state as { enquirySent?: boolean } | null)?.enquirySent
+    if (highlight) {
+      showToast('Your enquiry is in your dashboard. The provider has been notified.', 'success')
+    }
+  }, [location.state, showToast])
 
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'there'
 
@@ -74,15 +116,18 @@ export function CustomerDashboard() {
               </div>
               {enquiries.length > 0 ? (
                 <div className="enquiry-list">
-                  {enquiries.map((e) => (
-                    <div key={e.id} className="enquiry-item">
+                  {enquiries.map((enquiry) => (
+                    <div key={enquiry.id} className="enquiry-item">
                       <div>
-                        <strong>{e.subject}</strong>
+                        <strong>{enquiry.subject}</strong>
                         <span className="enquiry-provider">
-                          to {(e.providers as { business_name: string })?.business_name}
+                          to {(enquiry.providers as { business_name: string })?.business_name}
                         </span>
+                        <p className="enquiry-item__message">{enquiry.message}</p>
                       </div>
-                      <span className={`status-badge status-badge--${e.status}`}>{e.status}</span>
+                      <span className={`status-badge status-badge--${enquiry.status}`}>
+                        {formatStatusLabel(enquiry.status)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -107,8 +152,8 @@ export function CustomerDashboard() {
               </div>
               {favorites.length > 0 ? (
                 <div className="providers-grid">
-                  {favorites.map((p, i) => (
-                    <ProviderCard key={p.id} provider={p} index={i} />
+                  {favorites.map((provider, index) => (
+                    <ProviderCard key={provider.id} provider={provider} index={index} />
                   ))}
                 </div>
               ) : (

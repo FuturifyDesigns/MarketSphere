@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { isProfileBanned } from '../../lib/accountGuard'
 import type { UserRole } from '../../lib/types'
 
 interface ProtectedRouteProps {
@@ -19,7 +20,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     )
   }
 
-  if (!user) return <Navigate to="/" replace />
+  if (!user || !profile || isProfileBanned(profile)) return <Navigate to="/" replace />
 
   if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
     const redirect =

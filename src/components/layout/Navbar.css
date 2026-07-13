@@ -371,6 +371,10 @@ html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__pill {
     text-decoration: none;
   }
 
+  .navbar__mobile-notifications {
+    margin-top: 0.75rem;
+  }
+
   .navbar__name {
     max-width: 11rem;
   }

@@ -27,10 +27,21 @@
   padding: 1.125rem 1.25rem;
 }
 
+.browse-stat__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: rgba(201, 162, 75, 0.12);
+  color: var(--color-gold);
+}
+
 .browse-stat svg {
   color: var(--color-gold);
   flex-shrink: 0;
-  margin-top: 2px;
 }
 
 .browse-stat strong {

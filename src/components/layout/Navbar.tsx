@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext'
 import { COMPANY, LOGO_PATH } from '../../lib/constants'
 import { preloadServiceVideos } from '../../lib/serviceVideoCache'
 import { Button } from '../ui/Button'
+import { NotificationBell } from '../notifications/NotificationBell'
 import './Navbar.css'
 
 function profileInitials(name: string | null | undefined, email: string | undefined) {
@@ -118,6 +119,9 @@ export function Navbar() {
               <Link to={dashboardPath} className="navbar__mobile-dash" onClick={() => setOpen(false)}>
                 Go to Dashboard
               </Link>
+              <div className="navbar__mobile-notifications">
+                <NotificationBell />
+              </div>
             </div>
           ) : null}
           <div className="navbar__pill">
@@ -139,6 +143,7 @@ export function Navbar() {
         <div className="navbar__actions">
           {profile ? (
             <>
+              <NotificationBell />
               <div className="navbar__session" title={`Signed in as ${signedInName}`}>
                 <SessionAvatar
                   avatarUrl={profile.avatar_url}

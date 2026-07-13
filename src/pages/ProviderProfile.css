@@ -395,11 +395,19 @@
   margin-bottom: 0;
 }
 
-.provider-showcase-promo a {
+.provider-showcase-promo a,
+.provider-showcase-promo__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   color: var(--color-gold);
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
+}
+
+.provider-showcase-promo__link:hover {
+  text-decoration: underline;
 }
 
 .provider-showcase-mobile-cta {

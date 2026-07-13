@@ -49,11 +49,11 @@ export function Login() {
     if (hasErrors(errors)) return
 
     setLoading(true)
-    const { error: err } = await signIn(email.trim(), password)
+    const { error: err, bannedReason } = await signIn(email.trim(), password)
     setLoading(false)
     if (err) {
-      setError(err.message)
-      showToast(err.message, 'error')
+      setError(bannedReason || err.message)
+      showToast(bannedReason || err.message, 'error')
     } else {
       showToast('Signed in successfully. Welcome back!')
       const { data: { user } } = await supabase.auth.getUser()
