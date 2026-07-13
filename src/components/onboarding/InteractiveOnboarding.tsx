@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, X } from 'lucide-react'
-import { MASCOT_PATHS } from '../../lib/mascots'
+import { MASCOT_PATHS, preloadMascots } from '../../lib/mascots'
 import { scrollTourAfterLayout } from '../../lib/tourScroll'
+import { lockBodyScroll, unlockBodyScroll } from '../../lib/bodyScrollLock'
 import { Button } from '../ui/Button'
 import type { OnboardingPlacement, OnboardingStep } from './onboardingSteps'
 import './Onboarding.css'
@@ -57,18 +58,32 @@ function boxesOverlap(a: Box, b: Box, gap = OVERLAP_GAP): boolean {
   )
 }
 
+function isMobileViewport() {
+  return window.innerWidth <= 640
+}
+
+function getViewportMargins() {
+  const mobile = isMobileViewport()
+  return {
+    top: mobile ? 72 : TOOLTIP_MARGIN,
+    bottom: TOOLTIP_MARGIN,
+    left: TOOLTIP_MARGIN,
+    right: TOOLTIP_MARGIN,
+  }
+}
+
 function clampBox(top: number, left: number, width: number, height: number): Box {
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
+  const margins = getViewportMargins()
 
   return {
-    top: Math.max(TOOLTIP_MARGIN, Math.min(top, viewportHeight - height - TOOLTIP_MARGIN)),
-    left: Math.max(TOOLTIP_MARGIN, Math.min(left, viewportWidth - width - TOOLTIP_MARGIN)),
+    top: Math.max(margins.top, Math.min(top, viewportHeight - height - margins.bottom)),
+    left: Math.max(margins.left, Math.min(left, viewportWidth - width - margins.right)),
     width,
     height,
   }
 }
-
 function positionForPlacement(spotlight: Box, placement: OnboardingPlacement, cardWidth: number, cardHeight: number) {
   switch (placement) {
     case 'top':
@@ -137,10 +152,6 @@ function scorePlacement(
   return { box, score }
 }
 
-function isMobileViewport() {
-  return window.innerWidth <= 640
-}
-
 function getTooltipPosition(
   spotlight: Box | null,
   preferredPlacement: OnboardingPlacement | undefined,
@@ -185,13 +196,18 @@ function getTooltipPosition(
   }
 
   if (mobile) {
+    const margins = getViewportMargins()
+    const reservedTop = margins.top + 40
+    const maxCardHeight = Math.max(220, window.innerHeight - reservedTop - margins.bottom)
+
     return {
       position: 'fixed',
-      top: best.box.top,
-      left: TOOLTIP_MARGIN,
-      right: TOOLTIP_MARGIN,
+      left: margins.left,
+      right: margins.right,
+      bottom: margins.bottom,
+      top: 'auto',
       width: 'auto',
-      maxHeight: `min(72dvh, ${window.innerHeight - best.box.top - TOOLTIP_MARGIN}px)`,
+      maxHeight: `min(78dvh, ${maxCardHeight}px)`,
     }
   }
 
@@ -240,6 +256,10 @@ export function InteractiveOnboarding({
   const dismiss = onDismiss ?? onComplete
   const centered = step ? isCenterStep(step) : true
 
+  useEffect(() => {
+    preloadMascots()
+  }, [])
+
   const refreshSpotlight = useCallback(() => {
     const cardHeight = cardRef.current?.offsetHeight || 420
     const cardWidth = Math.min(
@@ -260,11 +280,8 @@ export function InteractiveOnboarding({
 
   useEffect(() => {
     if (!open) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
+    lockBodyScroll()
+    return () => unlockBodyScroll()
   }, [open])
 
   useLayoutEffect(() => {
@@ -390,7 +407,9 @@ export function InteractiveOnboarding({
                 src={MASCOT_PATHS[step.mascot]}
                 alt=""
                 className="onboarding-card__mascot"
-                decoding="async"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
               />
             </div>
 

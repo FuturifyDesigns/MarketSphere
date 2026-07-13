@@ -79,40 +79,27 @@
 }
 
 @media (max-width: 900px) {
+  .auth-theme-bg--signin,
+  .auth-page__bg--signin {
+    background:
+      radial-gradient(ellipse 85% 60% at 10% 12%, rgba(59, 130, 246, 0.44), transparent 58%),
+      radial-gradient(ellipse 80% 55% at 90% 88%, rgba(201, 162, 75, 0.36), transparent 54%),
+      linear-gradient(155deg, #dce8f8 0%, #eef3fb 40%, #f8f4eb 68%, #f5ead4 100%);
+  }
+
+  .auth-theme-bg--signup,
+  .auth-page__bg--signup {
+    background:
+      radial-gradient(ellipse 85% 60% at 90% 12%, rgba(201, 162, 75, 0.44), transparent 58%),
+      radial-gradient(ellipse 80% 55% at 10% 88%, rgba(59, 130, 246, 0.34), transparent 54%),
+      linear-gradient(205deg, #f5e8c8 0%, #faf6ee 40%, #eef3fb 68%, #dce8f8 100%);
+  }
+
   .auth-page__cover-img {
-    object-position: center 18%;
+    display: none;
   }
 
-  .auth-page__bg--signin .auth-page__cover-img {
-    object-position: 62% 22%;
-  }
-
-  .auth-page__bg--signup .auth-page__cover-img {
-    object-position: 72% 10%;
-  }
-
-  .auth-page__cover-img--ready {
-    opacity: 0.55;
-  }
-
-  .auth-page__bg--signin .auth-page__cover-scrim,
-  .auth-page__bg--signup .auth-page__cover-scrim {
-    background: linear-gradient(
-      180deg,
-      rgba(252, 250, 245, 0.97) 0%,
-      rgba(252, 250, 245, 0.88) 28%,
-      rgba(252, 250, 245, 0.72) 55%,
-      rgba(252, 250, 245, 0.45) 100%
-    );
-  }
-
-  .auth-page__bg--signup .auth-page__cover-scrim {
-    background: linear-gradient(
-      180deg,
-      rgba(255, 251, 242, 0.98) 0%,
-      rgba(255, 248, 235, 0.9) 30%,
-      rgba(255, 245, 228, 0.75) 58%,
-      rgba(255, 242, 220, 0.42) 100%
-    );
+  .auth-page__cover-scrim {
+    display: none;
   }
 }

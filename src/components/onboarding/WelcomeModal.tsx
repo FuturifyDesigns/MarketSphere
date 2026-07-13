@@ -4,7 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, X } from 'lucide-react'
 import { isIntroComplete, onIntroComplete } from '../../lib/intro'
 import { hasSeenWelcome, markWelcomeSeen } from '../../lib/onboarding'
-import { MASCOT_PATHS } from '../../lib/mascots'
+import { lockBodyScroll, unlockBodyScroll } from '../../lib/bodyScrollLock'
+import { MASCOT_PATHS, preloadMascots } from '../../lib/mascots'
 import { Button } from '../ui/Button'
 import './Onboarding.css'
 
@@ -12,6 +13,10 @@ const WELCOME_DELAY_MS = 500
 
 export function WelcomeModal() {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    preloadMascots()
+  }, [])
 
   useEffect(() => {
     if (hasSeenWelcome()) return
@@ -37,11 +42,8 @@ export function WelcomeModal() {
 
   useEffect(() => {
     if (!open) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
+    lockBodyScroll()
+    return () => unlockBodyScroll()
   }, [open])
 
   return (
@@ -76,48 +78,54 @@ export function WelcomeModal() {
               <X size={18} aria-hidden="true" />
             </button>
 
-            <span className="welcome-message__eyebrow">Welcome</span>
+            <div className="welcome-message__scroll">
+              <span className="welcome-message__eyebrow">Welcome</span>
 
-            <div className="welcome-message__mascot-wrap">
-              <img
-                src={MASCOT_PATHS.welcome}
-                alt=""
-                className="welcome-message__mascot"
-                decoding="async"
-              />
+              <div className="welcome-message__mascot-wrap">
+                <img
+                  src={MASCOT_PATHS.welcome}
+                  alt=""
+                  className="welcome-message__mascot"
+                  loading="eager"
+                  decoding="sync"
+                  fetchPriority="high"
+                />
+              </div>
+
+              <h2 id="welcome-message-title" className="welcome-message__title">
+                Welcome to Market Sphere Group
+              </h2>
+              <p className="welcome-message__lead">
+                Your trusted marketplace for discovering verified service providers across Botswana —
+                from tutors and consultants to youth mentors and real estate experts.
+              </p>
+              <p className="welcome-message__signup">
+                Create a free account as a <strong>customer</strong> to find services, or sign up as a{' '}
+                <strong>provider</strong> to list your business and reach new clients.
+              </p>
+
+              <ul className="welcome-message__bullets">
+                <li>Browse providers by category and location</li>
+                <li>Send secure enquiries from provider profiles</li>
+                <li>Track messages from your dashboard</li>
+              </ul>
             </div>
 
-            <h2 id="welcome-message-title" className="welcome-message__title">
-              Welcome to Market Sphere Group
-            </h2>
-            <p className="welcome-message__lead">
-              Your trusted marketplace for discovering verified service providers across Botswana —
-              from tutors and consultants to youth mentors and real estate experts.
-            </p>
-            <p className="welcome-message__signup">
-              Create a free account as a <strong>customer</strong> to find services, or sign up as a{' '}
-              <strong>provider</strong> to list your business and reach new clients.
-            </p>
+            <div className="welcome-message__footer">
+              <div className="welcome-message__actions">
+                <Button type="button" size="lg" onClick={closeWelcome}>
+                  Got it
+                </Button>
+                <Button to="/get-started" size="lg" variant="secondary" onClick={closeWelcome}>
+                  Sign up
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Button>
+              </div>
 
-            <ul className="welcome-message__bullets">
-              <li>Browse providers by category and location</li>
-              <li>Send secure enquiries from provider profiles</li>
-              <li>Track messages from your dashboard</li>
-            </ul>
-
-            <div className="welcome-message__actions">
-              <Button type="button" size="lg" onClick={closeWelcome}>
-                Got it
-              </Button>
-              <Button to="/get-started" size="lg" variant="secondary" onClick={closeWelcome}>
-                Sign up
-                <ArrowRight size={16} aria-hidden="true" />
-              </Button>
+              <p className="welcome-message__footnote">
+                Already have an account? <Link to="/login" onClick={closeWelcome}>Sign in</Link>
+              </p>
             </div>
-
-            <p className="welcome-message__footnote">
-              Already have an account? <Link to="/login" onClick={closeWelcome}>Sign in</Link>
-            </p>
           </motion.div>
         </motion.div>
       ) : null}

@@ -1,10 +1,10 @@
 import { HERO_VIDEO_PATH, preloadHeroVideo } from './heroVideoCache'
 import { LOGO_PATH } from './constants'
-import { MASCOT_PATHS } from './mascots'
+import { preloadMascots } from './mascots'
 
 let started = false
 
-/** Warm logo + hero video as early as possible (before intro finishes). */
+/** Warm logo, mascots, and hero video as early as possible (before intro finishes). */
 export function preloadCriticalAssets() {
   if (started || typeof window === 'undefined') return
   started = true
@@ -27,17 +27,10 @@ export function preloadCriticalAssets() {
     document.head.appendChild(link)
   }
 
-  for (const href of Object.values(MASCOT_PATHS)) {
-    if (document.querySelector(`link[rel="preload"][href="${href}"]`)) continue
-    const link = document.createElement('link')
-    link.rel = 'preload'
-    link.as = 'image'
-    link.href = href
-    document.head.appendChild(link)
-  }
+  preloadMascots()
 
   const logo = new Image()
-  logo.decoding = 'async'
+  logo.decoding = 'sync'
   logo.fetchPriority = 'high'
   logo.src = logoHref
 

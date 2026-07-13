@@ -83,9 +83,18 @@ textarea:focus:not(:focus-visible) {
 
 html {
   scroll-behavior: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  overscroll-behavior-x: none;
 }
 
-html.lenis, html.lenis body {
+html.body-scroll-locked {
+  overflow: hidden;
+  height: 100%;
+}
+
+html.lenis,
+html.lenis body {
   height: auto;
 }
 
@@ -100,8 +109,37 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   -webkit-font-smoothing: antialiased;
-  overflow-x: clip;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  overscroll-behavior-x: none;
   -webkit-overflow-scrolling: touch;
+}
+
+body.body-scroll-locked {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.layout,
+.main,
+.page-transition,
+.page {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas,
+iframe {
+  max-width: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -123,19 +161,17 @@ h1, h2, h3, h4, h5, h6 {
     var(--bg-primary);
 }
 
-#root {
-  min-height: 100vh;
-}
-
 .container {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
   padding: 0 clamp(1.25rem, 4vw, 2.5rem);
+  min-width: 0;
 }
 
 .container--wide {
   max-width: 1400px;
+  min-width: 0;
 }
 
 .main {
@@ -145,6 +181,8 @@ h1, h2, h3, h4, h5, h6 {
 .section {
   padding: clamp(4rem, 10vw, 7rem) 0;
   position: relative;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 @media (max-width: 900px) {
@@ -154,6 +192,17 @@ h1, h2, h3, h4, h5, h6 {
 
   .container {
     padding: 0 1rem;
+  }
+
+  html,
+  body {
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .gallery-slideshow__thumbs,
+  .legal-doc-toc,
+  [data-allow-horizontal-scroll] {
+    touch-action: pan-x pan-y;
   }
 }
 

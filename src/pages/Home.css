@@ -100,6 +100,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .hero__visual .hero-video {
@@ -566,6 +568,7 @@
     0 24px 64px color-mix(in srgb, #000 22%, transparent),
     inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
   overflow: hidden;
+  max-width: 100%;
 }
 
 .home-providers-stage__glow {
@@ -668,7 +671,7 @@
 
 .providers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 1.25rem;
 }
 
@@ -679,7 +682,7 @@
 
 .testimonials-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 1.25rem;
 }
 
@@ -807,7 +810,7 @@
     position: relative;
     min-height: auto;
     height: auto;
-    overflow: visible;
+    overflow: hidden;
     display: block;
     padding-bottom: 2rem;
   }

@@ -201,9 +201,16 @@
   .cms-toolbar {
     left: 12px;
     right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
     transform: none;
     flex-wrap: wrap;
     justify-content: center;
     border-radius: 16px;
+    max-width: calc(100vw - 24px);
+  }
+
+  .cms-toolbar__status {
+    flex-basis: 100%;
+    text-align: center;
   }
 }

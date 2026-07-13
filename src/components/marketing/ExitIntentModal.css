@@ -5,10 +5,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   background: rgba(10, 12, 16, 0.62);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+.exit-intent-modal.welcome-message {
+  max-height: min(90dvh, calc(100dvh - 2rem));
+  touch-action: pan-y;
+}
+
+.exit-intent-modal .welcome-message__scroll {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .exit-intent-modal__bullets li {
