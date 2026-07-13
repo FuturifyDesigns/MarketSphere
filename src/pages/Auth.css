@@ -202,6 +202,39 @@
   margin-bottom: 0.25rem;
 }
 
+.auth-card__success-icon--pulse {
+  animation: auth-pulse 1.2s ease-in-out infinite;
+}
+
+.auth-card__success-icon--error {
+  background: rgba(204, 68, 68, 0.12);
+  color: #c44;
+}
+
+@keyframes auth-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+.auth-error--inline {
+  text-align: left;
+}
+
+.auth-form__forgot {
+  margin: -0.35rem 0 0;
+  text-align: right;
+  font-size: 0.8125rem;
+}
+
+.auth-form__forgot a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.auth-form__forgot a:hover {
+  text-decoration: underline;
+}
+
 .auth-card__header {
   margin-bottom: 1rem;
 }

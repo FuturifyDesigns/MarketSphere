@@ -1,3 +1,6 @@
+/** Production app URL (GitHub Pages). Use this as Supabase Auth → Site URL. */
+export const APP_URL = 'https://futurifydesigns.github.io/MarketSphere/'
+
 export const COMPANY = {
   name: 'Market Sphere Group (Pty) Ltd',
   shortName: 'Market Sphere Group',

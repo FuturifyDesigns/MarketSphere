@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { getAuthRouteUrl } from '../lib/authRoutes'
 import type { Profile } from '../lib/types'
 
 interface AuthContextType {
@@ -10,6 +11,8 @@ interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string, meta: { full_name: string; phone?: string; role: string }) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  resetPasswordForEmail: (email: string) => Promise<{ error: Error | null }>
+  updatePassword: (password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -61,7 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: meta },
+      options: {
+        data: meta,
+        emailRedirectTo: getAuthRouteUrl('/auth/verify'),
+      },
     })
     return { error: error as Error | null }
   }
@@ -71,13 +77,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null }
   }
 
+  const resetPasswordForEmail = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getAuthRouteUrl('/auth/reset-password'),
+    })
+    return { error: error as Error | null }
+  }
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    return { error: error as Error | null }
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut()
     setProfile(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, resetPasswordForEmail, updatePassword, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )
