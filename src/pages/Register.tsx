@@ -1,8 +1,8 @@
 import { useState, useRef, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CheckCircle2, MapPinned, UsersRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { COMPANY } from '../lib/constants'
+import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import {
@@ -52,6 +52,12 @@ export function Register() {
       setFieldErrors((prev) => clearFieldError(prev, key as RegisterFields))
     }
   }
+
+  const isProvider = form.role === 'provider'
+  const roleLabel = isProvider ? 'Service Provider' : 'Customer'
+  const roleSummary = isProvider
+    ? 'You are applying to list your business and offer services on the marketplace.'
+    : 'You are applying to browse providers, save favourites, and book services.'
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -107,7 +113,7 @@ export function Register() {
         <AuthMobileHeader eyebrow="Join the network" backTo="/get-started" />
         <aside className="auth-shell__aside auth-shell__aside--register">
           <Link to="/" className="auth-shell__brand">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+            <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" loading="eager" decoding="sync" fetchPriority="high" />
             <span>{COMPANY.shortName}</span>
           </Link>
           <div className="auth-shell__aside-content">
@@ -115,9 +121,9 @@ export function Register() {
             <h1>Build your presence on Botswana&apos;s service marketplace</h1>
             <p>Whether you need trusted services or want to list your business — {COMPANY.shortName} connects you.</p>
             <ul className="auth-shell__perks">
-              <li><Sparkles size={16} /> Customer or provider accounts</li>
-              <li><Sparkles size={16} /> Verified professional network</li>
-              <li><Sparkles size={16} /> Nationwide reach across Botswana</li>
+              <li><UsersRound size={20} strokeWidth={2} /> Customer or provider accounts</li>
+              <li><BadgeCheck size={20} strokeWidth={2} /> Verified professional network</li>
+              <li><MapPinned size={20} strokeWidth={2} /> Nationwide reach across Botswana</li>
             </ul>
           </div>
         </aside>
@@ -126,24 +132,39 @@ export function Register() {
           <div className="auth-card auth-card--split auth-card--wide">
             <div className="auth-card__header">
               <h2>Create account</h2>
-              <p className="auth-subtitle">Join as a customer or service provider</p>
+              <p className="auth-subtitle">Choose your side, then complete your application</p>
             </div>
 
-            <div className="role-toggle">
+            <p className="role-toggle__heading">How are you joining?</p>
+            <div className="role-toggle" role="radiogroup" aria-label="Account type">
               <button
                 type="button"
                 className={form.role === 'customer' ? 'role-toggle__btn--active' : ''}
+                aria-pressed={form.role === 'customer'}
                 onClick={() => updateField('role', 'customer')}
               >
-                I&apos;m a Customer
+                <span className="role-toggle__title">I&apos;m a Customer</span>
+                <span className="role-toggle__hint">Find and book services</span>
               </button>
               <button
                 type="button"
                 className={form.role === 'provider' ? 'role-toggle__btn--active' : ''}
+                aria-pressed={form.role === 'provider'}
                 onClick={() => updateField('role', 'provider')}
               >
-                I&apos;m a Provider
+                <span className="role-toggle__title">I&apos;m a Provider</span>
+                <span className="role-toggle__hint">List your business</span>
               </button>
+            </div>
+
+            <div className="role-choice-banner" role="status" aria-live="polite">
+              <CheckCircle2 size={18} aria-hidden="true" />
+              <div>
+                <p className="role-choice-banner__title">
+                  Applying as a <strong>{roleLabel}</strong>
+                </p>
+                <p className="role-choice-banner__text">{roleSummary}</p>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
@@ -190,7 +211,12 @@ export function Register() {
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
               <Button type="submit" size="lg" disabled={loading}>
-                {loading ? 'Creating account...' : 'Create Account'} <ArrowRight size={16} />
+                {loading
+                  ? 'Submitting application...'
+                  : isProvider
+                    ? 'Apply as Provider'
+                    : 'Apply as Customer'}{' '}
+                <ArrowRight size={16} />
               </Button>
             </form>
 

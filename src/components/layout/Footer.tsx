@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react'
-import { COMPANY } from '../../lib/constants'
+import { COMPANY, LOGO_PATH } from '../../lib/constants'
 import { Button } from '../ui/Button'
 import './Footer.css'
 
@@ -23,7 +23,7 @@ export function Footer() {
       <div className="container footer__main">
         <div className="footer__grid">
           <div className="footer__brand">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="footer__logo" />
+            <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" className="footer__logo" loading="eager" decoding="sync" />
             <h3>{COMPANY.shortName}</h3>
             <p className="footer__tagline">{COMPANY.mission}</p>
             <p className="footer__reg">{COMPANY.registration}</p>

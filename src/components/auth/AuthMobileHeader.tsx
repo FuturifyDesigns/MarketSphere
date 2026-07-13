@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { COMPANY } from '../../lib/constants'
+import { COMPANY, LOGO_PATH } from '../../lib/constants'
 
 interface AuthMobileHeaderProps {
   eyebrow: string
@@ -21,7 +21,7 @@ export function AuthMobileHeader({
           <span>{backLabel}</span>
         </Link>
         <Link to="/" className="auth-mobile-header__brand">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+          <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" loading="eager" decoding="sync" fetchPriority="high" />
           <span>{COMPANY.shortName}</span>
         </Link>
       </div>

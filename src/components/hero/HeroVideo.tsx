@@ -5,12 +5,13 @@ import {
   preloadHeroVideo,
   subscribeHeroVideoCache,
 } from '../../lib/heroVideoCache'
+import { LOGO_PATH } from '../../lib/constants'
 import './HeroVideo.css'
 
 const base = import.meta.env.BASE_URL
 const CDN_BASE =
   'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
-const POSTER = `${base}logo.png`
+const POSTER = `${base}${LOGO_PATH}`
 
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null)

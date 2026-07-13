@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { COMPANY } from '../lib/constants'
+import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { AboutCompanyTree } from '../components/about/AboutCompanyTree'
 import { initAboutTreeAnimation } from '../animations/aboutTreeReveal'
@@ -49,7 +49,7 @@ export function About() {
           <div className="about-hero__logo-wrap about-reveal" aria-hidden="true">
             <div className="about-hero__logo-glow" />
             <img
-              src={`${import.meta.env.BASE_URL}logo.png`}
+              src={`${import.meta.env.BASE_URL}${LOGO_PATH}`}
               alt=""
               className="about-hero__logo"
             />

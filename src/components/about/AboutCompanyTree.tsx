@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { Link } from 'react-router-dom'
-import { COMPANY } from '../../lib/constants'
+import { COMPANY, LOGO_PATH } from '../../lib/constants'
 import {
   ABOUT_TREE_SECTION_ICONS,
   AREA_ICONS,
@@ -40,7 +40,7 @@ export const AboutCompanyTree = forwardRef<HTMLElement>(function AboutCompanyTre
                 <article className="about-tree__node about-tree__node--root">
                   <div className="about-tree__card bento-card">
                     <div className="about-tree__card-head">
-                      <img src={`${base}logo.png`} alt="" className="about-tree__logo about-tree__reveal-item" />
+                      <img src={`${base}${LOGO_PATH}`} alt="" className="about-tree__logo about-tree__reveal-item" loading="eager" decoding="sync" />
                       <span className="about-tree__step-label about-tree__reveal-item">Root</span>
                       <h3 className="about-tree__node-title about-tree__reveal-item">{COMPANY.shortName}</h3>
                       <p className="about-tree__node-subtitle about-tree__reveal-item">{COMPANY.name}</p>

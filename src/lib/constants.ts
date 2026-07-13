@@ -1,6 +1,9 @@
 /** Production app URL (GitHub Pages). Use this as Supabase Auth → Site URL. */
 export const APP_URL = 'https://futurifydesigns.github.io/MarketSphere/'
 
+/** Optimized logo (WebP). */
+export const LOGO_PATH = 'logo.webp'
+
 export const COMPANY = {
   name: 'Market Sphere Group (Pty) Ltd',
   shortName: 'Market Sphere Group',
@@ -49,7 +52,7 @@ export const SERVICES = [
     description:
       'We identify different youth centered and community projects that will harness the potentials of youths and young professionals in different parts of the country.',
     icon: 'users',
-    image: 'services/youth-empowerment.png',
+    image: 'services/youth-empowerment.webp',
     video: 'services/youth-empowerment.mp4',
     accent: '#6B5A3E',
     gradient:
@@ -61,7 +64,7 @@ export const SERVICES = [
     description:
       'We have flexible packages for out of school and school going folks to better upgrade their grades.',
     icon: 'graduation-cap',
-    image: 'services/academic-tuition.png',
+    image: 'services/academic-tuition.webp',
     video: 'services/academic-tuition.mp4',
     accent: '#4A5D4A',
     gradient:
@@ -73,7 +76,7 @@ export const SERVICES = [
     description:
       'We have at our disposal a couple of powerful apps that makes advertisements worthwhile and easy getting fast and broader mileage.',
     icon: 'megaphone',
-    image: 'services/platform-marketing.png',
+    image: 'services/platform-marketing.webp',
     video: 'services/platform-marketing.mp4',
     accent: '#5C5040',
     gradient:
@@ -85,7 +88,7 @@ export const SERVICES = [
     description:
       'We are quite acclimatized to the real estate industry in different areas of the country and we have a resolve to help customers achieve their property needs around the country from time to time.',
     icon: 'building',
-    image: 'services/real-estate.png',
+    image: 'services/real-estate.webp',
     video: 'services/real-estate.mp4',
     accent: '#4A4034',
     gradient:
@@ -97,7 +100,7 @@ export const SERVICES = [
     description:
       'We through our networks will provide a number of different opportunities that will foster the spirit of entrepreneurship in the population in the ultimate goal to reducing unemployment and total Government dependency.',
     icon: 'lightbulb',
-    image: 'services/entrepreneurship.png',
+    image: 'services/entrepreneurship.webp',
     video: 'services/entrepreneurship.mp4',
     accent: '#1A1510',
     gradient:

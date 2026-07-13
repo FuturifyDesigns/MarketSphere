@@ -1,8 +1,8 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, UserPlus, ArrowRight } from 'lucide-react'
-import { COMPANY } from '../lib/constants'
-import { preloadAuthCovers } from '../lib/preloadAuthCovers'
+import { COMPANY, LOGO_PATH } from '../lib/constants'
+import { preloadAuthCovers } from '../lib/imagePreload'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './AuthGate.css'
@@ -19,8 +19,8 @@ export function AuthGate() {
   }, [])
 
   const gateStyle = {
-    '--auth-cover-signin': `url(${base}auth/sign-in.png)`,
-    '--auth-cover-signup': `url(${base}auth/sign-up.png)`,
+    '--auth-cover-signin': `url(${base}auth/sign-in.webp)`,
+    '--auth-cover-signup': `url(${base}auth/sign-up.webp)`,
   } as CSSProperties
 
   return (
@@ -31,7 +31,7 @@ export function AuthGate() {
 
       <div className="auth-gate__stack">
         <Link to="/" className="auth-gate__brand">
-          <img src={`${base}logo.png`} alt="" />
+          <img src={`${base}${LOGO_PATH}`} alt="" loading="eager" decoding="sync" fetchPriority="high" />
           <span>{COMPANY.shortName}</span>
         </Link>
 

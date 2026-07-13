@@ -36,6 +36,20 @@
   object-position: 72% center;
   pointer-events: none;
   user-select: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.auth-page__bg--signin .auth-page__cover-img {
+  object-position: 68% 38%;
+}
+
+.auth-page__bg--signup .auth-page__cover-img {
+  object-position: 84% 14%;
+}
+
+.auth-page__cover-img--ready {
+  opacity: 1;
 }
 
 .auth-page__cover-scrim {
@@ -66,7 +80,18 @@
 
 @media (max-width: 900px) {
   .auth-page__cover-img {
-    object-position: center 22%;
+    object-position: center 18%;
+  }
+
+  .auth-page__bg--signin .auth-page__cover-img {
+    object-position: 62% 22%;
+  }
+
+  .auth-page__bg--signup .auth-page__cover-img {
+    object-position: 72% 10%;
+  }
+
+  .auth-page__cover-img--ready {
     opacity: 0.55;
   }
 

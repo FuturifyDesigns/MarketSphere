@@ -1,6 +1,5 @@
 import { HERO_VIDEO_PATH, preloadHeroVideo } from './heroVideoCache'
-
-const LOGO_PATH = 'logo.png'
+import { LOGO_PATH } from './constants'
 
 let started = false
 

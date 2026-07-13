@@ -1,9 +1,9 @@
 import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, ShieldCheck } from 'lucide-react'
+import { ArrowRight, LayoutDashboard, Lock, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { COMPANY } from '../lib/constants'
+import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import {
@@ -70,7 +70,7 @@ export function Login() {
         <AuthMobileHeader eyebrow="Welcome back" backTo="/get-started" />
         <aside className="auth-shell__aside auth-shell__aside--login">
           <Link to="/" className="auth-shell__brand">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+            <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" loading="eager" decoding="sync" fetchPriority="high" />
             <span>{COMPANY.shortName}</span>
           </Link>
           <div className="auth-shell__aside-content">
@@ -78,9 +78,9 @@ export function Login() {
             <h1>Sign in and pick up where you left off</h1>
             <p>Access your dashboard, saved providers, and account settings in one place.</p>
             <ul className="auth-shell__perks">
-              <li><ShieldCheck size={16} /> Verified provider network</li>
-              <li><ShieldCheck size={16} /> Secure account access</li>
-              <li><ShieldCheck size={16} /> Role-based dashboards</li>
+              <li><ShieldCheck size={20} strokeWidth={2} /> Verified provider network</li>
+              <li><Lock size={20} strokeWidth={2} /> Secure account access</li>
+              <li><LayoutDashboard size={20} strokeWidth={2} /> Role-based dashboards</li>
             </ul>
           </div>
         </aside>

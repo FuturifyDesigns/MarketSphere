@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
-import { COMPANY } from '../../lib/constants'
+import { COMPANY, LOGO_PATH } from '../../lib/constants'
 import {
   dispatchIntroComplete,
   hasSeenIntro,
@@ -130,7 +130,7 @@ export function SiteIntro() {
         <div className={`site-intro__logo-wrap ${logoReady ? 'site-intro__logo-wrap--ready' : ''}`}>
           <div className="site-intro__ring" />
           <img
-            src={`${base}logo.png`}
+            src={`${base}${LOGO_PATH}`}
             alt=""
             className="site-intro__logo"
             decoding="async"

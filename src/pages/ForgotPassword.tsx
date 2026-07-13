@@ -2,7 +2,7 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Mail } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { COMPANY } from '../lib/constants'
+import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import {
@@ -78,7 +78,7 @@ export function ForgotPassword() {
         <AuthMobileHeader eyebrow="Reset password" backTo="/login" />
         <aside className="auth-shell__aside auth-shell__aside--login">
           <Link to="/" className="auth-shell__brand">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+            <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" loading="eager" decoding="sync" fetchPriority="high" />
             <span>{COMPANY.shortName}</span>
           </Link>
           <div className="auth-shell__aside-content">
