@@ -22,6 +22,7 @@ import {
   validatePhone,
   validateServiceDescription,
   validateServiceTitle,
+  formatStatusLabel,
   type FieldErrors,
 } from '../../lib/validation'
 import type { Category, Enquiry, Provider, ProviderService } from '../../lib/types'
@@ -251,7 +252,8 @@ export function ProviderDashboard() {
     setEnquiries(enquiries.map((e) => (e.id === id ? { ...e, status: status as Enquiry['status'] } : e)))
   }
 
-  const statusLabel = provider?.status || 'not_created'
+  const statusKey = provider?.status || 'not_created'
+  const statusLabel = formatStatusLabel(statusKey)
   const galleryCount = provider?.gallery_urls?.length || 0
   const newEnquiryCount = enquiries.filter((e) => e.status === 'new').length
   const serviceCount = provider?.provider_services?.length || 0
@@ -451,7 +453,7 @@ export function ProviderDashboard() {
                   <Button onClick={() => void saveProfile()} disabled={saving}>
                     {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
                   </Button>
-                  {statusLabel === 'pending' && (
+                  {statusKey === 'pending' && (
                     <p className="dashboard-note">Your profile is pending admin approval.</p>
                   )}
                 </div>

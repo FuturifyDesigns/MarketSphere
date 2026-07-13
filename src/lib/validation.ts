@@ -44,6 +44,20 @@ export function trim(value: string) {
   return value.trim()
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  not_created: 'Not created',
+  pending: 'Pending review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  new: 'New',
+  read: 'Read',
+  replied: 'Replied',
+}
+
+export function formatStatusLabel(status: string) {
+  return STATUS_LABELS[status] ?? status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
 function hasLetters(value: string) {
   return TEXT_WITH_LETTERS_RE.test(value)
 }

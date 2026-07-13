@@ -171,6 +171,7 @@
 .status-badge--rejected { background: rgba(204, 68, 68, 0.1); color: #c44; }
 .status-badge--read { background: rgba(74, 63, 47, 0.08); }
 .status-badge--replied { background: rgba(109, 213, 140, 0.15); color: #3a9d5c; }
+.status-badge--not_created { background: rgba(74, 63, 47, 0.08); color: var(--text-secondary); }
 
 .stats-grid {
   display: grid;
@@ -472,7 +473,6 @@
   font-family: var(--font-display);
   font-size: 1.5rem;
   line-height: 1.1;
-  text-transform: capitalize;
 }
 
 .provider-dashboard__stat-status {

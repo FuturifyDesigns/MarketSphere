@@ -61,6 +61,10 @@
   backdrop-filter: blur(8px);
 }
 
+.navbar__mobile-session {
+  display: none;
+}
+
 .navbar__link {
   font-family: var(--font-ui);
   font-size: 0.8125rem;

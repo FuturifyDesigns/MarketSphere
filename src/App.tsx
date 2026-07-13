@@ -26,6 +26,7 @@ import { ResetPassword } from './pages/ResetPassword'
 import { CustomerDashboard } from './pages/dashboard/CustomerDashboard'
 import { ProviderDashboard } from './pages/dashboard/ProviderDashboard'
 import { AdminDashboard } from './pages/dashboard/AdminDashboard'
+import { NotFound } from './pages/NotFound'
 
 export default function App() {
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="get-started" element={<AuthGate />} />
           <Route path="login" element={<Login />} />
