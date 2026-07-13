@@ -204,7 +204,7 @@ export function FAQ() {
             </div>
 
             <div className="faq-list">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode={canEditFaqList ? 'sync' : 'popLayout'}>
                 {filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
                     const isOpen = openQuestion === item.question
@@ -213,7 +213,7 @@ export function FAQ() {
                     return (
                       <motion.div
                         key={item.id}
-                        layout
+                        layout={!canEditFaqList}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}

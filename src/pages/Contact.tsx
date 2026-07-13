@@ -216,7 +216,7 @@ export function Contact() {
             {submitted ? (
               <div className="contact-success bento-card">
                 <div className="contact-success__icon" aria-hidden="true">✓</div>
-                <h3><EditableText contentKey="contact" path="form.successTitle" as="span" /></h3>
+                <EditableText contentKey="contact" path="form.successTitle" as="h3" />
                 <EditableText contentKey="contact" path="form.successBody" as="p" multiline />
                 <p className="contact-success__note">
                   <EditableText contentKey="contact" path="form.successNote" as="span" multiline />

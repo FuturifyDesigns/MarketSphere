@@ -45,7 +45,7 @@ export function LiveEditorBar() {
         </div>
       </div>
       <p className="live-editor-bar__hint container">
-        Click <strong>EDIT</strong> on any section, then update the highlighted fields inside it.
+        Click <strong>EDIT</strong> on any section, then click highlighted text to update it.
       </p>
     </div>
   )

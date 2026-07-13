@@ -5,6 +5,7 @@ import { CookieConsentProvider } from './context/CookieConsentContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { SiteContentProvider } from './context/SiteContentContext'
 import { SiteEditProvider } from './context/SiteEditContext'
+import { CmsTextEditorProvider } from './context/CmsTextEditorContext'
 import { ToastProvider } from './context/ToastContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
@@ -80,6 +81,7 @@ export default function App() {
           <SiteContentProvider>
             <HashRouter>
               <SiteEditProvider>
+                <CmsTextEditorProvider>
                 <SiteIntro />
                 <ScrollToTop />
                 <CookieBanner />
@@ -129,6 +131,7 @@ export default function App() {
                     <Route path="auth/reset-password" element={<ResetPassword />} />
                   </Routes>
                 </NotificationProvider>
+                </CmsTextEditorProvider>
               </SiteEditProvider>
             </HashRouter>
           </SiteContentProvider>

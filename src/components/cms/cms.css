@@ -181,6 +181,18 @@
   border-radius: 4px;
 }
 
+.cms-editable--editing {
+  outline-color: rgba(212, 175, 55, 1);
+}
+
+.cms-editable--clickable {
+  cursor: pointer;
+}
+
+.cms-editable--clickable:hover {
+  outline-color: rgba(212, 175, 55, 0.9);
+}
+
 .cms-editable-toolbar {
   padding: 10px;
   border-radius: 12px;
