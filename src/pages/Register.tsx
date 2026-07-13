@@ -11,15 +11,16 @@ import {
   FIELD_HINTS,
   hasErrors,
   sanitizePersonName,
-  sanitizePhone,
   validateEmail,
   validateName,
   validatePassword,
-  validatePhone,
+  validatePhoneLocal,
+  formatPhoneWithCountry,
   type FieldErrors,
 } from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PhoneInput } from '../components/ui/PhoneInput'
 import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
@@ -38,7 +39,8 @@ export function Register() {
     full_name: '',
     email: '',
     password: '',
-    phone: '',
+    phoneCountry: '+267',
+    phoneLocal: '',
     role: defaultRole,
   })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<RegisterFields>>({})
@@ -66,16 +68,18 @@ export function Register() {
     const errors = collectErrors<RegisterFields>([
       ['full_name', validateName(form.full_name, 'Full name')],
       ['email', validateEmail(form.email)],
-      ['phone', validatePhone(form.phone, true)],
+      ['phone', validatePhoneLocal(form.phoneLocal, true)],
       ['password', validatePassword(form.password)],
     ])
     setFieldErrors(errors)
     if (hasErrors(errors)) return
 
+    const phone = formatPhoneWithCountry(form.phoneCountry, form.phoneLocal)
+
     setLoading(true)
     const { error: err } = await signUp(form.email.trim(), form.password, {
       full_name: form.full_name.trim(),
-      phone: form.phone.trim() || undefined,
+      phone: phone || undefined,
       role: form.role,
     })
     setLoading(false)
@@ -185,13 +189,11 @@ export function Register() {
                 hint={FIELD_HINTS.email}
                 error={fieldErrors.email}
               />
-              <Input
-                label="Phone (optional)"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={form.phone}
-                onChange={(e) => updateField('phone', sanitizePhone(e.target.value))}
+              <PhoneInput
+                countryCode={form.phoneCountry}
+                localNumber={form.phoneLocal}
+                onCountryCodeChange={(phoneCountry) => updateField('phoneCountry', phoneCountry)}
+                onLocalNumberChange={(phoneLocal) => updateField('phoneLocal', phoneLocal)}
                 hint={FIELD_HINTS.phone}
                 error={fieldErrors.phone}
               />
@@ -204,9 +206,11 @@ export function Register() {
                 hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
-              <div className="auth-form__strength">
-                <PasswordStrengthBar password={form.password} />
-              </div>
+              {form.password ? (
+                <div className="auth-form__strength">
+                  <PasswordStrengthBar password={form.password} />
+                </div>
+              ) : null}
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>

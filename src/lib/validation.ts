@@ -12,7 +12,7 @@ export const FIELD_HINTS = {
   fullName: 'Use your real name — letters only, 2–100 characters.',
   email: 'Use a valid email you can access for confirmations.',
   password: 'At least 8 characters with a letter, number, and mixed case for a strong password.',
-  phone: 'Botswana format: +267 71 234 567 or 071 234 567.',
+  phone: 'Enter your mobile number without the country code.',
   message: 'Describe your request clearly — at least 10 characters.',
   subject: 'Short summary of your enquiry — letters required.',
   businessName: 'Your registered or trading name — must include letters.',
@@ -62,6 +62,34 @@ export function sanitizeSlug(value: string) {
 
 export function sanitizePhone(value: string) {
   return value.replace(/[^\d\s+-]/g, '')
+}
+
+export function sanitizePhoneLocal(value: string) {
+  return value.replace(/[^\d\s]/g, '')
+}
+
+export const PHONE_COUNTRY_CODES = [
+  { code: '+267', label: 'BW', name: 'Botswana' },
+  { code: '+27', label: 'ZA', name: 'South Africa' },
+  { code: '+264', label: 'NA', name: 'Namibia' },
+  { code: '+260', label: 'ZM', name: 'Zambia' },
+  { code: '+263', label: 'ZW', name: 'Zimbabwe' },
+] as const
+
+export function formatPhoneWithCountry(countryCode: string, localNumber: string) {
+  const digits = localNumber.replace(/\D/g, '')
+  if (!digits) return ''
+  const normalized = digits.startsWith('0') ? digits.slice(1) : digits
+  return `${countryCode} ${normalized}`
+}
+
+export function validatePhoneLocal(localNumber: string, optional = true): ValidationResult {
+  const v = trim(localNumber)
+  if (!v) return optional ? null : 'Phone number is required'
+  if (/[A-Za-z]/.test(v)) return 'Phone number should only contain digits'
+  const digits = v.replace(/\D/g, '')
+  if (digits.length < 7 || digits.length > 12) return 'Enter a valid phone number'
+  return null
 }
 
 export function getPasswordStrength(password: string): PasswordStrength {

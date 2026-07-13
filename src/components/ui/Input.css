@@ -45,6 +45,11 @@
   box-shadow: 0 0 0 3px rgba(204, 68, 68, 0.15);
 }
 
+.input-group--error .phone-input__code,
+.input-group--error .phone-input__row input {
+  border-color: #c44;
+}
+
 .input-error {
   font-size: 0.75rem;
   color: #c44;

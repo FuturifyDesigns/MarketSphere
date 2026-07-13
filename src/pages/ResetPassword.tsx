@@ -217,9 +217,11 @@ export function ResetPassword() {
                 }}
                 error={fieldErrors.confirmPassword}
               />
-              <div className="auth-form__strength">
-                <PasswordStrengthBar password={password} />
-              </div>
+              {password ? (
+                <div className="auth-form__strength">
+                  <PasswordStrengthBar password={password} />
+                </div>
+              ) : null}
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>

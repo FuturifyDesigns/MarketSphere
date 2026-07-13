@@ -1,0 +1,30 @@
+.phone-input__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.phone-input__code {
+  min-width: 7.25rem;
+  padding-right: 1.75rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.phone-input__row input {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .phone-input__row {
+    grid-template-columns: 1fr;
+  }
+
+  .phone-input__code {
+    width: 100%;
+    min-width: 0;
+  }
+}

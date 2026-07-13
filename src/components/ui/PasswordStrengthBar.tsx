@@ -15,6 +15,8 @@ function getFilledSegments(metCount: number) {
 }
 
 export function PasswordStrengthBar({ password }: PasswordStrengthBarProps) {
+  if (!password) return null
+
   const strength = getPasswordStrength(password)
   const metCount = strength.checks.filter((check) => check.met).length
   const filledSegments = password ? getFilledSegments(metCount) : 0
