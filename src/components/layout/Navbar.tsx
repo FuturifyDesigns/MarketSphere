@@ -163,7 +163,9 @@ export function Navbar() {
               </button>
             </>
           ) : (
-            <Button to="/get-started" size="sm">Get Started</Button>
+            <span className="navbar__get-started" data-onboarding="nav-get-started">
+              <Button to="/get-started" size="sm">Get Started</Button>
+            </span>
           )}
           <button className="navbar__toggle" onClick={() => setOpen(!open)} aria-label="Menu">
             {open ? <X size={20} /> : <Menu size={20} />}

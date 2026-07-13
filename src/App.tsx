@@ -32,7 +32,6 @@ import { NotFound } from './pages/NotFound'
 import { Privacy } from './pages/Privacy'
 import { Terms } from './pages/Terms'
 import { CookieBanner } from './components/legal/CookieBanner'
-import { WelcomeModal } from './components/onboarding/WelcomeModal'
 
 export default function App() {
   useEffect(() => {
@@ -80,7 +79,6 @@ export default function App() {
           <HashRouter>
             <ScrollToTop />
             <CookieBanner />
-            <WelcomeModal />
             <NotificationProvider>
             <Routes>
           <Route element={<Layout />}>

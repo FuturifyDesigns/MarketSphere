@@ -1,65 +1,56 @@
 import type { MascotKey } from '../../lib/mascots'
 
+export type OnboardingPlacement = 'top' | 'bottom' | 'left' | 'right' | 'center'
+export type ProviderOnboardingTab = 'profile' | 'services' | 'inbox'
+
 export type OnboardingStep = {
   title: string
   description: string
   mascot: MascotKey
   bullets?: string[]
+  target?: string
+  placement?: OnboardingPlacement
+  tab?: ProviderOnboardingTab
 }
-
-export const WELCOME_STEPS: OnboardingStep[] = [
-  {
-    title: 'Welcome to Market Sphere Group',
-    mascot: 'thumbsUp',
-    description:
-      'Your trusted marketplace for discovering verified service providers across Botswana — from tutors and consultants to youth mentors and real estate experts.',
-    bullets: [
-      'Browse providers by category and location',
-      'Send secure enquiries straight from profiles',
-      'Save favourites and track replies in your dashboard',
-    ],
-  },
-]
 
 export const CUSTOMER_ONBOARDING_STEPS: OnboardingStep[] = [
   {
-    title: 'Your customer dashboard',
+    title: 'Your enquiry tracker',
     mascot: 'explaining',
-    description: 'This is your home base on Market Sphere Group. Everything you do as a customer is organised here.',
+    target: 'customer-enquiries',
+    placement: 'top',
+    description: 'Every message you send to a provider appears here with live status updates.',
     bullets: [
-      'See enquiry status from new to read, replied, or closed',
-      'Update your profile photo and contact details anytime',
-      'Jump back to Browse whenever you need a new provider',
+      'Statuses move from new → read → replied → closed',
+      'Providers are notified instantly when you enquire',
     ],
   },
   {
-    title: 'Find the right provider',
+    title: 'Saved providers',
     mascot: 'explaining',
-    description: 'Head to Browse to explore verified professionals across Botswana.',
-    bullets: [
-      'Filter by service category',
-      'Open a profile to read services, gallery, and contact info',
-      'Tap Send enquiry when you are ready to connect',
-    ],
+    target: 'customer-favorites',
+    placement: 'top',
+    description: 'Heart a provider on their profile and they will show up here for quick access.',
   },
   {
-    title: 'Save providers you like',
+    title: 'Your profile',
     mascot: 'explaining',
-    description: 'Found someone worth coming back to? Save them with one tap.',
-    bullets: [
-      'Use the heart on a provider profile to favourite them',
-      'Revisit saved providers from your dashboard',
-      'Enquire again without searching from scratch',
-    ],
+    target: 'customer-profile',
+    placement: 'right',
+    description: 'Keep your name, email, and profile photo up to date so providers know who they are speaking with.',
+  },
+  {
+    title: 'Find more providers',
+    mascot: 'explaining',
+    target: 'customer-browse',
+    placement: 'bottom',
+    description: 'Jump back to Browse any time to discover new professionals across Botswana.',
   },
   {
     title: 'You are all set!',
     mascot: 'allDone',
-    description: 'Start exploring the marketplace and connect with professionals who fit your needs.',
-    bullets: [
-      'Notifications keep you updated on enquiry replies',
-      'Your data is handled in line with Botswana privacy law',
-    ],
+    placement: 'center',
+    description: 'Start browsing, send your first enquiry, and track replies right from this dashboard.',
   },
 ]
 
@@ -67,50 +58,54 @@ export const PROVIDER_ONBOARDING_STEPS: OnboardingStep[] = [
   {
     title: 'Your provider hub',
     mascot: 'explaining',
-    description: 'Welcome to your business dashboard — manage your public listing and customer messages in one place.',
-    bullets: [
-      'Profile tab — business details, logo, cover, and gallery',
-      'Services tab — what you offer and how customers find you',
-      'Inbox tab — enquiries from customers on the platform',
-    ],
+    target: 'provider-hero',
+    placement: 'bottom',
+    description: 'This dashboard is your control centre for your public listing and customer messages.',
   },
   {
-    title: 'Build a standout profile',
+    title: 'Profile tab',
     mascot: 'explaining',
-    description: 'A complete profile helps customers trust you before they enquire.',
-    bullets: [
-      'Upload a logo and cover photo for your listing',
-      'Write a clear description and location',
-      'Add gallery images that showcase your work',
-    ],
+    target: 'provider-tab-profile',
+    tab: 'profile',
+    placement: 'bottom',
+    description: 'Start on Profile to set up your business details, branding, and gallery.',
   },
   {
-    title: 'List your services',
+    title: 'Build your branding',
     mascot: 'explaining',
-    description: 'Tell customers exactly what you offer with clear service entries.',
-    bullets: [
-      'Add titles and descriptions for each service',
-      'We can auto-suggest a category from your business details',
-      'Keep services updated as your offering grows',
-    ],
+    target: 'provider-branding',
+    tab: 'profile',
+    placement: 'top',
+    description: 'Upload a logo, cover image, and gallery photos so customers trust your listing immediately.',
   },
   {
-    title: 'Never miss an enquiry',
+    title: 'Services tab',
     mascot: 'explaining',
-    description: 'When a customer sends an enquiry, you will know right away.',
-    bullets: [
-      'Check the Inbox tab for new messages',
-      'Bell notifications alert you in real time',
-      'Mark enquiries read or replied as you respond',
-    ],
+    target: 'provider-tab-services',
+    tab: 'services',
+    placement: 'bottom',
+    description: 'Add the services you offer — we can auto-suggest a category from your business details.',
+  },
+  {
+    title: 'Your services list',
+    mascot: 'explaining',
+    target: 'provider-services',
+    tab: 'services',
+    placement: 'top',
+    description: 'List clear titles and descriptions so customers know exactly what you provide.',
+  },
+  {
+    title: 'Inbox tab',
+    mascot: 'explaining',
+    target: 'provider-tab-inbox',
+    tab: 'inbox',
+    placement: 'bottom',
+    description: 'All customer enquiries land here. You will also get real-time bell notifications.',
   },
   {
     title: 'Ready to grow!',
     mascot: 'allDone',
+    placement: 'center',
     description: 'Complete your profile, publish your services, and start receiving customers on Market Sphere Group.',
-    bullets: [
-      'Verified listings help you stand out nationwide',
-      'Customers discover you through Browse and categories',
-    ],
   },
 ]

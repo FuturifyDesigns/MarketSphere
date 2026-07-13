@@ -180,6 +180,10 @@
   flex-shrink: 0;
 }
 
+.navbar__get-started {
+  display: inline-flex;
+}
+
 .navbar__session {
   display: flex;
   align-items: center;

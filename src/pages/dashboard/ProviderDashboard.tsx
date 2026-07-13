@@ -8,7 +8,8 @@ import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFi
 import { prepareCoverImage, prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
 import { syncProviderPrimaryCategory } from '../../lib/providerCategory'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
-import { RoleOnboarding } from '../../components/onboarding/RoleOnboarding'
+import { RoleOnboarding, type RoleOnboardingHandle } from '../../components/onboarding/RoleOnboarding'
+import { DashboardTutorialButton } from '../../components/dashboard/DashboardTutorialButton'
 import { Button } from '../../components/ui/Button'
 import { ImageCropModal } from '../../components/ui/ImageCropModal'
 import { MediaEditActions } from '../../components/ui/MediaEditActions'
@@ -654,16 +655,24 @@ export function ProviderDashboard() {
   const newEnquiryCount = enquiries.filter((e) => e.status === 'new').length
   const serviceCount = provider?.provider_services?.length || 0
   const displayName = provider?.business_name?.trim() || form.business_name.trim() || 'your business'
+  const onboardingRef = useRef<RoleOnboardingHandle>(null)
 
   return (
     <div className="dashboard provider-dashboard">
-      <RoleOnboarding role="provider" />
+      <RoleOnboarding
+        ref={onboardingRef}
+        role="provider"
+        onStepEnter={(step) => {
+          if (step.tab) setTab(step.tab)
+        }}
+      />
       <div className="container">
-        <header className="provider-dashboard__hero">
+        <header className="provider-dashboard__hero" data-onboarding="provider-hero">
           <div>
             <span className="provider-dashboard__eyebrow">Provider dashboard</span>
             <h1>Manage {displayName}</h1>
             <p>Update your listing, respond to enquiries, and grow your services on Market Sphere Group.</p>
+            <DashboardTutorialButton onClick={() => onboardingRef.current?.replay()} />
           </div>
           <div className="provider-dashboard__stats">
             <div className="provider-dashboard__stat">
@@ -690,6 +699,7 @@ export function ProviderDashboard() {
             role="tab"
             aria-selected={tab === 'profile'}
             className={tab === 'profile' ? 'provider-dashboard__tab--active' : ''}
+            data-onboarding="provider-tab-profile"
             onClick={() => setTab('profile')}
           >
             <Settings size={16} /> Profile
@@ -699,6 +709,7 @@ export function ProviderDashboard() {
             role="tab"
             aria-selected={tab === 'services'}
             className={tab === 'services' ? 'provider-dashboard__tab--active' : ''}
+            data-onboarding="provider-tab-services"
             onClick={() => setTab('services')}
           >
             <BriefcaseBusiness size={16} /> Services
@@ -708,6 +719,7 @@ export function ProviderDashboard() {
             role="tab"
             aria-selected={tab === 'inbox'}
             className={tab === 'inbox' ? 'provider-dashboard__tab--active' : ''}
+            data-onboarding="provider-tab-inbox"
             onClick={() => setTab('inbox')}
           >
             <Inbox size={16} /> Inbox {newEnquiryCount > 0 ? `(${newEnquiryCount})` : ''}
@@ -719,7 +731,7 @@ export function ProviderDashboard() {
             <AccountProfileCard />
 
             <div className="provider-dashboard__panels">
-              <section className="dashboard-panel provider-branding-panel">
+              <section className="dashboard-panel provider-branding-panel" data-onboarding="provider-branding">
                 <div className="dashboard-panel__header">
                   <h2><ImagePlus size={20} /> Branding</h2>
                 </div>
@@ -944,7 +956,7 @@ export function ProviderDashboard() {
         )}
 
         {tab === 'services' && (
-          <section className="dashboard-panel">
+          <section className="dashboard-panel" data-onboarding="provider-services">
             <div className="dashboard-panel__header">
               <h2><BriefcaseBusiness size={20} /> Your services</h2>
             </div>

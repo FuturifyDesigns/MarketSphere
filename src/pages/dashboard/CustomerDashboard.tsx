@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ArrowRight, Heart, MessageSquare, Search } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -7,7 +7,8 @@ import { supabase } from '../../lib/supabase'
 import { ProviderCard } from '../../components/ui/ProviderCard'
 import { Button } from '../../components/ui/Button'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
-import { RoleOnboarding } from '../../components/onboarding/RoleOnboarding'
+import { RoleOnboarding, type RoleOnboardingHandle } from '../../components/onboarding/RoleOnboarding'
+import { DashboardTutorialButton } from '../../components/dashboard/DashboardTutorialButton'
 import { formatStatusLabel } from '../../lib/validation'
 import type { Enquiry, Provider } from '../../lib/types'
 import './Dashboard.css'
@@ -80,16 +81,18 @@ export function CustomerDashboard() {
   }, [location.state, showToast])
 
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'there'
+  const onboardingRef = useRef<RoleOnboardingHandle>(null)
 
   return (
     <div className="dashboard customer-dashboard">
-      <RoleOnboarding role="customer" />
+      <RoleOnboarding ref={onboardingRef} role="customer" />
       <div className="container">
         <header className="customer-dashboard__hero">
           <div>
             <span className="customer-dashboard__eyebrow">Customer dashboard</span>
             <h1>Welcome back, {firstName}</h1>
             <p>Track your enquiries, manage your profile, and revisit saved providers.</p>
+            <DashboardTutorialButton onClick={() => onboardingRef.current?.replay()} />
           </div>
           <div className="customer-dashboard__stats">
             <div className="customer-dashboard__stat">
@@ -106,15 +109,19 @@ export function CustomerDashboard() {
         </header>
 
         <div className="customer-dashboard__layout">
-          <AccountProfileCard />
+          <div data-onboarding="customer-profile">
+            <AccountProfileCard />
+          </div>
 
           <div className="customer-dashboard__panels">
-            <section className="dashboard-panel">
+            <section className="dashboard-panel" data-onboarding="customer-enquiries">
               <div className="dashboard-panel__header">
                 <h2><MessageSquare size={20} /> My Enquiries</h2>
-                <Button to="/browse" variant="ghost" size="sm">
-                  Browse providers <ArrowRight size={14} />
-                </Button>
+                <span data-onboarding="customer-browse">
+                  <Button to="/browse" variant="ghost" size="sm">
+                    Browse providers <ArrowRight size={14} />
+                  </Button>
+                </span>
               </div>
               {enquiries.length > 0 ? (
                 <div className="enquiry-list">
@@ -145,7 +152,7 @@ export function CustomerDashboard() {
               )}
             </section>
 
-            <section className="dashboard-panel">
+            <section className="dashboard-panel" data-onboarding="customer-favorites">
               <div className="dashboard-panel__header">
                 <h2><Heart size={20} /> Saved Providers</h2>
                 <Button to="/browse" variant="ghost" size="sm">

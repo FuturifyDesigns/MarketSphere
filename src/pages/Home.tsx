@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowRight, ArrowDown } from 'lucide-react'
+import { ArrowRight, ArrowDown, BadgeCheck, ShieldCheck, Users } from 'lucide-react'
 import { SkyBackground } from '../components/home/SkyBackground'
 import { Marquee } from '../components/home/Marquee'
 import { ServicesShowcase } from '../components/home/ServicesShowcase'
@@ -10,6 +10,7 @@ import { HeroVideo } from '../components/hero/HeroVideo'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
 import { Button } from '../components/ui/Button'
+import { WelcomeModal } from '../components/onboarding/WelcomeModal'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
@@ -212,6 +213,7 @@ export function Home() {
 
   return (
     <div className="home" ref={rootRef}>
+      <WelcomeModal />
       <SkyBackground />
 
       {/* Hero */}
@@ -231,12 +233,16 @@ export function Home() {
               A professional marketplace linking customers with verified service providers — from tutoring and real estate to youth empowerment and entrepreneurship.
             </p>
             <div className="hero__actions">
-              <Button to="/browse" size="lg">
-                Explore Providers <ArrowRight size={16} />
-              </Button>
-              <Button to="/register?role=provider" variant="secondary" size="lg">
-                List Your Business
-              </Button>
+              <span className="hero__action-target" data-onboarding="hero-browse">
+                <Button to="/browse" size="lg">
+                  Explore Providers <ArrowRight size={16} />
+                </Button>
+              </span>
+              <span className="hero__action-target" data-onboarding="hero-provider">
+                <Button to="/register?role=provider" variant="secondary" size="lg">
+                  List Your Business
+                </Button>
+              </span>
             </div>
           </div>
           <div className="hero__visual">
@@ -296,27 +302,70 @@ export function Home() {
           <header className="home-section__header section-header section-header--center">
             <span className="section-label home-section__label">Our Network</span>
             <h2 className="display-lg home-section__title">
-              <span className="home-section__title-word">Featured providers</span>
+              <span className="home-section__title-word">
+                Featured <em className="text-gold">providers</em>
+              </span>
             </h2>
-            <p className="home-section__lead">Browse verified professionals ready to help you master your field.</p>
-          </header>
-          {providers.length > 0 ? (
-            <ShowcaseCarousel
-              className="home-providers-carousel"
-              items={providers}
-              getKey={(provider) => provider.id}
-              ariaLabel="Featured providers"
-              renderItem={(provider) => (
-                <ProviderCard provider={provider} disableAnimation variant="featured" />
-              )}
-            />
-          ) : (
-            <div className="empty-state bento-card home-section__item">
-              <p>Provider listings coming soon. Be the first to <Link to="/register?role=provider">join our network</Link>.</p>
+            <p className="home-section__lead">
+              Browse verified professionals ready to help you master your field.
+            </p>
+            <div className="home-providers-trust" aria-label="Provider network highlights">
+              <span className="home-providers-trust__item">
+                <BadgeCheck size={15} aria-hidden="true" />
+                Verified listings
+              </span>
+              <span className="home-providers-trust__item">
+                <ShieldCheck size={15} aria-hidden="true" />
+                Trusted across Botswana
+              </span>
+              <span className="home-providers-trust__item">
+                <Users size={15} aria-hidden="true" />
+                Growing provider network
+              </span>
             </div>
-          )}
-          <div className="section-cta home-section__footer">
-            <Button to="/browse" size="lg">Browse All Providers</Button>
+          </header>
+
+          <div className="home-providers-stage">
+            <div className="home-providers-stage__glow" aria-hidden="true" />
+            {providers.length > 0 ? (
+              providers.length <= 3 ? (
+                <div className={`home-providers-grid home-providers-grid--count-${providers.length}`}>
+                  {providers.map((provider, index) => (
+                    <ProviderCard
+                      key={provider.id}
+                      provider={provider}
+                      index={index}
+                      disableAnimation
+                      variant="showcase"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <ShowcaseCarousel
+                  className="home-providers-carousel showcase-carousel--wide"
+                  items={providers}
+                  getKey={(provider) => provider.id}
+                  ariaLabel="Featured providers"
+                  renderItem={(provider) => (
+                    <ProviderCard provider={provider} disableAnimation variant="showcase" />
+                  )}
+                />
+              )
+            ) : (
+              <div className="empty-state bento-card home-section__item home-providers-empty">
+                <p>Provider listings coming soon. Be the first to <Link to="/register?role=provider">join our network</Link>.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="section-cta home-section__footer home-providers-footer">
+            <p className="home-providers-footer__text">
+              Discover more categories, locations, and specialists on the full marketplace.
+            </p>
+            <Button to="/browse" size="lg">
+              Browse all providers
+              <ArrowRight size={16} aria-hidden="true" />
+            </Button>
           </div>
         </div>
       </section>

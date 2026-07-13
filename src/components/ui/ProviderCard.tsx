@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MapPin } from 'lucide-react'
+import { ArrowRight, BadgeCheck, MapPin } from 'lucide-react'
 import type { Provider } from '../../lib/types'
 import { getProviderPrimaryCategory } from '../../lib/providerCategory'
 import './ProviderCard.css'
@@ -9,12 +9,17 @@ interface ProviderCardProps {
   provider: Provider
   index?: number
   disableAnimation?: boolean
-  variant?: 'default' | 'featured'
+  variant?: 'default' | 'featured' | 'showcase'
 }
 
 export function ProviderCard({ provider, index = 0, disableAnimation = false, variant = 'default' }: ProviderCardProps) {
   const primaryCategory = getProviderPrimaryCategory(provider)
-  const cardClassName = variant === 'featured' ? 'provider-card provider-card--featured' : 'provider-card'
+  const cardClassName =
+    variant === 'showcase'
+      ? 'provider-card provider-card--showcase'
+      : variant === 'featured'
+        ? 'provider-card provider-card--featured'
+        : 'provider-card'
 
   const content = (
     <Link to={`/provider/${provider.id}`} className="provider-card__link">
@@ -27,6 +32,12 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
           </div>
         )}
         {primaryCategory ? <span className="provider-card__category">{primaryCategory.name}</span> : null}
+        {variant === 'showcase' ? (
+          <span className="provider-card__verified">
+            <BadgeCheck size={13} aria-hidden="true" />
+            Verified
+          </span>
+        ) : null}
       </div>
       <div className="provider-card__body">
         <h3>{provider.business_name}</h3>
@@ -37,10 +48,16 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
         )}
         {provider.description && (
           <p className="provider-card__desc">
-            {provider.description.slice(0, 100)}
-            {provider.description.length > 100 ? '…' : ''}
+            {provider.description.slice(0, variant === 'showcase' ? 160 : 100)}
+            {provider.description.length > (variant === 'showcase' ? 160 : 100) ? '…' : ''}
           </p>
         )}
+        {variant === 'showcase' ? (
+          <span className="provider-card__cta">
+            View profile
+            <ArrowRight size={15} aria-hidden="true" />
+          </span>
+        ) : null}
       </div>
     </Link>
   )

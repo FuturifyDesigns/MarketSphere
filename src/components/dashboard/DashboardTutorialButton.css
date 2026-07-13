@@ -1,0 +1,15 @@
+.dashboard-tutorial-btn {
+  margin-top: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dashboard-tutorial-btn:hover {
+  color: var(--color-gold);
+}
+
+@media (max-width: 768px) {
+  .dashboard-tutorial-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
