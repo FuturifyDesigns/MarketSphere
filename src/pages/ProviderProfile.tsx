@@ -54,7 +54,7 @@ export function ProviderProfile() {
 
   const gallery = provider?.gallery_urls || []
   const serviceCount = provider?.provider_services?.length || 0
-  const coverImage = gallery[0] || provider?.logo_url || null
+  const coverImage = provider?.cover_url || gallery[0] || provider?.logo_url || null
   const primaryCategory = provider ? getProviderPrimaryCategory(provider) : null
 
   useEffect(() => {
@@ -178,7 +178,13 @@ export function ProviderProfile() {
     <div className="page provider-profile-page">
       <section className="provider-showcase-hero">
         {coverImage ? (
-          <img src={coverImage} alt="" className="provider-showcase-hero__cover" />
+          <img
+            src={coverImage}
+            alt=""
+            className="provider-showcase-hero__cover"
+            decoding="async"
+            fetchPriority="high"
+          />
         ) : (
           <div className="provider-showcase-hero__cover provider-showcase-hero__cover--fallback" aria-hidden="true" />
         )}
@@ -193,7 +199,7 @@ export function ProviderProfile() {
             <div className="provider-showcase-hero__brand">
               <div className="provider-showcase-hero__logo">
                 {provider.logo_url ? (
-                  <img src={provider.logo_url} alt="" />
+                  <img src={provider.logo_url} alt="" decoding="async" />
                 ) : (
                   <div className="provider-showcase-hero__logo-placeholder">
                     {provider.business_name.charAt(0)}
@@ -223,17 +229,23 @@ export function ProviderProfile() {
 
             <div className="provider-showcase-hero__stats">
               <div className="provider-showcase-hero__stat">
-                <BriefcaseBusiness size={18} aria-hidden="true" />
+                <span className="provider-showcase-hero__stat-icon" aria-hidden="true">
+                  <BriefcaseBusiness size={18} strokeWidth={2} />
+                </span>
                 <strong>{serviceCount}</strong>
                 <span>Services</span>
               </div>
               <div className="provider-showcase-hero__stat">
-                <Images size={18} aria-hidden="true" />
+                <span className="provider-showcase-hero__stat-icon" aria-hidden="true">
+                  <Images size={18} strokeWidth={2} />
+                </span>
                 <strong>{gallery.length}</strong>
                 <span>Gallery</span>
               </div>
               <div className="provider-showcase-hero__stat">
-                <Sparkles size={18} aria-hidden="true" />
+                <span className="provider-showcase-hero__stat-icon" aria-hidden="true">
+                  <Sparkles size={18} strokeWidth={2} />
+                </span>
                 <strong>Live</strong>
                 <span>Listing</span>
               </div>
@@ -317,13 +329,17 @@ export function ProviderProfile() {
               <p>Reach out directly or send an enquiry through Market Sphere Group.</p>
               {provider.contact_email ? (
                 <a href={`mailto:${provider.contact_email}`} className="provider-showcase-contact__link">
-                  <Mail size={16} aria-hidden="true" />
+                  <span className="provider-showcase-contact__icon" aria-hidden="true">
+                    <Mail size={16} strokeWidth={2} />
+                  </span>
                   {provider.contact_email}
                 </a>
               ) : null}
               {provider.contact_phone ? (
                 <a href={`tel:${provider.contact_phone}`} className="provider-showcase-contact__link">
-                  <Phone size={16} aria-hidden="true" />
+                  <span className="provider-showcase-contact__icon" aria-hidden="true">
+                    <Phone size={16} strokeWidth={2} />
+                  </span>
                   {provider.contact_phone}
                 </a>
               ) : null}
@@ -339,7 +355,9 @@ export function ProviderProfile() {
             </div>
 
             <div className="provider-showcase-promo">
-              <Sparkles size={18} aria-hidden="true" />
+              <span className="provider-showcase-promo__icon" aria-hidden="true">
+                <Sparkles size={18} strokeWidth={2} />
+              </span>
               <strong>Trusted on Market Sphere Group</strong>
               <p>Verified listings help customers discover quality services across Botswana.</p>
               <Link to="/browse">Explore more providers</Link>

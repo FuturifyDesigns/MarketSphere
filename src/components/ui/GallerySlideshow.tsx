@@ -49,7 +49,7 @@ export function GallerySlideshow({ images, onImageClick, autoplayMs = 4500 }: Ga
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             aria-label={`View gallery photo ${index + 1}`}
           >
-            <img src={images[index]} alt="" />
+            <img src={images[index]} alt="" decoding="async" fetchPriority={index === 0 ? 'high' : 'auto'} />
           </motion.button>
         </AnimatePresence>
 
@@ -76,7 +76,7 @@ export function GallerySlideshow({ images, onImageClick, autoplayMs = 4500 }: Ga
               onClick={() => setIndex(thumbIndex)}
               aria-label={`Show photo ${thumbIndex + 1}`}
             >
-              <img src={url} alt="" />
+              <img src={url} alt="" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>

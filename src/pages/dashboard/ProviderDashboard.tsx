@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { BriefcaseBusiness, ImagePlus, Inbox, Settings, Store } from 'lucide-react'
+import { BriefcaseBusiness, ImagePlus, Inbox, Settings, Store, Image } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFile } from '../../lib/supabase'
-import { prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
+import { prepareCoverImage, prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
 import { syncProviderPrimaryCategory } from '../../lib/providerCategory'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
@@ -39,6 +39,7 @@ export function ProviderDashboard() {
   const { user, profile, refreshProfile } = useAuth()
   const { showToast } = useToast()
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -53,6 +54,7 @@ export function ProviderDashboard() {
   const [newService, setNewService] = useState({ title: '', description: '', category_id: '' })
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
   const [uploadingGallery, setUploadingGallery] = useState(false)
   const [galleryUploadProgress, setGalleryUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [uploadError, setUploadError] = useState('')
@@ -350,6 +352,61 @@ export function ProviderDashboard() {
     }
   }
 
+  const handleCoverPick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setUploadingCover(true)
+    setUploadError('')
+
+    try {
+      assertImageFile(file)
+      const activeProvider = await ensureProvider()
+      if (!activeProvider) return
+
+      const prepared = await prepareCoverImage(file)
+      const url = await uploadPreparedFile('provider-gallery', `${activeProvider.id}/cover`, prepared)
+      if (!url) throw new Error('Cover upload failed')
+
+      if (activeProvider.cover_url) {
+        const oldPath = storagePathFromPublicUrl('provider-gallery', activeProvider.cover_url)
+        if (oldPath) await removeStorageFile('provider-gallery', oldPath)
+      }
+
+      await supabase.from('providers').update({ cover_url: url }).eq('id', activeProvider.id)
+      setProvider({ ...activeProvider, cover_url: url })
+      showToast('Profile cover image updated.')
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Cover upload failed')
+      showToast(err instanceof Error ? err.message : 'Cover upload failed', 'error')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
+  const removeCover = async () => {
+    if (!provider?.cover_url) return
+    if (!window.confirm('Remove your profile cover image?')) return
+
+    setUploadingCover(true)
+    setUploadError('')
+
+    try {
+      const path = storagePathFromPublicUrl('provider-gallery', provider.cover_url)
+      if (path) await removeStorageFile('provider-gallery', path)
+
+      await supabase.from('providers').update({ cover_url: null }).eq('id', provider.id)
+      setProvider({ ...provider, cover_url: null })
+      showToast('Profile cover image removed.')
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not remove cover image')
+      showToast(err instanceof Error ? err.message : 'Could not remove cover image', 'error')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
   const openGalleryEditor = async (url: string) => {
     setLoadingMediaEditor(true)
     setUploadError('')
@@ -598,6 +655,60 @@ export function ProviderDashboard() {
               <section className="dashboard-panel provider-branding-panel">
                 <div className="dashboard-panel__header">
                   <h2><ImagePlus size={20} /> Branding</h2>
+                </div>
+
+                <div className="provider-branding-panel__cover">
+                  {provider?.cover_url ? (
+                    <button
+                      type="button"
+                      className="provider-branding-panel__cover-btn"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={uploadingCover}
+                      aria-label="Change profile cover image"
+                    >
+                      <img src={provider.cover_url} alt="" className="provider-branding-panel__cover-img" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="provider-branding-panel__cover-placeholder"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={uploadingCover}
+                    >
+                      <Image size={28} strokeWidth={1.75} />
+                      <span>Add cover image</span>
+                    </button>
+                  )}
+                  <div>
+                    <p className="provider-branding-panel__title">Profile cover</p>
+                    <p className="provider-branding-panel__hint">
+                      Wide banner for your public profile · up to {UPLOAD_LIMITS.cover.maxWidth}×{UPLOAD_LIMITS.cover.maxHeight} px
+                    </p>
+                    <div className="provider-branding-panel__action-row">
+                      <button
+                        type="button"
+                        className="provider-branding-panel__upload-btn"
+                        onClick={() => coverInputRef.current?.click()}
+                        disabled={uploadingCover}
+                      >
+                        {uploadingCover ? 'Uploading…' : provider?.cover_url ? 'Change cover' : 'Upload cover'}
+                      </button>
+                      {provider?.cover_url ? (
+                        <MediaEditActions
+                          onEdit={() => coverInputRef.current?.click()}
+                          onDelete={() => void removeCover()}
+                          disabled={uploadingCover}
+                        />
+                      ) : null}
+                    </div>
+                    <input
+                      ref={coverInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => void handleCoverPick(e)}
+                      hidden
+                    />
+                  </div>
                 </div>
 
                 <div className="provider-branding-panel__logo">

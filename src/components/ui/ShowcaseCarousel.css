@@ -78,4 +78,31 @@
   .showcase-carousel__nav--next {
     right: 0.25rem;
   }
+
+  .showcase-carousel__nav {
+    width: 36px;
+    height: 36px;
+  }
+
+  .showcase-carousel__dots {
+    margin-top: 0.85rem;
+  }
+
+  .home-providers-carousel.showcase-carousel {
+    max-width: 100%;
+    padding-inline: 0.15rem;
+  }
+
+  .home-testimonials-carousel.showcase-carousel {
+    max-width: 100%;
+  }
+
+  .home-testimonials-carousel .testimonial-card {
+    min-height: 11.5rem;
+    padding: 1.15rem;
+  }
+
+  .home-testimonials-carousel .testimonial-card p {
+    font-size: 0.9375rem;
+  }
 }

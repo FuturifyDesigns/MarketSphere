@@ -302,11 +302,13 @@ export function Home() {
           </header>
           {providers.length > 0 ? (
             <ShowcaseCarousel
-              className="showcase-carousel--wide home-providers-carousel"
+              className="home-providers-carousel"
               items={providers}
               getKey={(provider) => provider.id}
               ariaLabel="Featured providers"
-              renderItem={(provider) => <ProviderCard provider={provider} disableAnimation />}
+              renderItem={(provider) => (
+                <ProviderCard provider={provider} disableAnimation variant="featured" />
+              )}
             />
           ) : (
             <div className="empty-state bento-card home-section__item">

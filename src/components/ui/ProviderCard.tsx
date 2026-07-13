@@ -9,10 +9,12 @@ interface ProviderCardProps {
   provider: Provider
   index?: number
   disableAnimation?: boolean
+  variant?: 'default' | 'featured'
 }
 
-export function ProviderCard({ provider, index = 0, disableAnimation = false }: ProviderCardProps) {
+export function ProviderCard({ provider, index = 0, disableAnimation = false, variant = 'default' }: ProviderCardProps) {
   const primaryCategory = getProviderPrimaryCategory(provider)
+  const cardClassName = variant === 'featured' ? 'provider-card provider-card--featured' : 'provider-card'
 
   const content = (
     <Link to={`/provider/${provider.id}`} className="provider-card__link">
@@ -44,12 +46,12 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false }: 
   )
 
   if (disableAnimation) {
-    return <article className="provider-card">{content}</article>
+    return <article className={cardClassName}>{content}</article>
   }
 
   return (
     <motion.article
-      className="provider-card"
+      className={cardClassName}
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}

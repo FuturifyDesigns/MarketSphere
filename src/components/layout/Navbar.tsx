@@ -64,13 +64,19 @@ export function Navbar() {
         ? '/dashboard/provider'
         : '/dashboard/customer'
 
+  const isHome = location.pathname === '/'
+  const isProviderProfile = location.pathname.startsWith('/provider/')
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
+    onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [location.pathname])
 
   const signedInName = profile?.full_name?.trim() || profile?.email || 'Account'
+  const useInverseNav = isProviderProfile && !scrolled
+  const useSolidNav = scrolled || !isHome
 
   const handleSignOut = async () => {
     setOpen(false)
@@ -82,7 +88,13 @@ export function Navbar() {
   }
 
   return (
-    <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
+    <header
+      className={[
+        'navbar',
+        useSolidNav ? 'navbar--scrolled' : '',
+        useInverseNav ? 'navbar--inverse' : '',
+      ].filter(Boolean).join(' ')}
+    >
       <div className="navbar__inner container">
         <Link to="/" className="navbar__brand" onClick={() => setOpen(false)}>
           <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt={COMPANY.shortName} className="navbar__logo" loading="eager" decoding="sync" fetchPriority="high" />

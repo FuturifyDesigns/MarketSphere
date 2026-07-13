@@ -523,8 +523,20 @@
   margin-top: 0.5rem;
 }
 
+.home-providers-carousel.showcase-carousel {
+  max-width: min(100%, 24rem);
+}
+
+.home-providers-carousel .showcase-carousel__viewport {
+  min-height: auto;
+}
+
+.home-testimonials-carousel.showcase-carousel {
+  max-width: min(100%, 34rem);
+}
+
 .home-testimonials-carousel .testimonial-card {
-  min-height: 16rem;
+  min-height: 13rem;
 }
 
 .providers-grid {
@@ -755,5 +767,14 @@
   .section--vision .home-showcase__mega--vision .home-section__title-word {
     font-size: clamp(2rem, 9vw, 2.85rem);
     max-width: none;
+  }
+
+  .section--providers .section-cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .home-providers-carousel.showcase-carousel {
+    max-width: 100%;
   }
 }

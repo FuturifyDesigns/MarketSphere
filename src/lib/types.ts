@@ -27,6 +27,7 @@ export interface Provider {
   business_name: string
   description: string | null
   logo_url: string | null
+  cover_url: string | null
   location: string | null
   contact_email: string | null
   contact_phone: string | null

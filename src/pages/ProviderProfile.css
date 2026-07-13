@@ -11,7 +11,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.04);
+  object-position: center;
 }
 
 .provider-showcase-hero__cover--fallback {
@@ -133,6 +133,17 @@
   border-radius: 12px;
   background: rgba(201, 162, 75, 0.08);
   border: 1px solid rgba(201, 162, 75, 0.18);
+}
+
+.provider-showcase-hero__stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(201, 162, 75, 0.16);
+  color: var(--color-gold);
 }
 
 .provider-showcase-hero__stat svg {
@@ -338,12 +349,24 @@
 .provider-showcase-contact__link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
   margin-bottom: 0.5rem;
-  color: var(--color-gold);
+  color: var(--text-primary);
   text-decoration: none;
   font-size: 0.875rem;
   word-break: break-word;
+}
+
+.provider-showcase-contact__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(201, 162, 75, 0.14);
+  color: var(--color-gold);
 }
 
 .provider-showcase-contact__cta {
@@ -355,9 +378,21 @@
   background: linear-gradient(135deg, rgba(201, 162, 75, 0.12) 0%, rgba(255, 255, 255, 0.95) 100%);
 }
 
+.provider-showcase-promo__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 0.35rem;
+  border-radius: 10px;
+  background: rgba(201, 162, 75, 0.16);
+  color: var(--color-gold);
+}
+
 .provider-showcase-promo svg {
   color: var(--color-gold);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
 }
 
 .provider-showcase-promo a {
@@ -494,6 +529,44 @@
 .upload-error {
   font-size: 0.8125rem;
   color: #c44;
+}
+
+@media (max-width: 768px) {
+  .provider-showcase-hero {
+    min-height: auto;
+    padding-bottom: 1.5rem;
+  }
+
+  .provider-showcase-hero__card {
+    padding: 1.1rem;
+  }
+
+  .provider-showcase-hero__logo img,
+  .provider-showcase-hero__logo-placeholder {
+    width: 84px;
+    height: 84px;
+    border-radius: 14px;
+  }
+
+  .provider-showcase-panel {
+    padding: 1.15rem;
+  }
+
+  .provider-showcase-contact,
+  .provider-showcase-promo {
+    padding: 1.1rem;
+  }
+
+  .provider-lightbox {
+    padding: 0.5rem;
+  }
+
+  .provider-lightbox__image {
+    max-height: min(70vh, 560px);
+  }
+
+  .provider-lightbox__nav--prev { left: 0.25rem; }
+  .provider-lightbox__nav--next { right: 0.25rem; }
 }
 
 @media (max-width: 960px) {

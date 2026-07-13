@@ -72,6 +72,7 @@ create table if not exists public.providers (
   business_name text not null,
   description text,
   logo_url text,
+  cover_url text,
   location text,
   contact_email text,
   contact_phone text,

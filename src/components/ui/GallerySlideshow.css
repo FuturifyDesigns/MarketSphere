@@ -24,7 +24,9 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+  object-position: center;
   display: block;
+  image-rendering: auto;
 }
 
 .gallery-slideshow__nav {
@@ -88,4 +90,24 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+@media (max-width: 768px) {
+  .gallery-slideshow__nav {
+    width: 34px;
+    height: 34px;
+  }
+
+  .gallery-slideshow__nav--prev { left: 0.5rem; }
+  .gallery-slideshow__nav--next { right: 0.5rem; }
+
+  .gallery-slideshow__thumb {
+    width: 56px;
+    height: 56px;
+  }
+
+  .gallery-slideshow__image-btn img {
+    aspect-ratio: 4 / 3;
+    max-height: 16rem;
+  }
 }

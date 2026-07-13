@@ -11,9 +11,55 @@
 }
 
 .navbar--scrolled {
-  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-primary) 94%, transparent);
   backdrop-filter: blur(16px) saturate(1.4);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.navbar--inverse {
+  background: linear-gradient(180deg, rgba(14, 17, 22, 0.78) 0%, rgba(14, 17, 22, 0.18) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.navbar--inverse .navbar__name,
+.navbar--inverse .navbar__session-label,
+.navbar--inverse .navbar__session-name,
+.navbar--inverse .navbar__dash,
+.navbar--inverse .navbar__signout,
+.navbar--inverse .navbar__toggle {
+  color: rgba(250, 248, 244, 0.94);
+}
+
+.navbar--inverse .navbar__link {
+  color: rgba(250, 248, 244, 0.84);
+}
+
+.navbar--inverse .navbar__link:hover {
+  color: #fff;
+}
+
+.navbar--inverse .navbar__pill {
+  background: rgba(14, 17, 22, 0.42);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.navbar--scrolled .navbar__link {
+  color: var(--text-primary);
+}
+
+.navbar--scrolled .navbar__link:hover {
+  color: var(--color-bronze);
+}
+
+.navbar--scrolled .navbar__pill {
+  background: var(--card-bg);
+  border-color: var(--border-subtle);
+  box-shadow: 0 8px 24px rgba(74, 63, 47, 0.08);
+}
+
+.navbar--scrolled .navbar__dash,
+.navbar--scrolled .navbar__signout {
+  color: var(--text-primary);
 }
 
 .navbar__inner {
@@ -199,6 +245,25 @@
   color: inherit;
   cursor: pointer;
   padding: 0.25rem;
+}
+
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__name,
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__session-label,
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__session-name,
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__dash,
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__signout,
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__toggle,
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__link {
+  color: rgba(250, 248, 244, 0.9);
+}
+
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__link:hover {
+  color: #fff;
+}
+
+html[data-theme='night'] .navbar:not(.navbar--scrolled) .navbar__pill {
+  background: rgba(14, 17, 22, 0.42);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 @media (max-width: 900px) {

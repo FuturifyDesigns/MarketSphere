@@ -2,8 +2,9 @@
 
 export const UPLOAD_LIMITS = {
   avatar: { maxWidth: 256, maxHeight: 256, maxBytes: 150_000, quality: 0.82 },
-  logo: { maxWidth: 512, maxHeight: 512, maxBytes: 300_000, quality: 0.85 },
-  gallery: { maxWidth: 1280, maxHeight: 1280, maxBytes: 500_000, quality: 0.8, maxCount: 6 },
+  logo: { maxWidth: 768, maxHeight: 768, maxBytes: 400_000, quality: 0.88 },
+  cover: { maxWidth: 1920, maxHeight: 1080, maxBytes: 900_000, quality: 0.9 },
+  gallery: { maxWidth: 1920, maxHeight: 1440, maxBytes: 900_000, quality: 0.9, maxCount: 6 },
 } as const
 
 const ACCEPTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
@@ -68,6 +69,8 @@ async function compressImage(file: File, opts: CompressOptions): Promise<File> {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Could not prepare image')
 
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(img, 0, 0, width, height)
 
   let quality = opts.quality
@@ -106,5 +109,12 @@ export function prepareGalleryImage(file: File) {
   return compressImage(file, {
     ...UPLOAD_LIMITS.gallery,
     fileName: `gallery-${crypto.randomUUID()}.jpg`,
+  })
+}
+
+export function prepareCoverImage(file: File) {
+  return compressImage(file, {
+    ...UPLOAD_LIMITS.cover,
+    fileName: `cover-${crypto.randomUUID()}.jpg`,
   })
 }
