@@ -16,7 +16,7 @@ export function PageTransition() {
 
   useLayoutEffect(() => {
     resetScrollOnRouteChange()
-  }, [location.pathname])
+  }, [location.pathname, location.key])
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -49,6 +49,7 @@ export function PageTransition() {
         }
 
         scheduleScrollRefresh()
+        window.setTimeout(() => resetScrollOnRouteChange(), 350)
       })
     }
 

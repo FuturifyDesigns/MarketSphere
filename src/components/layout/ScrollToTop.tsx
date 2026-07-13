@@ -5,17 +5,17 @@ import { scheduleScrollRefresh } from '../../lib/scrollRefresh'
 
 /** Scroll to top before paint on every route change (all pages, including auth). */
 export function ScrollToTop() {
-  const { pathname } = useLocation()
+  const location = useLocation()
 
   useLayoutEffect(() => {
     resetScrollOnRouteChange()
 
     const isAuthRoute =
-      pathname === '/get-started' || pathname === '/login' || pathname === '/register'
+      location.pathname === '/get-started' || location.pathname === '/login' || location.pathname === '/register'
     if (!isAuthRoute) {
       scheduleScrollRefresh()
     }
-  }, [pathname])
+  }, [location.pathname, location.key])
 
   return null
 }

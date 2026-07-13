@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Cookie } from 'lucide-react'
 import { useCookieConsent } from '../../context/CookieConsentContext'
@@ -30,12 +29,15 @@ export function LegalDocument({
   showCookieAction = false,
 }: LegalDocumentProps) {
   const { openCookieSettings } = useCookieConsent()
-  const location = useLocation()
-  const navigate = useNavigate()
   const [activeId, setActiveId] = useState(() => sections[0]?.id ?? '')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(sections.map((section, index) => [section.id, index === 0])),
   )
+
+  const selectSection = useCallback((id: string) => {
+    setOpenSections((prev) => ({ ...prev, [id]: true }))
+    setActiveId(id)
+  }, [])
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => {
@@ -44,26 +46,6 @@ export function LegalDocument({
       return { ...prev, [id]: nextOpen }
     })
   }
-
-  const jumpTo = useCallback((id: string) => {
-    setOpenSections((prev) => ({ ...prev, [id]: true }))
-    setActiveId(id)
-    window.requestAnimationFrame(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }, [])
-
-  useEffect(() => {
-    const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo
-    if (!scrollTo || !sections.some((section) => section.id === scrollTo)) return
-
-    const timer = window.setTimeout(() => {
-      jumpTo(scrollTo)
-      navigate('.', { replace: true, state: null })
-    }, 120)
-
-    return () => window.clearTimeout(timer)
-  }, [jumpTo, location.state, navigate, sections])
 
   const quickActions = useMemo(
     () =>
@@ -106,7 +88,7 @@ export function LegalDocument({
                   type="button"
                   className={activeId === section.id ? 'legal-doc-toc__link legal-doc-toc__link--active' : 'legal-doc-toc__link'}
                   aria-current={activeId === section.id ? 'true' : undefined}
-                  onClick={() => jumpTo(section.id)}
+                  onClick={() => selectSection(section.id)}
                 >
                   {section.title}
                 </button>

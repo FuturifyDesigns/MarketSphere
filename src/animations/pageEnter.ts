@@ -2,6 +2,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
+import { scrollToTop } from '../lib/scrollToTop'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -33,7 +34,10 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
 
     const pageTl = gsap.timeline({
       defaults: { ease: 'power3.out' },
-      onComplete: () => scheduleScrollRefresh(),
+      onComplete: () => {
+        scrollToTop(true)
+        scheduleScrollRefresh()
+      },
     })
 
     pageTl.fromTo(
