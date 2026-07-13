@@ -33,7 +33,7 @@ type ServiceFields = 'title' | 'description'
 type ProviderTab = 'profile' | 'inbox' | 'services'
 
 export function ProviderDashboard() {
-  const { user, refreshProfile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
@@ -90,6 +90,58 @@ export function ProviderDashboard() {
       .then(({ data }) => setEnquiries(data || []))
   }, [provider])
 
+  const ensureProvider = async (): Promise<Provider | null> => {
+    if (provider) return provider
+    if (!user) return null
+
+    const businessName =
+      form.business_name.trim() ||
+      profile?.full_name?.trim() ||
+      'My Business'
+
+    const payload = {
+      user_id: user.id,
+      business_name: businessName,
+      description: form.description.trim() || null,
+      location: form.location.trim() || null,
+      contact_email: form.contact_email.trim() || null,
+      contact_phone: form.contact_phone.trim() || null,
+    }
+
+    const { data, error } = await supabase
+      .from('providers')
+      .insert(payload)
+      .select()
+      .single()
+
+    if (error) {
+      const { data: existing } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (existing) {
+        setProvider(existing)
+        return existing
+      }
+
+      setUploadError('Could not prepare your listing for upload. Please try again.')
+      return null
+    }
+
+    setProvider(data)
+    setForm((prev) => ({
+      business_name: prev.business_name.trim() ? prev.business_name : data.business_name,
+      description: prev.description || data.description || '',
+      location: prev.location || data.location || '',
+      contact_email: prev.contact_email || data.contact_email || '',
+      contact_phone: prev.contact_phone || data.contact_phone || '',
+    }))
+    refreshProfile()
+    return data
+  }
+
   const saveProfile = async () => {
     if (!user) return
     setSaveError('')
@@ -138,7 +190,7 @@ export function ProviderDashboard() {
   const handleLogoPick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file || !provider) return
+    if (!file) return
 
     try {
       assertImageFile(file)
@@ -151,18 +203,19 @@ export function ProviderDashboard() {
   }
 
   const handleLogoCroppedUpload = async (croppedFile: File) => {
-    if (!provider) return
-
     setUploadingLogo(true)
     setUploadError('')
 
     try {
+      const activeProvider = await ensureProvider()
+      if (!activeProvider) return
+
       const prepared = await prepareLogoImage(croppedFile)
-      const url = await uploadPreparedFile('provider-logos', `${provider.id}/logo`, prepared)
+      const url = await uploadPreparedFile('provider-logos', `${activeProvider.id}/logo`, prepared)
       if (!url) throw new Error('Logo upload failed')
 
-      await supabase.from('providers').update({ logo_url: url }).eq('id', provider.id)
-      setProvider({ ...provider, logo_url: url })
+      await supabase.from('providers').update({ logo_url: url }).eq('id', activeProvider.id)
+      setProvider({ ...activeProvider, logo_url: url })
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Logo upload failed')
     } finally {
@@ -174,26 +227,29 @@ export function ProviderDashboard() {
   const handleGalleryUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file || !provider) return
-
-    const currentCount = provider.gallery_urls?.length || 0
-    if (currentCount >= UPLOAD_LIMITS.gallery.maxCount) {
-      setUploadError(`Gallery limit is ${UPLOAD_LIMITS.gallery.maxCount} images.`)
-      return
-    }
+    if (!file) return
 
     setUploadError('')
     setUploadingGallery(true)
 
     try {
+      const activeProvider = await ensureProvider()
+      if (!activeProvider) return
+
+      const currentCount = activeProvider.gallery_urls?.length || 0
+      if (currentCount >= UPLOAD_LIMITS.gallery.maxCount) {
+        setUploadError(`Gallery limit is ${UPLOAD_LIMITS.gallery.maxCount} images.`)
+        return
+      }
+
       const prepared = await prepareGalleryImage(file)
-      const path = `${provider.id}/${prepared.name}`
+      const path = `${activeProvider.id}/${prepared.name}`
       const url = await uploadPreparedFile('provider-gallery', path, prepared)
       if (!url) throw new Error('Gallery upload failed')
 
-      const gallery_urls = [...(provider.gallery_urls || []), url]
-      await supabase.from('providers').update({ gallery_urls }).eq('id', provider.id)
-      setProvider({ ...provider, gallery_urls })
+      const gallery_urls = [...(activeProvider.gallery_urls || []), url]
+      await supabase.from('providers').update({ gallery_urls }).eq('id', activeProvider.id)
+      setProvider({ ...activeProvider, gallery_urls })
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Gallery upload failed')
     } finally {
@@ -342,11 +398,10 @@ export function ProviderDashboard() {
                       type="button"
                       className="provider-branding-panel__upload-btn"
                       onClick={() => logoInputRef.current?.click()}
-                      disabled={!provider || uploadingLogo}
+                      disabled={uploadingLogo}
                     >
                       {uploadingLogo ? 'Uploading…' : 'Upload logo'}
                     </button>
-                    {!provider && <small>Save your profile first to upload a logo.</small>}
                     <input
                       ref={logoInputRef}
                       type="file"
@@ -372,7 +427,7 @@ export function ProviderDashboard() {
                       ))}
                     </div>
                   )}
-                  {provider && galleryCount < UPLOAD_LIMITS.gallery.maxCount && (
+                  {galleryCount < UPLOAD_LIMITS.gallery.maxCount && (
                     <label className="provider-branding-panel__gallery-upload">
                       <input
                         type="file"
@@ -383,7 +438,6 @@ export function ProviderDashboard() {
                       {uploadingGallery ? 'Uploading photo…' : 'Add gallery photo'}
                     </label>
                   )}
-                  {!provider && <small>Save your profile first to upload gallery photos.</small>}
                 </div>
 
                 {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
