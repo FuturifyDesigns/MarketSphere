@@ -6,6 +6,16 @@ export function assertImageFile(file: File) {
   }
 }
 
+export async function urlToImageFile(url: string, fileName = 'image.jpg'): Promise<File> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error('Could not load image for editing')
+  const blob = await response.blob()
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('Could not load image for editing')
+  }
+  return new File([blob], fileName, { type: blob.type, lastModified: Date.now() })
+}
+
 export function loadImageFile(file: File): Promise<{ image: HTMLImageElement; objectUrl: string }> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)

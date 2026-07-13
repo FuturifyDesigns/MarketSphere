@@ -1,0 +1,45 @@
+.media-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.media-edit-actions--compact {
+  gap: 0.25rem;
+}
+
+.media-edit-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--color-day);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.media-edit-actions--compact .media-edit-actions__btn {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.6875rem;
+}
+
+.media-edit-actions__btn:hover:not(:disabled) {
+  border-color: rgba(201, 162, 75, 0.45);
+  color: var(--color-gold);
+}
+
+.media-edit-actions__btn--danger:hover:not(:disabled) {
+  border-color: rgba(204, 68, 68, 0.35);
+  color: #c44;
+}
+
+.media-edit-actions__btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

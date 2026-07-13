@@ -76,7 +76,7 @@ create table if not exists public.providers (
   contact_email text,
   contact_phone text,
   gallery_urls text[] default '{}',
-  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  status text not null default 'approved' check (status in ('pending', 'approved', 'rejected')),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

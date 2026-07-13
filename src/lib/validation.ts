@@ -52,6 +52,9 @@ const STATUS_LABELS: Record<string, string> = {
   new: 'New',
   read: 'Read',
   replied: 'Replied',
+  customer: 'Customer',
+  provider: 'Provider',
+  admin: 'Admin',
 }
 
 export function formatStatusLabel(status: string) {

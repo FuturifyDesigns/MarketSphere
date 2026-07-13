@@ -16,6 +16,26 @@
   flex-shrink: 0;
 }
 
+.account-profile-card__avatar-btn {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.account-profile-card__avatar-btn:disabled {
+  cursor: wait;
+}
+
+.account-profile-card__action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .account-avatar {
   width: 112px;
   height: 112px;

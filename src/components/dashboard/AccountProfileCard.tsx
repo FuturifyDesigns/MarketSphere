@@ -1,10 +1,11 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Camera, Mail, Phone, UserRound } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { assertImageFile } from '../../lib/imageCrop'
+import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { UPLOAD_LIMITS, prepareAvatarImage } from '../../lib/imageUpload'
-import { supabase, uploadPreparedFile } from '../../lib/supabase'
+import { removeStorageFile, storagePathFromPublicUrl, supabase, uploadPreparedFile } from '../../lib/supabase'
 import { ImageCropModal } from '../ui/ImageCropModal'
+import { MediaEditActions } from '../ui/MediaEditActions'
 import './AccountProfileCard.css'
 
 function initials(name: string | null | undefined, email: string | undefined) {
@@ -23,6 +24,7 @@ export function AccountProfileCard() {
   const { user, profile, refreshProfile } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [loadingEditor, setLoadingEditor] = useState(false)
   const [error, setError] = useState('')
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
@@ -68,12 +70,64 @@ export function AccountProfileCard() {
     }
   }
 
+  const openAvatarEditor = async () => {
+    if (!profile?.avatar_url) {
+      fileInputRef.current?.click()
+      return
+    }
+
+    setLoadingEditor(true)
+    setError('')
+    try {
+      const file = await urlToImageFile(profile.avatar_url, 'avatar.jpg')
+      setCropFile(file)
+      setCropOpen(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open photo for editing')
+    } finally {
+      setLoadingEditor(false)
+    }
+  }
+
+  const deleteAvatar = async () => {
+    if (!user || !profile?.avatar_url) return
+    if (!window.confirm('Remove your profile photo?')) return
+
+    setUploading(true)
+    setError('')
+
+    try {
+      const path = storagePathFromPublicUrl('avatars', profile.avatar_url)
+      if (path) await removeStorageFile('avatars', path)
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id)
+
+      if (updateError) throw updateError
+      await refreshProfile()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not remove photo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <>
       <section className="account-profile-card">
         <div className="account-profile-card__avatar-wrap">
           {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="account-avatar" />
+            <button
+              type="button"
+              className="account-profile-card__avatar-btn"
+              onClick={() => void openAvatarEditor()}
+              disabled={uploading || loadingEditor}
+              aria-label="Edit profile photo"
+            >
+              <img src={profile.avatar_url} alt="" className="account-avatar" />
+            </button>
           ) : (
             <div className="account-avatar account-avatar--placeholder" aria-hidden="true">
               {initials(profile?.full_name, profile?.email)}
@@ -83,7 +137,7 @@ export function AccountProfileCard() {
             type="button"
             className="account-profile-card__camera"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || loadingEditor}
             aria-label="Change profile photo"
           >
             <Camera size={16} />
@@ -125,14 +179,23 @@ export function AccountProfileCard() {
           </ul>
 
           <div className="account-profile-card__actions">
-            <button
-              type="button"
-              className="account-profile-card__upload"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? 'Uploading…' : 'Change photo'}
-            </button>
+            <div className="account-profile-card__action-row">
+              <button
+                type="button"
+                className="account-profile-card__upload"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || loadingEditor}
+              >
+                {uploading ? 'Uploading…' : loadingEditor ? 'Opening…' : 'Change photo'}
+              </button>
+              {profile?.avatar_url ? (
+                <MediaEditActions
+                  onEdit={() => void openAvatarEditor()}
+                  onDelete={() => void deleteAvatar()}
+                  disabled={uploading || loadingEditor}
+                />
+              ) : null}
+            </div>
             <small>
               Saved at up to {UPLOAD_LIMITS.avatar.maxWidth}×{UPLOAD_LIMITS.avatar.maxHeight} px
             </small>

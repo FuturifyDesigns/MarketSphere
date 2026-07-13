@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { BriefcaseBusiness, ImagePlus, Inbox, Settings, Store } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { assertImageFile } from '../../lib/imageCrop'
+import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFile } from '../../lib/supabase'
 import { prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
 import { ImageCropModal } from '../../components/ui/ImageCropModal'
+import { MediaEditActions } from '../../components/ui/MediaEditActions'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import {
@@ -57,6 +58,10 @@ export function ProviderDashboard() {
   const [saveError, setSaveError] = useState('')
   const [logoCropFile, setLogoCropFile] = useState<File | null>(null)
   const [logoCropOpen, setLogoCropOpen] = useState(false)
+  const [galleryCropFile, setGalleryCropFile] = useState<File | null>(null)
+  const [galleryCropOpen, setGalleryCropOpen] = useState(false)
+  const [galleryEditingUrl, setGalleryEditingUrl] = useState<string | null>(null)
+  const [loadingMediaEditor, setLoadingMediaEditor] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -67,15 +72,25 @@ export function ProviderDashboard() {
       .select('*, provider_services(*, categories(*))')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (data) {
-          setProvider(data)
+          let providerData = data
+          if (data.status === 'pending') {
+            const { data: approved } = await supabase
+              .from('providers')
+              .update({ status: 'approved', updated_at: new Date().toISOString() })
+              .eq('id', data.id)
+              .select('*, provider_services(*, categories(*))')
+              .single()
+            if (approved) providerData = approved
+          }
+          setProvider(providerData)
           setForm({
-            business_name: data.business_name || '',
-            description: data.description || '',
-            location: data.location || '',
-            contact_email: data.contact_email || '',
-            contact_phone: data.contact_phone || '',
+            business_name: providerData.business_name || '',
+            description: providerData.description || '',
+            location: providerData.location || '',
+            contact_email: providerData.contact_email || '',
+            contact_phone: providerData.contact_phone || '',
           })
         }
       })
@@ -107,6 +122,7 @@ export function ProviderDashboard() {
       location: form.location.trim() || null,
       contact_email: form.contact_email.trim() || null,
       contact_phone: form.contact_phone.trim() || null,
+      status: 'approved' as const,
     }
 
     const { data, error } = await supabase
@@ -175,7 +191,7 @@ export function ProviderDashboard() {
     } else {
       const { data, error } = await supabase
         .from('providers')
-        .insert({ ...payload, user_id: user.id })
+        .insert({ ...payload, user_id: user.id, status: 'approved' })
         .select()
         .single()
       if (error) {
@@ -222,6 +238,93 @@ export function ProviderDashboard() {
     } finally {
       setUploadingLogo(false)
       setLogoCropFile(null)
+    }
+  }
+
+  const openLogoEditor = async () => {
+    if (!provider?.logo_url) {
+      logoInputRef.current?.click()
+      return
+    }
+
+    setLoadingMediaEditor(true)
+    setUploadError('')
+    try {
+      const file = await urlToImageFile(provider.logo_url, 'logo.jpg')
+      setLogoCropFile(file)
+      setLogoCropOpen(true)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not open logo for editing')
+    } finally {
+      setLoadingMediaEditor(false)
+    }
+  }
+
+  const removeLogo = async () => {
+    if (!provider?.logo_url) return
+    if (!window.confirm('Remove your business logo?')) return
+
+    setUploadingLogo(true)
+    setUploadError('')
+
+    try {
+      const path = storagePathFromPublicUrl('provider-logos', provider.logo_url)
+      if (path) await removeStorageFile('provider-logos', path)
+
+      await supabase.from('providers').update({ logo_url: null }).eq('id', provider.id)
+      setProvider({ ...provider, logo_url: null })
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not remove logo')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const openGalleryEditor = async (url: string) => {
+    setLoadingMediaEditor(true)
+    setUploadError('')
+    try {
+      const file = await urlToImageFile(url, 'gallery.jpg')
+      setGalleryEditingUrl(url)
+      setGalleryCropFile(file)
+      setGalleryCropOpen(true)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not open photo for editing')
+    } finally {
+      setLoadingMediaEditor(false)
+    }
+  }
+
+  const handleGalleryCroppedUpload = async (croppedFile: File) => {
+    if (!galleryEditingUrl) return
+
+    setUploadingGallery(true)
+    setUploadError('')
+
+    try {
+      const activeProvider = await ensureProvider()
+      if (!activeProvider) return
+
+      const prepared = await prepareGalleryImage(croppedFile)
+      const path = `${activeProvider.id}/${prepared.name}`
+      const newUrl = await uploadPreparedFile('provider-gallery', path, prepared)
+      if (!newUrl) throw new Error('Gallery upload failed')
+
+      const gallery_urls = (activeProvider.gallery_urls || []).map((item) =>
+        item === galleryEditingUrl ? newUrl : item,
+      )
+      await supabase.from('providers').update({ gallery_urls }).eq('id', activeProvider.id)
+
+      const oldPath = storagePathFromPublicUrl('provider-gallery', galleryEditingUrl)
+      if (oldPath) await removeStorageFile('provider-gallery', oldPath)
+
+      setProvider({ ...activeProvider, gallery_urls })
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not save gallery photo')
+    } finally {
+      setUploadingGallery(false)
+      setGalleryCropFile(null)
+      setGalleryEditingUrl(null)
     }
   }
 
@@ -283,6 +386,7 @@ export function ProviderDashboard() {
 
   const removeGalleryImage = async (url: string) => {
     if (!provider) return
+    if (!window.confirm('Remove this gallery photo?')) return
 
     const path = storagePathFromPublicUrl('provider-gallery', url)
     if (path) await removeStorageFile('provider-gallery', path)
@@ -409,7 +513,15 @@ export function ProviderDashboard() {
 
                 <div className="provider-branding-panel__logo">
                   {provider?.logo_url ? (
-                    <img src={provider.logo_url} alt="" className="provider-branding-panel__logo-img" />
+                    <button
+                      type="button"
+                      className="provider-branding-panel__logo-btn"
+                      onClick={() => void openLogoEditor()}
+                      disabled={uploadingLogo || loadingMediaEditor}
+                      aria-label="Edit business logo"
+                    >
+                      <img src={provider.logo_url} alt="" className="provider-branding-panel__logo-img" />
+                    </button>
                   ) : (
                     <div className="provider-branding-panel__logo-placeholder">Logo</div>
                   )}
@@ -418,14 +530,23 @@ export function ProviderDashboard() {
                     <p className="provider-branding-panel__hint">
                       Saved at up to {UPLOAD_LIMITS.logo.maxWidth}×{UPLOAD_LIMITS.logo.maxHeight} px
                     </p>
-                    <button
-                      type="button"
-                      className="provider-branding-panel__upload-btn"
-                      onClick={() => logoInputRef.current?.click()}
-                      disabled={uploadingLogo}
-                    >
-                      {uploadingLogo ? 'Uploading…' : 'Upload logo'}
-                    </button>
+                    <div className="provider-branding-panel__action-row">
+                      <button
+                        type="button"
+                        className="provider-branding-panel__upload-btn"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={uploadingLogo || loadingMediaEditor}
+                      >
+                        {uploadingLogo ? 'Uploading…' : loadingMediaEditor ? 'Opening…' : 'Upload logo'}
+                      </button>
+                      {provider?.logo_url ? (
+                        <MediaEditActions
+                          onEdit={() => void openLogoEditor()}
+                          onDelete={() => void removeLogo()}
+                          disabled={uploadingLogo || loadingMediaEditor}
+                        />
+                      ) : null}
+                    </div>
                     <input
                       ref={logoInputRef}
                       type="file"
@@ -445,8 +566,21 @@ export function ProviderDashboard() {
                     <div className="gallery-grid">
                       {(provider?.gallery_urls || []).map((url) => (
                         <div key={url} className="gallery-item">
-                          <img src={url} alt="" />
-                          <button type="button" onClick={() => void removeGalleryImage(url)}>Remove</button>
+                          <button
+                            type="button"
+                            className="gallery-item__image-btn"
+                            onClick={() => void openGalleryEditor(url)}
+                            disabled={uploadingGallery || loadingMediaEditor}
+                            aria-label="Edit gallery photo"
+                          >
+                            <img src={url} alt="" />
+                          </button>
+                          <MediaEditActions
+                            compact
+                            onEdit={() => void openGalleryEditor(url)}
+                            onDelete={() => void removeGalleryImage(url)}
+                            disabled={uploadingGallery || loadingMediaEditor}
+                          />
                         </div>
                       ))}
                     </div>
@@ -534,11 +668,8 @@ export function ProviderDashboard() {
                   />
                   {saveError && tab === 'profile' && <p className="upload-error" role="alert">{saveError}</p>}
                   <Button onClick={() => void saveProfile()} disabled={saving}>
-                    {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
+                    {saving ? 'Saving...' : provider ? 'Update Profile' : 'Save Profile'}
                   </Button>
-                  {statusKey === 'pending' && (
-                    <p className="dashboard-note">Your profile is pending admin approval.</p>
-                  )}
                 </div>
               </section>
             </div>
@@ -657,6 +788,18 @@ export function ProviderDashboard() {
           setLogoCropFile(null)
         }}
         onConfirm={(file) => void handleLogoCroppedUpload(file)}
+      />
+      <ImageCropModal
+        file={galleryCropFile}
+        open={galleryCropOpen}
+        title="Edit gallery photo"
+        outputSize={UPLOAD_LIMITS.gallery.maxWidth}
+        onClose={() => {
+          setGalleryCropOpen(false)
+          setGalleryCropFile(null)
+          setGalleryEditingUrl(null)
+        }}
+        onConfirm={(file) => void handleGalleryCroppedUpload(file)}
       />
     </div>
   )
