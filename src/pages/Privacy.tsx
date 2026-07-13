@@ -209,7 +209,6 @@ export function Privacy() {
       title="Privacy Policy"
       subtitle="How Market Sphere Group collects, uses, and protects your personal data under Botswana law."
       meta={`Last updated: ${LAST_UPDATED} · Policy version ${COOKIE_POLICY_VERSION}`}
-      showCookieAction
       intro={
         <p>
           {COMPANY.name} (&quot;Market Sphere Group&quot;, &quot;we&quot;, &quot;us&quot;) processes personal

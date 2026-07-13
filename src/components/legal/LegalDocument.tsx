@@ -1,8 +1,7 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Cookie } from 'lucide-react'
-import { useCookieConsent } from '../../context/CookieConsentContext'
-import { Button } from '../ui/Button'
+import { ChevronDown } from 'lucide-react'
+import { getLenis } from '../../hooks/useLenis'
 import './LegalDocument.css'
 
 export interface LegalSection {
@@ -17,7 +16,6 @@ interface LegalDocumentProps {
   meta: string
   intro: ReactNode
   sections: LegalSection[]
-  showCookieAction?: boolean
 }
 
 export function LegalDocument({
@@ -26,15 +24,71 @@ export function LegalDocument({
   meta,
   intro,
   sections,
-  showCookieAction = false,
 }: LegalDocumentProps) {
-  const { openCookieSettings } = useCookieConsent()
+  const tocNavRef = useRef<HTMLElement>(null)
+  const scrollLockRef = useRef(false)
+  const scrollLockTimerRef = useRef<number | undefined>(undefined)
   const [activeId, setActiveId] = useState(() => sections[0]?.id ?? '')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(sections.map((section, index) => [section.id, index === 0])),
   )
 
+  const getScrollMarker = useCallback(() => {
+    const navHeight = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--nav-height'),
+    )
+    return (Number.isFinite(navHeight) ? navHeight : 72) + 32
+  }, [])
+
+  const syncActiveFromScroll = useCallback(() => {
+    if (scrollLockRef.current || sections.length === 0) return
+
+    const marker = getScrollMarker()
+    let current = sections[0].id
+
+    for (const section of sections) {
+      const element = document.getElementById(section.id)
+      if (!element) continue
+      if (element.getBoundingClientRect().top <= marker) {
+        current = section.id
+      }
+    }
+
+    setActiveId(current)
+  }, [getScrollMarker, sections])
+
+  useEffect(() => {
+    const onScroll = () => {
+      window.requestAnimationFrame(syncActiveFromScroll)
+    }
+
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    const lenis = getLenis()
+    lenis?.on('scroll', onScroll)
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      lenis?.off('scroll', onScroll)
+    }
+  }, [syncActiveFromScroll])
+
+  useEffect(() => {
+    const nav = tocNavRef.current
+    if (!nav || !activeId) return
+
+    const activeLink = nav.querySelector<HTMLElement>(`[data-section-id="${activeId}"]`)
+    activeLink?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [activeId])
+
   const selectSection = useCallback((id: string) => {
+    scrollLockRef.current = true
+    if (scrollLockTimerRef.current) window.clearTimeout(scrollLockTimerRef.current)
+    scrollLockTimerRef.current = window.setTimeout(() => {
+      scrollLockRef.current = false
+    }, 700)
+
     setOpenSections((prev) => ({ ...prev, [id]: true }))
     setActiveId(id)
   }, [])
@@ -47,24 +101,11 @@ export function LegalDocument({
     })
   }
 
-  const quickActions = useMemo(
-    () =>
-      showCookieAction
-        ? [
-            {
-              icon: Cookie,
-              label: 'Cookie settings',
-              text: 'Review or change your cookie preferences',
-              action: (
-                <Button size="sm" variant="secondary" onClick={openCookieSettings}>
-                  Manage cookies
-                </Button>
-              ),
-            },
-          ]
-        : [],
-    [openCookieSettings, showCookieAction],
-  )
+  useEffect(() => {
+    return () => {
+      if (scrollLockTimerRef.current) window.clearTimeout(scrollLockTimerRef.current)
+    }
+  }, [])
 
   return (
     <div className="page legal-doc-page">
@@ -81,11 +122,12 @@ export function LegalDocument({
         <aside className="legal-doc-sidebar" aria-label="Table of contents">
           <div className="legal-doc-sidebar__card">
             <p className="legal-doc-sidebar__label">On this page</p>
-            <nav className="legal-doc-toc">
+            <nav ref={tocNavRef} className="legal-doc-toc">
               {sections.map((section) => (
                 <button
                   key={section.id}
                   type="button"
+                  data-section-id={section.id}
                   className={activeId === section.id ? 'legal-doc-toc__link legal-doc-toc__link--active' : 'legal-doc-toc__link'}
                   aria-current={activeId === section.id ? 'true' : undefined}
                   onClick={() => selectSection(section.id)}
@@ -95,21 +137,6 @@ export function LegalDocument({
               ))}
             </nav>
           </div>
-
-          {quickActions.length > 0 ? (
-            <div className="legal-doc-sidebar__actions">
-              {quickActions.map((item) => (
-                <div key={item.label} className="legal-doc-action">
-                  <item.icon size={18} aria-hidden="true" />
-                  <div>
-                    <strong>{item.label}</strong>
-                    <p>{item.text}</p>
-                    {item.action}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
         </aside>
 
         <div className="legal-doc-main">

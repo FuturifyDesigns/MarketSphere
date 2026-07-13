@@ -56,6 +56,10 @@
   position: sticky;
   top: calc(var(--nav-height) + 1rem);
   z-index: 1;
+  max-height: calc(100dvh - var(--nav-height) - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .legal-doc-sidebar__card,
