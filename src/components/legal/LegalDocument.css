@@ -102,10 +102,20 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-.legal-doc-toc__link:hover,
-.legal-doc-toc__link--active {
-  background: rgba(201, 162, 75, 0.12);
+.legal-doc-toc__link:hover {
+  background: rgba(201, 162, 75, 0.08);
   color: var(--text-primary);
+}
+
+.legal-doc-toc__link--active {
+  background: rgba(201, 162, 75, 0.16);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-gold);
+}
+
+.legal-doc-toc__link--active:hover {
+  background: rgba(201, 162, 75, 0.2);
 }
 
 .legal-doc-sidebar__actions {

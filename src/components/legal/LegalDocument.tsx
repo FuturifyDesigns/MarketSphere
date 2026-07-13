@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Shield, Cookie } from 'lucide-react'
+import { ChevronDown, Cookie } from 'lucide-react'
 import { useCookieConsent } from '../../context/CookieConsentContext'
 import { Button } from '../ui/Button'
 import './LegalDocument.css'
@@ -32,15 +32,17 @@ export function LegalDocument({
   const { openCookieSettings } = useCookieConsent()
   const location = useLocation()
   const navigate = useNavigate()
-  const rightsSectionId = 'your-rights'
-  const hasRightsSection = sections.some((section) => section.id === rightsSectionId)
-  const [activeId, setActiveId] = useState('')
+  const [activeId, setActiveId] = useState(() => sections[0]?.id ?? '')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(sections.map((section, index) => [section.id, index === 0])),
   )
 
   const toggleSection = (id: string) => {
-    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }))
+    setOpenSections((prev) => {
+      const nextOpen = !prev[id]
+      if (nextOpen) setActiveId(id)
+      return { ...prev, [id]: nextOpen }
+    })
   }
 
   const jumpTo = useCallback((id: string) => {
@@ -50,14 +52,6 @@ export function LegalDocument({
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   }, [])
-
-  const viewRights = useCallback(() => {
-    if (hasRightsSection) {
-      jumpTo(rightsSectionId)
-      return
-    }
-    navigate('/privacy', { state: { scrollTo: rightsSectionId } })
-  }, [hasRightsSection, jumpTo, navigate])
 
   useEffect(() => {
     const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo
@@ -72,8 +66,8 @@ export function LegalDocument({
   }, [jumpTo, location.state, navigate, sections])
 
   const quickActions = useMemo(
-    () => [
-      ...(showCookieAction
+    () =>
+      showCookieAction
         ? [
             {
               icon: Cookie,
@@ -86,19 +80,8 @@ export function LegalDocument({
               ),
             },
           ]
-        : []),
-      {
-        icon: Shield,
-        label: 'Your rights',
-        text: 'Access, correction, erasure, and withdrawal of consent',
-        action: (
-          <Button size="sm" variant="secondary" onClick={viewRights}>
-            View rights
-          </Button>
-        ),
-      },
-    ],
-    [openCookieSettings, showCookieAction, viewRights],
+        : [],
+    [openCookieSettings, showCookieAction],
   )
 
   return (
@@ -122,6 +105,7 @@ export function LegalDocument({
                   key={section.id}
                   type="button"
                   className={activeId === section.id ? 'legal-doc-toc__link legal-doc-toc__link--active' : 'legal-doc-toc__link'}
+                  aria-current={activeId === section.id ? 'true' : undefined}
                   onClick={() => jumpTo(section.id)}
                 >
                   {section.title}
@@ -130,18 +114,20 @@ export function LegalDocument({
             </nav>
           </div>
 
-          <div className="legal-doc-sidebar__actions">
-            {quickActions.map((item) => (
-              <div key={item.label} className="legal-doc-action">
-                <item.icon size={18} aria-hidden="true" />
-                <div>
-                  <strong>{item.label}</strong>
-                  <p>{item.text}</p>
-                  {item.action}
+          {quickActions.length > 0 ? (
+            <div className="legal-doc-sidebar__actions">
+              {quickActions.map((item) => (
+                <div key={item.label} className="legal-doc-action">
+                  <item.icon size={18} aria-hidden="true" />
+                  <div>
+                    <strong>{item.label}</strong>
+                    <p>{item.text}</p>
+                    {item.action}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : null}
         </aside>
 
         <div className="legal-doc-main">
