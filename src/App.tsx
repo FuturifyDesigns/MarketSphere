@@ -78,59 +78,59 @@ export default function App() {
       <ToastProvider>
         <CookieConsentProvider>
           <SiteContentProvider>
-            <SiteEditProvider>
-          <SiteIntro />
-          <HashRouter>
-            <ScrollToTop />
-            <CookieBanner />
-            <NotificationProvider>
-            <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="about" element={<About />} />
-            <Route path="services" element={<Services />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="faq" element={<FAQ />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="browse" element={<Browse />} />
-            <Route path="provider/:id" element={<ProviderProfile />} />
-            <Route
-              path="dashboard/customer"
-              element={
-                <ProtectedRoute allowedRoles={['customer']}>
-                  <CustomerDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="dashboard/provider"
-              element={
-                <ProtectedRoute allowedRoles={['provider']}>
-                  <ProviderDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="dashboard/admin"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-          <Route path="get-started" element={<AuthGate />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
-          <Route path="auth/verify" element={<VerifyEmail />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="auth/reset-password" element={<ResetPassword />} />
-        </Routes>
-            </NotificationProvider>
-      </HashRouter>
-            </SiteEditProvider>
+            <HashRouter>
+              <SiteEditProvider>
+                <SiteIntro />
+                <ScrollToTop />
+                <CookieBanner />
+                <NotificationProvider>
+                  <Routes>
+                    <Route element={<Layout />}>
+                      <Route index element={<Home />} />
+                      <Route path="about" element={<About />} />
+                      <Route path="services" element={<Services />} />
+                      <Route path="contact" element={<Contact />} />
+                      <Route path="faq" element={<FAQ />} />
+                      <Route path="privacy" element={<Privacy />} />
+                      <Route path="terms" element={<Terms />} />
+                      <Route path="browse" element={<Browse />} />
+                      <Route path="provider/:id" element={<ProviderProfile />} />
+                      <Route
+                        path="dashboard/customer"
+                        element={
+                          <ProtectedRoute allowedRoles={['customer']}>
+                            <CustomerDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="dashboard/provider"
+                        element={
+                          <ProtectedRoute allowedRoles={['provider']}>
+                            <ProviderDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="dashboard/admin"
+                        element={
+                          <ProtectedRoute allowedRoles={['admin']}>
+                            <AdminDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Route>
+                    <Route path="get-started" element={<AuthGate />} />
+                    <Route path="login" element={<Login />} />
+                    <Route path="register" element={<Register />} />
+                    <Route path="auth/verify" element={<VerifyEmail />} />
+                    <Route path="forgot-password" element={<ForgotPassword />} />
+                    <Route path="auth/reset-password" element={<ResetPassword />} />
+                  </Routes>
+                </NotificationProvider>
+              </SiteEditProvider>
+            </HashRouter>
           </SiteContentProvider>
         </CookieConsentProvider>
       </ToastProvider>

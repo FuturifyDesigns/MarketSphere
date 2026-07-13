@@ -1,4 +1,4 @@
-import { HERO_VIDEO_PATH, preloadHeroVideo } from './heroVideoCache'
+import { preloadHeroVideo } from './heroVideoCache'
 import { LOGO_PATH } from './constants'
 import { preloadMascots } from './mascots'
 
@@ -12,18 +12,13 @@ export function preloadCriticalAssets() {
   const base = import.meta.env.BASE_URL
 
   const logoHref = `${base}${LOGO_PATH}`
-  const videoHref = `${base}${HERO_VIDEO_PATH}`
 
-  for (const [href, as] of [
-    [logoHref, 'image'],
-    [videoHref, 'video'],
-  ] as const) {
-    if (document.querySelector(`link[rel="preload"][href="${href}"]`)) continue
+  if (!document.querySelector(`link[rel="preload"][href="${logoHref}"]`)) {
     const link = document.createElement('link')
     link.rel = 'preload'
-    link.as = as
-    link.href = href
-    if (as === 'image') link.setAttribute('fetchpriority', 'high')
+    link.as = 'image'
+    link.href = logoHref
+    link.setAttribute('fetchpriority', 'high')
     document.head.appendChild(link)
   }
 
