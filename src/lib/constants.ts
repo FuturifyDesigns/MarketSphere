@@ -6,7 +6,7 @@ export const LOGO_PATH = 'logo.webp'
 
 export const FUTURIFY_DESIGNS = {
   name: 'Futurify Designs',
-  url: 'https://github.com/FuturifyDesigns',
+  url: 'https://futurifydesigns.com',
 } as const
 
 export const COMPANY = {
