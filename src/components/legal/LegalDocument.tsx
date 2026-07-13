@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Mail, Shield, Cookie } from 'lucide-react'
+import { ChevronDown, Shield, Cookie } from 'lucide-react'
 import { useCookieConsent } from '../../context/CookieConsentContext'
 import { Button } from '../ui/Button'
 import './LegalDocument.css'
@@ -30,6 +30,10 @@ export function LegalDocument({
   showCookieAction = false,
 }: LegalDocumentProps) {
   const { openCookieSettings } = useCookieConsent()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const rightsSectionId = 'your-rights'
+  const hasRightsSection = sections.some((section) => section.id === rightsSectionId)
   const [activeId, setActiveId] = useState(sections[0]?.id ?? '')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(sections.map((section, index) => [section.id, index === 0])),
@@ -60,20 +64,36 @@ export function LegalDocument({
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const jumpTo = (id: string) => {
+  const jumpTo = useCallback((id: string) => {
     setOpenSections((prev) => ({ ...prev, [id]: true }))
     setActiveId(id)
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+    window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
+
+  const viewRights = useCallback(() => {
+    if (hasRightsSection) {
+      jumpTo(rightsSectionId)
+      return
+    }
+    navigate('/privacy', { state: { scrollTo: rightsSectionId } })
+  }, [hasRightsSection, jumpTo, navigate])
+
+  useEffect(() => {
+    const scrollTo = (location.state as { scrollTo?: string } | null)?.scrollTo
+    if (!scrollTo || !sections.some((section) => section.id === scrollTo)) return
+
+    const timer = window.setTimeout(() => {
+      jumpTo(scrollTo)
+      navigate('.', { replace: true, state: null })
+    }, 120)
+
+    return () => window.clearTimeout(timer)
+  }, [jumpTo, location.state, navigate, sections])
 
   const quickActions = useMemo(
     () => [
-      {
-        icon: Mail,
-        label: 'Contact us',
-        text: 'Questions about your data or these terms',
-        action: <Button to="/contact" size="sm" variant="secondary">Get in touch</Button>,
-      },
       ...(showCookieAction
         ? [
             {
@@ -92,10 +112,14 @@ export function LegalDocument({
         icon: Shield,
         label: 'Your rights',
         text: 'Access, correction, erasure, and withdrawal of consent',
-        action: <Button to="/privacy#your-rights" size="sm" variant="secondary">View rights</Button>,
+        action: (
+          <Button size="sm" variant="secondary" onClick={viewRights}>
+            View rights
+          </Button>
+        ),
       },
     ],
-    [openCookieSettings, showCookieAction],
+    [openCookieSettings, showCookieAction, viewRights],
   )
 
   return (
@@ -180,14 +204,6 @@ export function LegalDocument({
               )
             })}
           </div>
-
-          <p className="legal-doc-footer-note">
-            Need help? <Link to="/contact">Contact Market Sphere Group</Link> or read our{' '}
-            <Link to={showCookieAction ? '/terms' : '/privacy'}>
-              {showCookieAction ? 'Terms of Service' : 'Privacy Policy'}
-            </Link>
-            .
-          </p>
         </div>
       </div>
     </div>
