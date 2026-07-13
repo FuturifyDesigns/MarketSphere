@@ -3,16 +3,32 @@
   bottom: 1.5rem;
   right: 1.5rem;
   z-index: 1400;
-  max-width: min(360px, calc(100vw - 2rem));
-  padding: 0.875rem 1.125rem;
+  max-width: min(380px, calc(100vw - 2rem));
+  padding: 0.9rem 1.15rem;
   border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+  box-shadow: 0 16px 40px rgba(14, 17, 22, 0.24);
+  animation: toast-in 0.28s ease;
+}
+
+.app-toast--success {
   border: 1px solid rgba(201, 162, 75, 0.35);
   background: var(--color-night);
   color: var(--color-day);
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: 0 16px 40px rgba(14, 17, 22, 0.24);
-  animation: toast-in 0.28s ease;
+}
+
+.app-toast--error {
+  border: 1px solid rgba(204, 68, 68, 0.35);
+  background: #2a1414;
+  color: #ffd9d9;
+}
+
+.app-toast--info {
+  border: 1px solid rgba(74, 63, 47, 0.2);
+  background: var(--card-bg);
+  color: var(--text-primary);
 }
 
 @keyframes toast-in {

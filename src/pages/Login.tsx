@@ -2,6 +2,7 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, LayoutDashboard, Lock, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { supabase } from '../lib/supabase'
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
@@ -28,6 +29,7 @@ export function Login() {
   const pageRef = useRef<HTMLDivElement>(null)
   useAuthPageEnter(pageRef)
   const { signIn } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,7 +53,9 @@ export function Login() {
     setLoading(false)
     if (err) {
       setError(err.message)
+      showToast(err.message, 'error')
     } else {
+      showToast('Signed in successfully. Welcome back!')
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()

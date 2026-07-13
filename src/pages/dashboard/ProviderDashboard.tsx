@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { BriefcaseBusiness, ImagePlus, Inbox, Settings, Store } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFile } from '../../lib/supabase'
 import { prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
+import { syncProviderPrimaryCategory } from '../../lib/providerCategory'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
 import { ImageCropModal } from '../../components/ui/ImageCropModal'
@@ -35,6 +37,7 @@ type ProviderTab = 'profile' | 'inbox' | 'services'
 
 export function ProviderDashboard() {
   const { user, profile, refreshProfile } = useAuth()
+  const { showToast } = useToast()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
@@ -106,6 +109,42 @@ export function ProviderDashboard() {
       .then(({ data }) => setEnquiries(data || []))
   }, [provider])
 
+  const reloadProvider = async (providerId: string) => {
+    const { data } = await supabase
+      .from('providers')
+      .select('*, provider_services(*, categories(*))')
+      .eq('id', providerId)
+      .single()
+    if (data) setProvider(data)
+    return data
+  }
+
+  const applyAutoCategory = async (
+    providerId: string,
+    businessName: string,
+    description: string,
+    notify = true,
+  ) => {
+    if (!categories.length || !businessName.trim() || description.trim().length < 10) return null
+    const matched = await syncProviderPrimaryCategory(providerId, businessName, description, categories)
+    if (!matched) return null
+    await reloadProvider(providerId)
+    if (notify) showToast(`Auto-categorized under ${matched.name}.`, 'info')
+    return matched
+  }
+
+  useEffect(() => {
+    if (!provider || categories.length === 0) return
+    const hasCategory = provider.provider_services?.some((service) => service.category_id)
+    if (hasCategory) return
+    void applyAutoCategory(
+      provider.id,
+      provider.business_name || form.business_name,
+      provider.description || form.description,
+      false,
+    )
+  }, [provider?.id, categories.length])
+
   const ensureProvider = async (): Promise<Provider | null> => {
     if (provider) return provider
     if (!user) return null
@@ -156,6 +195,7 @@ export function ProviderDashboard() {
       contact_phone: prev.contact_phone || data.contact_phone || '',
     }))
     refreshProfile()
+    await applyAutoCategory(data.id, businessName, form.description.trim(), false)
     return data
   }
 
@@ -182,12 +222,20 @@ export function ProviderDashboard() {
     }
 
     setSaving(true)
+    let providerId = provider?.id
+    let failed = false
+    const wasUpdate = Boolean(provider)
+
     if (provider) {
       const { error } = await supabase
         .from('providers')
         .update({ ...payload, updated_at: new Date().toISOString() })
         .eq('id', provider.id)
-      if (error) setSaveError('Could not update profile. Please try again.')
+      if (error) {
+        failed = true
+        setSaveError('Could not update profile. Please try again.')
+        showToast('Could not update profile. Please try again.', 'error')
+      }
     } else {
       const { data, error } = await supabase
         .from('providers')
@@ -195,13 +243,31 @@ export function ProviderDashboard() {
         .select()
         .single()
       if (error) {
+        failed = true
         setSaveError('Could not submit profile. Please try again.')
-      } else {
+        showToast('Could not save profile. Please try again.', 'error')
+      } else if (data) {
         setProvider(data)
+        providerId = data.id
       }
     }
+
     setSaving(false)
     refreshProfile()
+
+    if (failed || !providerId) return
+
+    const matched = await applyAutoCategory(providerId, payload.business_name, payload.description, false)
+    if (matched) {
+      showToast(`Profile saved. Listed under ${matched.name}.`)
+      return
+    }
+
+    showToast(
+      wasUpdate
+        ? 'Profile updated successfully.'
+        : 'Profile saved successfully. Your listing is now live.',
+    )
   }
 
   const handleLogoPick = (e: ChangeEvent<HTMLInputElement>) => {
@@ -233,8 +299,10 @@ export function ProviderDashboard() {
 
       await supabase.from('providers').update({ logo_url: url }).eq('id', activeProvider.id)
       setProvider({ ...activeProvider, logo_url: url })
+      showToast('Business logo updated.')
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Logo upload failed')
+      showToast(err instanceof Error ? err.message : 'Logo upload failed', 'error')
     } finally {
       setUploadingLogo(false)
       setLogoCropFile(null)
@@ -273,8 +341,10 @@ export function ProviderDashboard() {
 
       await supabase.from('providers').update({ logo_url: null }).eq('id', provider.id)
       setProvider({ ...provider, logo_url: null })
+      showToast('Business logo removed.')
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Could not remove logo')
+      showToast(err instanceof Error ? err.message : 'Could not remove logo', 'error')
     } finally {
       setUploadingLogo(false)
     }
@@ -319,8 +389,10 @@ export function ProviderDashboard() {
       if (oldPath) await removeStorageFile('provider-gallery', oldPath)
 
       setProvider({ ...activeProvider, gallery_urls })
+      showToast('Gallery photo updated.')
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Could not save gallery photo')
+      showToast(err instanceof Error ? err.message : 'Could not save gallery photo', 'error')
     } finally {
       setUploadingGallery(false)
       setGalleryCropFile(null)
@@ -356,6 +428,7 @@ export function ProviderDashboard() {
 
       setGalleryUploadProgress({ done: 0, total: filesToUpload.length })
 
+      let uploadedCount = 0
       for (let index = 0; index < filesToUpload.length; index++) {
         const file = filesToUpload[index]
 
@@ -371,10 +444,20 @@ export function ProviderDashboard() {
           activeProvider = { ...activeProvider, gallery_urls }
           setProvider(activeProvider)
           setGalleryUploadProgress({ done: index + 1, total: filesToUpload.length })
+          uploadedCount += 1
         } catch (err) {
           setUploadError(err instanceof Error ? err.message : `Could not upload ${file.name}`)
+          showToast(err instanceof Error ? err.message : `Could not upload ${file.name}`, 'error')
           break
         }
+      }
+
+      if (uploadedCount > 0) {
+        showToast(
+          uploadedCount === 1
+            ? 'Gallery photo uploaded.'
+            : `${uploadedCount} gallery photos uploaded.`,
+        )
       }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Gallery upload failed')
@@ -394,6 +477,7 @@ export function ProviderDashboard() {
     const gallery_urls = (provider.gallery_urls || []).filter((item) => item !== url)
     await supabase.from('providers').update({ gallery_urls }).eq('id', provider.id)
     setProvider({ ...provider, gallery_urls })
+    showToast('Gallery photo removed.')
   }
 
   const addService = async () => {
@@ -419,6 +503,7 @@ export function ProviderDashboard() {
       .single()
     if (error) {
       setSaveError('Could not add service. Please try again.')
+      showToast('Could not add service. Please try again.', 'error')
       return
     }
     if (data) {
@@ -428,12 +513,16 @@ export function ProviderDashboard() {
       })
       setNewService({ title: '', description: '', category_id: '' })
       setServiceErrors({})
+      showToast('Service added successfully.')
     }
   }
 
   const updateEnquiryStatus = async (id: string, status: string) => {
     await supabase.from('enquiries').update({ status }).eq('id', id)
     setEnquiries(enquiries.map((e) => (e.id === id ? { ...e, status: status as Enquiry['status'] } : e)))
+    showToast(
+      status === 'read' ? 'Enquiry marked as read.' : status === 'replied' ? 'Enquiry marked as replied.' : 'Enquiry updated.',
+    )
   }
 
   const statusKey = provider?.status || 'not_created'

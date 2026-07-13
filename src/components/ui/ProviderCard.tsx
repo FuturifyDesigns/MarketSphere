@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MapPin } from 'lucide-react'
 import type { Provider } from '../../lib/types'
+import { getProviderPrimaryCategory } from '../../lib/providerCategory'
 import './ProviderCard.css'
 
 interface ProviderCardProps {
@@ -11,6 +12,8 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider, index = 0, disableAnimation = false }: ProviderCardProps) {
+  const primaryCategory = getProviderPrimaryCategory(provider)
+
   const content = (
     <Link to={`/provider/${provider.id}`} className="provider-card__link">
       <div className="provider-card__image-wrap">
@@ -21,6 +24,7 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false }: 
             {provider.business_name.charAt(0)}
           </div>
         )}
+        {primaryCategory ? <span className="provider-card__category">{primaryCategory.name}</span> : null}
       </div>
       <div className="provider-card__body">
         <h3>{provider.business_name}</h3>

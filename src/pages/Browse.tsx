@@ -5,6 +5,7 @@ import { COMPANY } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import type { Provider, Category } from '../lib/types'
+import { ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
 import './Browse.css'
 
 export function Browse() {
@@ -35,17 +36,29 @@ export function Browse() {
       query = query.ilike('location', `%${location}%`)
     }
 
-    query.then(({ data }) => {
+    query.then(async ({ data }) => {
       let results = data || []
       if (category) {
         results = results.filter((p) =>
           p.provider_services?.some((s: { categories?: { slug: string } }) => s.categories?.slug === category)
         )
       }
+
+      if (categories.length > 0) {
+        results = await Promise.all(
+          results.map((provider) => ensureProviderCategoryIfNeeded(provider, categories)),
+        )
+        if (category) {
+          results = results.filter((p) =>
+            p.provider_services?.some((s: { categories?: { slug: string } }) => s.categories?.slug === category),
+          )
+        }
+      }
+
       setProviders(results)
       setLoading(false)
     })
-  }, [search, category, location])
+  }, [search, category, location, categories])
 
   const hasFilters = Boolean(search || category || location)
 

@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Camera, Mail, Phone, UserRound } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { UPLOAD_LIMITS, prepareAvatarImage } from '../../lib/imageUpload'
 import { removeStorageFile, storagePathFromPublicUrl, supabase, uploadPreparedFile } from '../../lib/supabase'
@@ -22,6 +23,7 @@ function initials(name: string | null | undefined, email: string | undefined) {
 
 export function AccountProfileCard() {
   const { user, profile, refreshProfile } = useAuth()
+  const { showToast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [loadingEditor, setLoadingEditor] = useState(false)
@@ -62,8 +64,10 @@ export function AccountProfileCard() {
 
       if (updateError) throw updateError
       await refreshProfile()
+      showToast('Profile photo updated.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not upload photo')
+      showToast(err instanceof Error ? err.message : 'Could not upload photo', 'error')
     } finally {
       setUploading(false)
       setCropFile(null)
@@ -107,8 +111,10 @@ export function AccountProfileCard() {
 
       if (updateError) throw updateError
       await refreshProfile()
+      showToast('Profile photo removed.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not remove photo')
+      showToast(err instanceof Error ? err.message : 'Could not remove photo', 'error')
     } finally {
       setUploading(false)
     }

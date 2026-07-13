@@ -8,6 +8,7 @@ import { Marquee } from '../components/home/Marquee'
 import { ServicesShowcase } from '../components/home/ServicesShowcase'
 import { HeroVideo } from '../components/hero/HeroVideo'
 import { ProviderCard } from '../components/ui/ProviderCard'
+import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
 import { Button } from '../components/ui/Button'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
@@ -19,7 +20,9 @@ import { isServicesShowcaseReady, onServicesShowcaseReady } from '../lib/service
 import { initHomeSectionReveals } from '../animations/homeSectionReveal'
 import { initBelowFoldSections } from '../animations/belowFoldReveal'
 import type { Provider, Testimonial } from '../lib/types'
+import { ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
 import './Home.css'
+import '../components/ui/ShowcaseCarousel.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -41,10 +44,39 @@ export function Home() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
   useEffect(() => {
-    supabase.from('providers').select('*').eq('status', 'approved').limit(3)
-      .then(({ data }) => setProviders(data || []))
+    let cancelled = false
+
+    async function loadFeaturedProviders() {
+      const [{ data: providerRows }, { data: categoryRows }] = await Promise.all([
+        supabase
+          .from('providers')
+          .select('*, provider_services(*, categories(*))')
+          .eq('status', 'approved')
+          .limit(8),
+        supabase.from('categories').select('*').order('sort_order'),
+      ])
+
+      if (cancelled) return
+
+      const categories = categoryRows || []
+      const providers = providerRows || []
+      const categorized = categories.length
+        ? await Promise.all(
+            providers.map((provider) => ensureProviderCategoryIfNeeded(provider, categories)),
+          )
+        : providers
+
+      if (!cancelled) setProviders(categorized)
+    }
+
+    void loadFeaturedProviders()
+
     supabase.from('testimonials').select('*').eq('approved', true).limit(4)
       .then(({ data }) => setTestimonials(data || []))
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -269,13 +301,13 @@ export function Home() {
             <p className="home-section__lead">Browse verified professionals ready to help you master your field.</p>
           </header>
           {providers.length > 0 ? (
-            <div className="providers-grid">
-              {providers.map((p, i) => (
-                <div key={p.id} className="home-section__item">
-                  <ProviderCard provider={p} index={i} disableAnimation />
-                </div>
-              ))}
-            </div>
+            <ShowcaseCarousel
+              className="showcase-carousel--wide home-providers-carousel"
+              items={providers}
+              getKey={(provider) => provider.id}
+              ariaLabel="Featured providers"
+              renderItem={(provider) => <ProviderCard provider={provider} disableAnimation />}
+            />
           ) : (
             <div className="empty-state bento-card home-section__item">
               <p>Provider listings coming soon. Be the first to <Link to="/register?role=provider">join our network</Link>.</p>
@@ -298,18 +330,22 @@ export function Home() {
               </span>
             </h2>
           </header>
-          <div className="testimonials-grid">
-            {(testimonials.length > 0 ? testimonials : fallbackTestimonials).map((t) => (
-              <blockquote key={t.id} className="testimonial-card bento-card home-section__item">
+          <ShowcaseCarousel
+            className="home-testimonials-carousel"
+            items={testimonials.length > 0 ? testimonials : fallbackTestimonials}
+            getKey={(testimonial) => testimonial.id}
+            ariaLabel="Client testimonials"
+            renderItem={(testimonial) => (
+              <blockquote className="testimonial-card bento-card home-section__item">
                 <div className="testimonial-card__stars">★★★★★</div>
-                <p>"{t.content}"</p>
+                <p>"{testimonial.content}"</p>
                 <footer>
-                  <strong>{t.client_name}</strong>
-                  {t.service_type && <span>{t.service_type}</span>}
+                  <strong>{testimonial.client_name}</strong>
+                  {testimonial.service_type ? <span>{testimonial.service_type}</span> : null}
                 </footer>
               </blockquote>
-            ))}
-          </div>
+            )}
+          />
         </div>
       </section>
 

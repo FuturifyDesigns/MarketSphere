@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
@@ -77,6 +78,7 @@ const ADMIN_TABS: Array<{ id: AdminTab; label: string; icon: typeof Users }> = [
 
 export function AdminDashboard() {
   const { profile } = useAuth()
+  const { showToast } = useToast()
   const [users, setUsers] = useState<Profile[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
@@ -141,7 +143,12 @@ export function AdminDashboard() {
       current.map((provider) => (provider.id === id ? { ...provider, status } : provider)),
     )
     const { error } = await supabase.from('providers').update({ status }).eq('id', id)
-    if (error) void loadData()
+    if (error) {
+      void loadData()
+      showToast('Could not update provider status.', 'error')
+      return
+    }
+    showToast(status === 'approved' ? 'Provider activated.' : 'Provider suspended.')
   }
 
   const addCategory = async () => {
@@ -165,18 +172,25 @@ export function AdminDashboard() {
     const { data, error } = await supabase.from('categories').insert(payload).select().single()
     if (error || !data) {
       setFormError('Could not add category. The slug may already exist.')
+      showToast('Could not add category.', 'error')
       return
     }
 
     setCategories((current) => [...current, data])
     setNewCategory({ name: '', slug: '', description: '' })
     setCategoryErrors({})
+    showToast('Category added.')
   }
 
   const deleteCategory = async (id: string) => {
     setCategories((current) => current.filter((category) => category.id !== id))
     const { error } = await supabase.from('categories').delete().eq('id', id)
-    if (error) void loadData()
+    if (error) {
+      void loadData()
+      showToast('Could not delete category.', 'error')
+      return
+    }
+    showToast('Category deleted.')
   }
 
   const addTestimonial = async () => {
@@ -204,12 +218,14 @@ export function AdminDashboard() {
 
     if (error || !data) {
       setFormError('Could not add testimonial. Please try again.')
+      showToast('Could not add testimonial.', 'error')
       return
     }
 
     setTestimonials((current) => [data, ...current])
     setNewTestimonial({ client_name: '', content: '', service_type: '' })
     setTestimonialErrors({})
+    showToast('Testimonial added.')
   }
 
   const toggleTestimonial = async (id: string, approved: boolean) => {
@@ -217,7 +233,12 @@ export function AdminDashboard() {
       current.map((testimonial) => (testimonial.id === id ? { ...testimonial, approved } : testimonial)),
     )
     const { error } = await supabase.from('testimonials').update({ approved }).eq('id', id)
-    if (error) void loadData()
+    if (error) {
+      void loadData()
+      showToast('Could not update testimonial.', 'error')
+      return
+    }
+    showToast(approved ? 'Testimonial is now visible.' : 'Testimonial hidden.')
   }
 
   const updateContactStatus = async (id: string, status: ContactMessage['status']) => {
@@ -225,7 +246,12 @@ export function AdminDashboard() {
       current.map((message) => (message.id === id ? { ...message, status } : message)),
     )
     const { error } = await supabase.from('contact_messages').update({ status }).eq('id', id)
-    if (error) void loadData()
+    if (error) {
+      void loadData()
+      showToast('Could not update contact message.', 'error')
+      return
+    }
+    showToast(status === 'read' ? 'Contact message marked as read.' : 'Contact message marked as replied.')
   }
 
   const updateEnquiryStatus = async (id: string, status: Enquiry['status']) => {
@@ -233,7 +259,12 @@ export function AdminDashboard() {
       current.map((enquiry) => (enquiry.id === id ? { ...enquiry, status } : enquiry)),
     )
     const { error } = await supabase.from('enquiries').update({ status }).eq('id', id)
-    if (error) void loadData()
+    if (error) {
+      void loadData()
+      showToast('Could not update enquiry.', 'error')
+      return
+    }
+    showToast(status === 'read' ? 'Enquiry marked as read.' : 'Enquiry marked as replied.')
   }
 
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'Admin'

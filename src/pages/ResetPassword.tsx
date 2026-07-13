@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
@@ -32,6 +33,7 @@ export function ResetPassword() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { updatePassword } = useAuth()
+  const { showToast } = useToast()
   const [status, setStatus] = useState<ResetStatus>('loading')
   const [message, setMessage] = useState('')
   const [password, setPassword] = useState('')
@@ -108,9 +110,11 @@ export function ResetPassword() {
     setLoading(false)
     if (err) {
       setError(err.message)
+      showToast(err.message, 'error')
     } else {
       await supabase.auth.signOut()
       setStatus('success')
+      showToast('Password updated successfully. Sign in with your new password.')
       window.setTimeout(() => navigate('/login'), 2500)
     }
   }

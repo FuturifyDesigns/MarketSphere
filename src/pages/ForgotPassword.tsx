@@ -2,6 +2,7 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Mail } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
@@ -25,6 +26,7 @@ export function ForgotPassword() {
   const pageRef = useRef<HTMLDivElement>(null)
   useAuthPageEnter(pageRef)
   const { resetPasswordForEmail } = useAuth()
+  const { showToast } = useToast()
   const [email, setEmail] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<ForgotFields>>({})
   const [error, setError] = useState('')
@@ -44,7 +46,9 @@ export function ForgotPassword() {
     setLoading(false)
     if (err) {
       setError(err.message)
+      showToast(err.message, 'error')
     } else {
+      showToast('Password reset email sent. Check your inbox.', 'info')
       setSuccess(true)
     }
   }

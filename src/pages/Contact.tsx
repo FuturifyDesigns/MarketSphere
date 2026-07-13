@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Mail, MapPin, Phone, Clock, ArrowRight, MessageSquare, Building2, Send } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../context/ToastContext'
 import {
   clearFieldError,
   collectErrors,
@@ -23,6 +24,7 @@ import './Contact.css'
 type ContactFields = 'name' | 'email' | 'phone' | 'message'
 
 export function Contact() {
+  const { showToast } = useToast()
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<ContactFields>>({})
   const [submitted, setSubmitted] = useState(false)
@@ -60,11 +62,13 @@ export function Contact() {
 
     if (insertError) {
       setError('Could not send your message. Please try again or email us directly.')
+      showToast('Could not send your message. Please try again.', 'error')
       return
     }
 
     setForm({ name: '', email: '', phone: '', message: '' })
     setSubmitted(true)
+    showToast('Message sent. We will get back to you soon.')
   }
 
   return (

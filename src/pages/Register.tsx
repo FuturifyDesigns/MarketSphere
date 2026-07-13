@@ -2,6 +2,7 @@ import { useState, useRef, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, BadgeCheck, CheckCircle2, MapPinned, UsersRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/ToastContext'
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
@@ -33,6 +34,7 @@ export function Register() {
   const pageRef = useRef<HTMLDivElement>(null)
   useAuthPageEnter(pageRef)
   const { signUp } = useAuth()
+  const { showToast } = useToast()
   const [searchParams] = useSearchParams()
   const defaultRole = searchParams.get('role') === 'provider' ? 'provider' : 'customer'
 
@@ -86,7 +88,9 @@ export function Register() {
     setLoading(false)
     if (err) {
       setError(err.message)
+      showToast(err.message, 'error')
     } else {
+      showToast('Account created. Check your email to verify your address.', 'info')
       setSuccess(true)
     }
   }
