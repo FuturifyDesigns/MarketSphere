@@ -8,6 +8,7 @@ import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFi
 import { prepareCoverImage, prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
 import { syncProviderPrimaryCategory } from '../../lib/providerCategory'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
+import { RoleOnboarding } from '../../components/onboarding/RoleOnboarding'
 import { Button } from '../../components/ui/Button'
 import { ImageCropModal } from '../../components/ui/ImageCropModal'
 import { MediaEditActions } from '../../components/ui/MediaEditActions'
@@ -656,6 +657,7 @@ export function ProviderDashboard() {
 
   return (
     <div className="dashboard provider-dashboard">
+      <RoleOnboarding role="provider" />
       <div className="container">
         <header className="provider-dashboard__hero">
           <div>

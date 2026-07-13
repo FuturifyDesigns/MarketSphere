@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { ProviderCard } from '../../components/ui/ProviderCard'
 import { Button } from '../../components/ui/Button'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
+import { RoleOnboarding } from '../../components/onboarding/RoleOnboarding'
 import { formatStatusLabel } from '../../lib/validation'
 import type { Enquiry, Provider } from '../../lib/types'
 import './Dashboard.css'
@@ -82,6 +83,7 @@ export function CustomerDashboard() {
 
   return (
     <div className="dashboard customer-dashboard">
+      <RoleOnboarding role="customer" />
       <div className="container">
         <header className="customer-dashboard__hero">
           <div>
