@@ -17,6 +17,7 @@ import {
 } from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PasswordInput } from '../components/ui/PasswordInput'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import './authTheme.css'
 import './Auth.css'
@@ -105,9 +106,8 @@ export function Login() {
                 hint={FIELD_HINTS.email}
                 error={fieldErrors.email}
               />
-              <Input
+              <PasswordInput
                 label="Password"
-                type="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => {

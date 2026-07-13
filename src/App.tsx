@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
 import { preloadAllImages } from './lib/imagePreload'
@@ -66,6 +67,7 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <ToastProvider>
       <SiteIntro />
       <HashRouter>
         <ScrollToTop />
@@ -111,6 +113,7 @@ export default function App() {
           <Route path="auth/reset-password" element={<ResetPassword />} />
         </Routes>
       </HashRouter>
+      </ToastProvider>
     </AuthProvider>
   )
 }

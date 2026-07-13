@@ -61,6 +61,36 @@
   color: var(--text-secondary);
 }
 
+.input-password-wrap {
+  position: relative;
+}
+
+.input-password-wrap input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
+.input-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.input-password-toggle:hover {
+  color: var(--text-primary);
+  background: rgba(201, 162, 75, 0.1);
+}
+
 @media (max-width: 900px) {
   .input-group input,
   .input-group textarea,

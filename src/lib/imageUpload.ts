@@ -1,4 +1,4 @@
-/** Client-side image prep to stay within Supabase free-tier storage limits. */
+/** Client-side image prep for uploads. */
 
 export const UPLOAD_LIMITS = {
   avatar: { maxWidth: 256, maxHeight: 256, maxBytes: 150_000, quality: 0.82 },

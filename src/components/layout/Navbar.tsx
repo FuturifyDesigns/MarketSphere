@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { COMPANY, LOGO_PATH } from '../../lib/constants'
 import { preloadServiceVideos } from '../../lib/serviceVideoCache'
 import { Button } from '../ui/Button'
@@ -20,7 +21,9 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { profile, signOut } = useAuth()
+  const { showToast } = useToast()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const dashboardPath =
     profile?.role === 'admin'
@@ -35,6 +38,17 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const signedInName = profile?.full_name?.trim() || profile?.email || 'Account'
+
+  const handleSignOut = async () => {
+    setOpen(false)
+    if (location.pathname.startsWith('/dashboard')) {
+      navigate('/')
+    }
+    await signOut()
+    showToast('You have signed out.')
+  }
+
   return (
     <header className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
       <div className="navbar__inner container">
@@ -44,6 +58,15 @@ export function Navbar() {
         </Link>
 
         <nav className={`navbar__nav ${open ? 'navbar__nav--open' : ''}`}>
+          {profile ? (
+            <div className="navbar__mobile-session">
+              <span className="navbar__session-label">Signed in as</span>
+              <span className="navbar__session-name">{signedInName}</span>
+              <Link to={dashboardPath} className="navbar__mobile-dash" onClick={() => setOpen(false)}>
+                Go to Dashboard
+              </Link>
+            </div>
+          ) : null}
           <div className="navbar__pill">
             {NAV_LINKS.map((link) => (
               <Link
@@ -63,8 +86,16 @@ export function Navbar() {
         <div className="navbar__actions">
           {profile ? (
             <>
-              <Link to={dashboardPath} className="navbar__dash">Dashboard</Link>
-              <button className="navbar__signout" onClick={() => signOut()}>Sign Out</button>
+              <div className="navbar__session" title={`Signed in as ${signedInName}`}>
+                <span className="navbar__session-label">Signed in as</span>
+                <span className="navbar__session-name">{signedInName}</span>
+              </div>
+              <Link to={dashboardPath} className="navbar__dash" onClick={() => setOpen(false)}>
+                Dashboard
+              </Link>
+              <button className="navbar__signout" type="button" onClick={() => void handleSignOut()}>
+                Sign Out
+              </button>
             </>
           ) : (
             <Button to="/get-started" size="sm">Get Started</Button>

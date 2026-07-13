@@ -1,10 +1,12 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
-import { Inbox, Settings } from 'lucide-react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { BriefcaseBusiness, ImagePlus, Inbox, Settings, Store } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { assertImageFile } from '../../lib/imageCrop'
 import { supabase, removeStorageFile, storagePathFromPublicUrl, uploadPreparedFile } from '../../lib/supabase'
 import { prepareGalleryImage, prepareLogoImage, UPLOAD_LIMITS } from '../../lib/imageUpload'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
 import { Button } from '../../components/ui/Button'
+import { ImageCropModal } from '../../components/ui/ImageCropModal'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import {
@@ -27,13 +29,15 @@ import './Dashboard.css'
 
 type ProfileFields = 'business_name' | 'description' | 'location' | 'contact_email' | 'contact_phone'
 type ServiceFields = 'title' | 'description'
+type ProviderTab = 'profile' | 'inbox' | 'services'
 
 export function ProviderDashboard() {
   const { user, refreshProfile } = useAuth()
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [tab, setTab] = useState<'profile' | 'inbox' | 'services'>('profile')
+  const [tab, setTab] = useState<ProviderTab>('profile')
   const [form, setForm] = useState({
     business_name: '',
     description: '',
@@ -49,6 +53,8 @@ export function ProviderDashboard() {
   const [profileErrors, setProfileErrors] = useState<FieldErrors<ProfileFields>>({})
   const [serviceErrors, setServiceErrors] = useState<FieldErrors<ServiceFields>>({})
   const [saveError, setSaveError] = useState('')
+  const [logoCropFile, setLogoCropFile] = useState<File | null>(null)
+  const [logoCropOpen, setLogoCropOpen] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -128,16 +134,29 @@ export function ProviderDashboard() {
     refreshProfile()
   }
 
-  const handleLogoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleLogoPick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file || !provider) return
 
-    setUploadError('')
+    try {
+      assertImageFile(file)
+      setUploadError('')
+      setLogoCropFile(file)
+      setLogoCropOpen(true)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not open logo image')
+    }
+  }
+
+  const handleLogoCroppedUpload = async (croppedFile: File) => {
+    if (!provider) return
+
     setUploadingLogo(true)
+    setUploadError('')
 
     try {
-      const prepared = await prepareLogoImage(file)
+      const prepared = await prepareLogoImage(croppedFile)
       const url = await uploadPreparedFile('provider-logos', `${provider.id}/logo`, prepared)
       if (!url) throw new Error('Logo upload failed')
 
@@ -147,6 +166,7 @@ export function ProviderDashboard() {
       setUploadError(err instanceof Error ? err.message : 'Logo upload failed')
     } finally {
       setUploadingLogo(false)
+      setLogoCropFile(null)
     }
   }
 
@@ -233,154 +253,237 @@ export function ProviderDashboard() {
 
   const statusLabel = provider?.status || 'not_created'
   const galleryCount = provider?.gallery_urls?.length || 0
+  const newEnquiryCount = enquiries.filter((e) => e.status === 'new').length
+  const serviceCount = provider?.provider_services?.length || 0
+  const displayName = provider?.business_name?.trim() || form.business_name.trim() || 'your business'
 
   return (
-    <div className="dashboard">
+    <div className="dashboard provider-dashboard">
       <div className="container">
-        <div className="dashboard-header">
-          <h1>Provider Dashboard</h1>
-          <p>Manage your business profile and enquiries</p>
-          {provider && (
-            <span className={`status-badge status-badge--${statusLabel}`}>
-              Status: {statusLabel}
-            </span>
-          )}
-        </div>
+        <header className="provider-dashboard__hero">
+          <div>
+            <span className="provider-dashboard__eyebrow">Provider dashboard</span>
+            <h1>Manage {displayName}</h1>
+            <p>Update your listing, respond to enquiries, and grow your services on Market Sphere Group.</p>
+          </div>
+          <div className="provider-dashboard__stats">
+            <div className="provider-dashboard__stat">
+              <BriefcaseBusiness size={18} />
+              <strong>{serviceCount}</strong>
+              <span>Services</span>
+            </div>
+            <div className="provider-dashboard__stat">
+              <Inbox size={18} />
+              <strong>{newEnquiryCount}</strong>
+              <span>New</span>
+            </div>
+            <div className="provider-dashboard__stat">
+              <Store size={18} />
+              <strong className="provider-dashboard__stat-status">{statusLabel}</strong>
+              <span>Status</span>
+            </div>
+          </div>
+        </header>
 
-        <div className="dashboard-tabs">
-          <button className={tab === 'profile' ? 'tab--active' : ''} onClick={() => setTab('profile')}>
+        <div className="provider-dashboard__tabs" role="tablist" aria-label="Provider sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'profile'}
+            className={tab === 'profile' ? 'provider-dashboard__tab--active' : ''}
+            onClick={() => setTab('profile')}
+          >
             <Settings size={16} /> Profile
           </button>
-          <button className={tab === 'services' ? 'tab--active' : ''} onClick={() => setTab('services')}>
-            Services
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'services'}
+            className={tab === 'services' ? 'provider-dashboard__tab--active' : ''}
+            onClick={() => setTab('services')}
+          >
+            <BriefcaseBusiness size={16} /> Services
           </button>
-          <button className={tab === 'inbox' ? 'tab--active' : ''} onClick={() => setTab('inbox')}>
-            <Inbox size={16} /> Inbox {enquiries.filter((e) => e.status === 'new').length > 0 && `(${enquiries.filter((e) => e.status === 'new').length})`}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'inbox'}
+            className={tab === 'inbox' ? 'provider-dashboard__tab--active' : ''}
+            onClick={() => setTab('inbox')}
+          >
+            <Inbox size={16} /> Inbox {newEnquiryCount > 0 ? `(${newEnquiryCount})` : ''}
           </button>
         </div>
 
         {tab === 'profile' && (
-          <div className="dashboard-profile-layout">
+          <div className="provider-dashboard__profile-layout">
             <AccountProfileCard />
-            <div className="dashboard-form">
-              {provider?.logo_url && (
-                <img src={provider.logo_url} alt="" className="dashboard-logo-preview" />
-              )}
-              <div className="input-group">
-                <label>Business Logo</label>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleLogoUpload}
-                  disabled={!provider || uploadingLogo}
-                />
-                {!provider && <small>Save your profile first to upload a logo</small>}
-                {uploadingLogo && <small>Compressing and uploading logo…</small>}
-              </div>
 
-              <div className="input-group gallery-upload">
-                <label>Gallery ({galleryCount}/{UPLOAD_LIMITS.gallery.maxCount})</label>
-                {galleryCount > 0 && (
-                  <div className="gallery-grid">
-                    {(provider?.gallery_urls || []).map((url) => (
-                      <div key={url} className="gallery-item">
-                        <img src={url} alt="" />
-                        <button type="button" onClick={() => removeGalleryImage(url)}>Remove</button>
-                      </div>
-                    ))}
+            <div className="provider-dashboard__panels">
+              <section className="dashboard-panel provider-branding-panel">
+                <div className="dashboard-panel__header">
+                  <h2><ImagePlus size={20} /> Branding</h2>
+                </div>
+
+                <div className="provider-branding-panel__logo">
+                  {provider?.logo_url ? (
+                    <img src={provider.logo_url} alt="" className="provider-branding-panel__logo-img" />
+                  ) : (
+                    <div className="provider-branding-panel__logo-placeholder">Logo</div>
+                  )}
+                  <div>
+                    <p className="provider-branding-panel__title">Business logo</p>
+                    <p className="provider-branding-panel__hint">
+                      Saved at up to {UPLOAD_LIMITS.logo.maxWidth}×{UPLOAD_LIMITS.logo.maxHeight} px
+                    </p>
+                    <button
+                      type="button"
+                      className="provider-branding-panel__upload-btn"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={!provider || uploadingLogo}
+                    >
+                      {uploadingLogo ? 'Uploading…' : 'Upload logo'}
+                    </button>
+                    {!provider && <small>Save your profile first to upload a logo.</small>}
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleLogoPick}
+                      hidden
+                    />
                   </div>
-                )}
-                {provider && galleryCount < UPLOAD_LIMITS.gallery.maxCount && (
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleGalleryUpload}
-                    disabled={uploadingGallery}
+                </div>
+
+                <div className="provider-branding-panel__gallery">
+                  <div className="dashboard-panel__header dashboard-panel__header--compact">
+                    <h3>Gallery ({galleryCount}/{UPLOAD_LIMITS.gallery.maxCount})</h3>
+                    <small>Up to {UPLOAD_LIMITS.gallery.maxWidth}px wide per image</small>
+                  </div>
+                  {galleryCount > 0 && (
+                    <div className="gallery-grid">
+                      {(provider?.gallery_urls || []).map((url) => (
+                        <div key={url} className="gallery-item">
+                          <img src={url} alt="" />
+                          <button type="button" onClick={() => void removeGalleryImage(url)}>Remove</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {provider && galleryCount < UPLOAD_LIMITS.gallery.maxCount && (
+                    <label className="provider-branding-panel__gallery-upload">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleGalleryUpload}
+                        disabled={uploadingGallery}
+                      />
+                      {uploadingGallery ? 'Uploading photo…' : 'Add gallery photo'}
+                    </label>
+                  )}
+                  {!provider && <small>Save your profile first to upload gallery photos.</small>}
+                </div>
+
+                {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
+              </section>
+
+              <section className="dashboard-panel">
+                <div className="dashboard-panel__header">
+                  <h2><Store size={20} /> Business details</h2>
+                </div>
+
+                <div className="dashboard-form dashboard-form--flush">
+                  <Input
+                    label="Business Name"
+                    value={form.business_name}
+                    onChange={(e) => {
+                      setForm({ ...form, business_name: e.target.value })
+                      setProfileErrors((prev) => clearFieldError(prev, 'business_name'))
+                    }}
+                    hint={FIELD_HINTS.businessName}
+                    error={profileErrors.business_name}
                   />
-                )}
-                {!provider && <small>Save your profile first to upload gallery photos</small>}
-                {uploadingGallery && <small>Compressing and uploading photo…</small>}
-                <small>Images are compressed automatically to stay within free storage limits.</small>
-              </div>
-
-              {uploadError && <p className="upload-error" role="alert">{uploadError}</p>}
-
-              <Input
-                label="Business Name"
-                value={form.business_name}
-                onChange={(e) => {
-                  setForm({ ...form, business_name: e.target.value })
-                  setProfileErrors((prev) => clearFieldError(prev, 'business_name'))
-                }}
-                hint={FIELD_HINTS.businessName}
-                error={profileErrors.business_name}
-              />
-              <Textarea
-                label="Description"
-                rows={4}
-                value={form.description}
-                onChange={(e) => {
-                  setForm({ ...form, description: e.target.value })
-                  setProfileErrors((prev) => clearFieldError(prev, 'description'))
-                }}
-                hint={FIELD_HINTS.description}
-                error={profileErrors.description}
-              />
-              <Input
-                label="Location"
-                value={form.location}
-                onChange={(e) => {
-                  setForm({ ...form, location: e.target.value })
-                  setProfileErrors((prev) => clearFieldError(prev, 'location'))
-                }}
-                hint={FIELD_HINTS.location}
-                error={profileErrors.location}
-              />
-              <Input
-                label="Contact Email"
-                type="email"
-                value={form.contact_email}
-                onChange={(e) => {
-                  setForm({ ...form, contact_email: e.target.value })
-                  setProfileErrors((prev) => clearFieldError(prev, 'contact_email'))
-                }}
-                hint={FIELD_HINTS.contactEmail}
-                error={profileErrors.contact_email}
-              />
-              <Input
-                label="Contact Phone"
-                type="tel"
-                inputMode="tel"
-                value={form.contact_phone}
-                onChange={(e) => {
-                  setForm({ ...form, contact_phone: sanitizePhone(e.target.value) })
-                  setProfileErrors((prev) => clearFieldError(prev, 'contact_phone'))
-                }}
-                hint={FIELD_HINTS.contactPhone}
-                error={profileErrors.contact_phone}
-              />
-              {saveError && tab === 'profile' && <p className="upload-error" role="alert">{saveError}</p>}
-              <Button onClick={saveProfile} disabled={saving}>
-                {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
-              </Button>
-              {statusLabel === 'pending' && (
-                <p className="dashboard-note">Your profile is pending admin approval.</p>
-              )}
+                  <Textarea
+                    label="Description"
+                    rows={4}
+                    value={form.description}
+                    onChange={(e) => {
+                      setForm({ ...form, description: e.target.value })
+                      setProfileErrors((prev) => clearFieldError(prev, 'description'))
+                    }}
+                    hint={FIELD_HINTS.description}
+                    error={profileErrors.description}
+                  />
+                  <Input
+                    label="Location"
+                    value={form.location}
+                    onChange={(e) => {
+                      setForm({ ...form, location: e.target.value })
+                      setProfileErrors((prev) => clearFieldError(prev, 'location'))
+                    }}
+                    hint={FIELD_HINTS.location}
+                    error={profileErrors.location}
+                  />
+                  <Input
+                    label="Contact Email"
+                    type="email"
+                    value={form.contact_email}
+                    onChange={(e) => {
+                      setForm({ ...form, contact_email: e.target.value })
+                      setProfileErrors((prev) => clearFieldError(prev, 'contact_email'))
+                    }}
+                    hint={FIELD_HINTS.contactEmail}
+                    error={profileErrors.contact_email}
+                  />
+                  <Input
+                    label="Contact Phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={form.contact_phone}
+                    onChange={(e) => {
+                      setForm({ ...form, contact_phone: sanitizePhone(e.target.value) })
+                      setProfileErrors((prev) => clearFieldError(prev, 'contact_phone'))
+                    }}
+                    hint={FIELD_HINTS.contactPhone}
+                    error={profileErrors.contact_phone}
+                  />
+                  {saveError && tab === 'profile' && <p className="upload-error" role="alert">{saveError}</p>}
+                  <Button onClick={() => void saveProfile()} disabled={saving}>
+                    {saving ? 'Saving...' : provider ? 'Update Profile' : 'Submit for Approval'}
+                  </Button>
+                  {statusLabel === 'pending' && (
+                    <p className="dashboard-note">Your profile is pending admin approval.</p>
+                  )}
+                </div>
+              </section>
             </div>
           </div>
         )}
 
         {tab === 'services' && (
-          <div className="dashboard-form">
-            {provider?.provider_services?.map((s: ProviderService) => (
-              <div key={s.id} className="service-row">
-                <strong>{s.title}</strong>
-                {s.categories && <span className="service-tag">{s.categories.name}</span>}
+          <section className="dashboard-panel">
+            <div className="dashboard-panel__header">
+              <h2><BriefcaseBusiness size={20} /> Your services</h2>
+            </div>
+            {provider?.provider_services?.length ? (
+              <div className="provider-service-list">
+                {provider.provider_services.map((s: ProviderService) => (
+                  <div key={s.id} className="service-row">
+                    <strong>{s.title}</strong>
+                    {s.categories && <span className="service-tag">{s.categories.name}</span>}
+                  </div>
+                ))}
               </div>
-            ))}
-            {provider && (
-              <>
-                <h3>Add Service</h3>
+            ) : (
+              <div className="dashboard-empty-state">
+                <BriefcaseBusiness size={28} />
+                <p>No services listed yet</p>
+                <span>Add your first service below so customers can find what you offer.</span>
+              </div>
+            )}
+            {provider ? (
+              <div className="dashboard-form dashboard-form--flush provider-service-form">
+                <h3>Add service</h3>
                 <Input
                   label="Service Title"
                   value={newService.title}
@@ -414,38 +517,62 @@ export function ProviderDashboard() {
                   error={serviceErrors.description}
                 />
                 {saveError && tab === 'services' && <p className="upload-error" role="alert">{saveError}</p>}
-                <Button onClick={addService}>Add Service</Button>
-              </>
+                <Button onClick={() => void addService()}>Add Service</Button>
+              </div>
+            ) : (
+              <p className="dashboard-empty">Create your profile first.</p>
             )}
-            {!provider && <p className="dashboard-empty">Create your profile first.</p>}
-          </div>
+          </section>
         )}
 
         {tab === 'inbox' && (
-          <div className="enquiry-list">
-            {enquiries.length > 0 ? enquiries.map((e) => (
-              <div key={e.id} className="enquiry-detail">
-                <div className="enquiry-detail__header">
-                  <strong>{e.subject}</strong>
-                  <span className={`status-badge status-badge--${e.status}`}>{e.status}</span>
-                </div>
-                <p className="enquiry-detail__from">
-                  From: {(e.profiles as { full_name: string; email: string })?.full_name} ({(e.profiles as { email: string })?.email})
-                </p>
-                <p className="enquiry-detail__msg">{e.message}</p>
-                {e.status === 'new' && (
-                  <div className="enquiry-actions">
-                    <Button size="sm" onClick={() => updateEnquiryStatus(e.id, 'read')}>Mark Read</Button>
-                    <Button size="sm" variant="secondary" onClick={() => updateEnquiryStatus(e.id, 'replied')}>Mark Replied</Button>
+          <section className="dashboard-panel">
+            <div className="dashboard-panel__header">
+              <h2><Inbox size={20} /> Enquiry inbox</h2>
+            </div>
+            {enquiries.length > 0 ? (
+              <div className="enquiry-list">
+                {enquiries.map((e) => (
+                  <div key={e.id} className="enquiry-detail">
+                    <div className="enquiry-detail__header">
+                      <strong>{e.subject}</strong>
+                      <span className={`status-badge status-badge--${e.status}`}>{e.status}</span>
+                    </div>
+                    <p className="enquiry-detail__from">
+                      From: {(e.profiles as { full_name: string; email: string })?.full_name} ({(e.profiles as { email: string })?.email})
+                    </p>
+                    <p className="enquiry-detail__msg">{e.message}</p>
+                    {e.status === 'new' && (
+                      <div className="enquiry-actions">
+                        <Button size="sm" onClick={() => void updateEnquiryStatus(e.id, 'read')}>Mark Read</Button>
+                        <Button size="sm" variant="secondary" onClick={() => void updateEnquiryStatus(e.id, 'replied')}>Mark Replied</Button>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            )) : (
-              <p className="dashboard-empty">No enquiries yet.</p>
+            ) : (
+              <div className="dashboard-empty-state">
+                <Inbox size={28} />
+                <p>No enquiries yet</p>
+                <span>When customers contact you, their messages will appear here.</span>
+              </div>
             )}
-          </div>
+          </section>
         )}
       </div>
+
+      <ImageCropModal
+        file={logoCropFile}
+        open={logoCropOpen}
+        title="Edit business logo"
+        outputSize={UPLOAD_LIMITS.logo.maxWidth}
+        onClose={() => {
+          setLogoCropOpen(false)
+          setLogoCropFile(null)
+        }}
+        onConfirm={(file) => void handleLogoCroppedUpload(file)}
+      />
     </div>
   )
 }

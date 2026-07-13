@@ -20,6 +20,7 @@ import {
 } from '../lib/validation'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PasswordInput } from '../components/ui/PasswordInput'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
@@ -197,9 +198,8 @@ export function Register() {
                 hint={FIELD_HINTS.phone}
                 error={fieldErrors.phone}
               />
-              <Input
+              <PasswordInput
                 label="Password"
-                type="password"
                 autoComplete="new-password"
                 value={form.password}
                 onChange={(e) => updateField('password', e.target.value)}

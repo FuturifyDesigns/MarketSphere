@@ -15,7 +15,7 @@ import {
   type FieldErrors,
 } from '../lib/validation'
 import { Button } from '../components/ui/Button'
-import { Input } from '../components/ui/Input'
+import { PasswordInput } from '../components/ui/PasswordInput'
 import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import { supabase } from '../lib/supabase'
@@ -194,9 +194,8 @@ export function ResetPassword() {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
-              <Input
+              <PasswordInput
                 label="New Password"
-                type="password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => {
@@ -206,9 +205,8 @@ export function ResetPassword() {
                 hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
-              <Input
+              <PasswordInput
                 label="Confirm Password"
-                type="password"
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => {
