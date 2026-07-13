@@ -55,6 +55,31 @@
   max-width: 540px;
 }
 
+.onboarding-card-stage--centered {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  pointer-events: none;
+  overflow-y: auto;
+}
+
+.onboarding-card-stage--centered .onboarding-card {
+  pointer-events: auto;
+  position: relative;
+  width: min(100%, 540px);
+  max-height: min(86dvh, calc(100dvh - 2rem));
+  margin: auto;
+  flex-shrink: 0;
+}
+
 .onboarding-card--docked {
   max-width: 400px;
   max-height: min(68dvh, 480px);
@@ -256,15 +281,13 @@
 }
 
 @media (max-width: 640px) {
-  .onboarding-card--centered {
-    top: 50% !important;
-    left: 1rem !important;
-    right: 1rem !important;
-    bottom: auto !important;
-    width: auto !important;
-    max-width: none !important;
-    transform: translateY(-50%) !important;
-    max-height: min(86dvh, calc(100dvh - 2rem)) !important;
+  .onboarding-card-stage--centered {
+    padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+      max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  }
+
+  .onboarding-card-stage--centered .onboarding-card {
+    max-height: min(88dvh, calc(100dvh - 1.5rem));
   }
 
   .onboarding-card--docked {

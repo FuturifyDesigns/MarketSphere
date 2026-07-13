@@ -121,9 +121,9 @@
 }
 
 .provider-card__image-overlay-name {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
   font-family: var(--font-display);
-  font-size: clamp(1.1rem, 2.2vw, 1.45rem);
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
   font-weight: 700;
   line-height: 1.15;
   color: #fff;
@@ -133,12 +133,12 @@
 .provider-card__image-overlay-contact {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin: 0.2rem 0 0;
-  font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+  gap: 0.45rem;
+  margin: 0.28rem 0 0;
+  font-size: clamp(0.875rem, 1.8vw, 1rem);
   font-weight: 600;
   line-height: 1.35;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.95);
   word-break: break-word;
 }
 
@@ -428,14 +428,6 @@
   font-size: 0.6875rem;
   background: rgba(14, 17, 22, 0.78);
   backdrop-filter: blur(8px);
-}
-
-.provider-card--showcase .provider-card__logo-badge {
-  left: 1rem;
-  bottom: 6.5rem;
-  width: 3rem;
-  height: 3rem;
-  z-index: 3;
 }
 
 .provider-card--showcase .provider-card__gallery-dots {

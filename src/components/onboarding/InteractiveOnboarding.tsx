@@ -141,32 +141,6 @@ function isMobileViewport() {
   return window.innerWidth <= 640
 }
 
-function getCenteredTooltipStyle(cardHeight: number): CSSProperties {
-  const viewportHeight = window.innerHeight
-  const width = `min(calc(100% - ${TOOLTIP_MARGIN * 2}px), 540px)`
-  const maxHeight = Math.min(viewportHeight - TOOLTIP_MARGIN * 2, 760)
-
-  if (cardHeight > 0 && cardHeight <= viewportHeight - TOOLTIP_MARGIN * 2) {
-    return {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width,
-      maxHeight,
-    }
-  }
-
-  return {
-    position: 'fixed',
-    top: TOOLTIP_MARGIN,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width,
-    maxHeight,
-  }
-}
-
 function getTooltipPosition(
   spotlight: Box | null,
   preferredPlacement: OnboardingPlacement | undefined,
@@ -174,7 +148,7 @@ function getTooltipPosition(
   cardHeight: number,
 ): CSSProperties {
   if (!spotlight) {
-    return getCenteredTooltipStyle(cardHeight)
+    return {}
   }
 
   const mobile = isMobileViewport()
@@ -275,7 +249,7 @@ export function InteractiveOnboarding({
 
     if (!step || isCenterStep(step)) {
       setSpotlight(null)
-      setTooltipStyle(getCenteredTooltipStyle(cardHeight))
+      setTooltipStyle({})
       return
     }
 
@@ -371,6 +345,100 @@ export function InteractiveOnboarding({
     dismiss()
   }
 
+  const renderCardBody = () => (
+    <>
+      {showSkip ? (
+        <button type="button" className="onboarding-card__skip" onClick={handleSkip}>
+          Skip tour
+        </button>
+      ) : null}
+
+      <button
+        type="button"
+        className="onboarding-card__close"
+        onClick={handleSkip}
+        aria-label="Close"
+      >
+        <X size={18} aria-hidden="true" />
+      </button>
+
+      <div className="onboarding-card__top">
+        {steps.length > 1 ? (
+          <div className="onboarding-card__progress" aria-hidden="true">
+            {steps.map((item, index) => (
+              <span
+                key={item.title}
+                className={`onboarding-card__dot${index <= stepIndex ? ' onboarding-card__dot--active' : ''}${index < stepIndex ? ' onboarding-card__dot--done' : ''}`}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {eyebrow ? <span className="onboarding-card__eyebrow">{eyebrow}</span> : null}
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step.title}
+            className="onboarding-card__content"
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -14 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="onboarding-card__mascot-wrap">
+              <img
+                src={MASCOT_PATHS[step.mascot]}
+                alt=""
+                className="onboarding-card__mascot"
+                decoding="async"
+              />
+            </div>
+
+            <h2 id="onboarding-title" className="onboarding-card__title">
+              {step.title}
+            </h2>
+            <p className="onboarding-card__description">{step.description}</p>
+
+            {step.bullets?.length ? (
+              <ul className="onboarding-card__bullets">
+                {step.bullets.map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className="onboarding-card__footer">
+        {steps.length > 1 ? (
+          <span className="onboarding-card__counter">
+            Step {stepIndex + 1} of {steps.length}
+          </span>
+        ) : (
+          <span className="onboarding-card__counter" aria-hidden="true" />
+        )}
+
+        <div className="onboarding-card__actions">
+          {!isFirst && steps.length > 1 ? (
+            <Button type="button" variant="ghost" onClick={handleBack}>
+              <ArrowLeft size={16} aria-hidden="true" />
+              Back
+            </Button>
+          ) : null}
+          <Button type="button" size="lg" onClick={handleNext} className="onboarding-card__next">
+            {isLast ? finishLabel : (
+              <>
+                Next
+                <ArrowRight size={16} aria-hidden="true" />
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </>
+  )
+
   return (
     <AnimatePresence>
       {open ? (
@@ -422,108 +490,38 @@ export function InteractiveOnboarding({
             />
           ) : null}
 
-          <motion.div
-            ref={cardRef}
-            className={`onboarding-card${centered ? ' onboarding-card--centered' : ' onboarding-card--docked'}`}
-            style={tooltipStyle}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="onboarding-title"
-            initial={{ opacity: 0, y: centered ? 24 : 12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {showSkip ? (
-              <button type="button" className="onboarding-card__skip" onClick={handleSkip}>
-                Skip tour
-              </button>
-            ) : null}
-
-            <button
-              type="button"
-              className="onboarding-card__close"
-              onClick={handleSkip}
-              aria-label="Close"
+          {centered ? (
+            <div className="onboarding-card-stage onboarding-card-stage--centered">
+              <motion.div
+                ref={cardRef}
+                className="onboarding-card onboarding-card--centered"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="onboarding-title"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {renderCardBody()}
+              </motion.div>
+            </div>
+          ) : (
+            <motion.div
+              ref={cardRef}
+              className="onboarding-card onboarding-card--docked"
+              style={tooltipStyle}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="onboarding-title"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
-              <X size={18} aria-hidden="true" />
-            </button>
-
-            <div className="onboarding-card__top">
-              {steps.length > 1 ? (
-                <div className="onboarding-card__progress" aria-hidden="true">
-                  {steps.map((item, index) => (
-                    <span
-                      key={item.title}
-                      className={`onboarding-card__dot${index <= stepIndex ? ' onboarding-card__dot--active' : ''}${index < stepIndex ? ' onboarding-card__dot--done' : ''}`}
-                    />
-                  ))}
-                </div>
-              ) : null}
-
-              {eyebrow ? <span className="onboarding-card__eyebrow">{eyebrow}</span> : null}
-
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={step.title}
-                  className="onboarding-card__content"
-                  initial={{ opacity: 0, x: 14 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -14 }}
-                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className="onboarding-card__mascot-wrap">
-                    <img
-                      src={MASCOT_PATHS[step.mascot]}
-                      alt=""
-                      className="onboarding-card__mascot"
-                      decoding="async"
-                    />
-                  </div>
-
-                  <h2 id="onboarding-title" className="onboarding-card__title">
-                    {step.title}
-                  </h2>
-                  <p className="onboarding-card__description">{step.description}</p>
-
-                  {step.bullets?.length ? (
-                    <ul className="onboarding-card__bullets">
-                      {step.bullets.map((bullet) => (
-                        <li key={bullet}>{bullet}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <div className="onboarding-card__footer">
-              {steps.length > 1 ? (
-                <span className="onboarding-card__counter">
-                  Step {stepIndex + 1} of {steps.length}
-                </span>
-              ) : (
-                <span className="onboarding-card__counter" aria-hidden="true" />
-              )}
-
-              <div className="onboarding-card__actions">
-                {!isFirst && steps.length > 1 ? (
-                  <Button type="button" variant="ghost" onClick={handleBack}>
-                    <ArrowLeft size={16} aria-hidden="true" />
-                    Back
-                  </Button>
-                ) : null}
-                <Button type="button" size="lg" onClick={handleNext} className="onboarding-card__next">
-                  {isLast ? finishLabel : (
-                    <>
-                      Next
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+              {renderCardBody()}
+            </motion.div>
+          )}
         </motion.div>
       ) : null}
     </AnimatePresence>

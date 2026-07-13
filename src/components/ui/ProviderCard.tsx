@@ -69,7 +69,7 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
 
         {primaryCategory ? <span className="provider-card__category">{primaryCategory.name}</span> : null}
 
-        {provider.logo_url && cardImage !== provider.logo_url ? (
+        {variant !== 'showcase' && provider.logo_url && cardImage !== provider.logo_url ? (
           <img src={provider.logo_url} alt="" className="provider-card__logo-badge" />
         ) : null}
 

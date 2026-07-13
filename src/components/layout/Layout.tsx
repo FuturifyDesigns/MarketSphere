@@ -3,6 +3,7 @@ import { Navbar } from './Navbar'
 import { Footer } from './Footer'
 import { PageTransition } from './PageTransition'
 import { AccountNoticeListener } from '../auth/AccountNoticeListener'
+import { ExitIntentModal } from '../marketing/ExitIntentModal'
 import { SiteEditToolbar } from '../cms/SiteEditToolbar'
 import { useLenis } from '../../hooks/useLenis'
 import { usePageTheme } from '../../hooks/usePageTheme'
@@ -28,6 +29,7 @@ export function Layout() {
         <PageTransition />
       </main>
       <Footer />
+      <ExitIntentModal />
       <SiteEditToolbar />
     </div>
   )
