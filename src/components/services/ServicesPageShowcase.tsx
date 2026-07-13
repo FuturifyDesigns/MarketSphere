@@ -1,5 +1,4 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { onIntroComplete } from '../../lib/intro'
 import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
@@ -9,6 +8,7 @@ import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableText } from '../cms/EditableText'
+import { EditableLink } from '../cms/EditableLink'
 import { EditableImage } from '../cms/EditableImage'
 import { EditableAsset } from '../cms/EditableAsset'
 import { Button } from '../ui/Button'
@@ -134,9 +134,14 @@ export function ServicesPageShowcase() {
                     <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="svc-page__tagline" />
                     <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="svc-page__title" />
                     <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="svc-page__desc" multiline />
-                    <Link to="/contact" className="svc-page__cta">
-                      <EditableText contentKey="services" path="showcase.ctaLabel" as="span" /> <ArrowRight size={14} />
-                    </Link>
+                    <EditableLink
+                      contentKey="services"
+                      labelPath="showcase.ctaLabel"
+                      to="/contact"
+                      className="svc-page__cta"
+                    >
+                      <ArrowRight size={14} />
+                    </EditableLink>
                   </div>
                 </div>
               </article>

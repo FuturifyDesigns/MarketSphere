@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '../components/ui/Button'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { EditableButton } from '../components/cms/EditableButton'
 import { useSiteContent } from '../context/SiteContentContext'
 import { useSectionFieldEdit } from '../context/SectionEditContext'
 import type { FaqItem } from '../lib/siteContentDefaults'
@@ -335,12 +336,23 @@ export function FAQ() {
             <EditableText contentKey="faq" path="supportCta.title" as="h2" className="display-lg" />
             <EditableText contentKey="faq" path="supportCta.body" as="p" multiline />
             <div className="cta-panel__actions">
-              <Button to="/contact" size="lg">
-                <EditableText contentKey="faq" path="supportCta.primaryLabel" as="span" /> <ArrowRight size={16} />
-              </Button>
-              <Button to="/register" variant="secondary" size="lg">
-                <EditableText contentKey="faq" path="supportCta.secondaryLabel" as="span" />
-              </Button>
+              <EditableButton
+                contentKey="faq"
+                labelPath="supportCta.primaryLabel"
+                hrefPath="supportCta.primaryHref"
+                to="/contact"
+                size="lg"
+              >
+                <ArrowRight size={16} />
+              </EditableButton>
+              <EditableButton
+                contentKey="faq"
+                labelPath="supportCta.secondaryLabel"
+                hrefPath="supportCta.secondaryHref"
+                to="/register"
+                variant="secondary"
+                size="lg"
+              />
             </div>
           </div>
         </div>

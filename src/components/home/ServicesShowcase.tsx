@@ -1,5 +1,4 @@
 import { useRef, useEffect, type ReactNode, type MouseEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -13,6 +12,7 @@ import { useSiteContent } from '../../context/SiteContentContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableSection } from '../cms/EditableSection'
 import { EditableText } from '../cms/EditableText'
+import { EditableLink } from '../cms/EditableLink'
 import { EditableImage } from '../cms/EditableImage'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import './ServicesShowcase.css'
@@ -386,9 +386,14 @@ export function ServicesShowcase() {
                       </h3>
                     )}
                     <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="services-showcase__desc" multiline />
-                    <Link to="/services" className="services-showcase__cta">
-                      <EditableText contentKey="home" path="servicesShowcase.ctaLabel" as="span" /> <ArrowRight size={14} />
-                    </Link>
+                    <EditableLink
+                      contentKey="home"
+                      labelPath="servicesShowcase.ctaLabel"
+                      to="/services"
+                      className="services-showcase__cta"
+                    >
+                      <ArrowRight size={14} />
+                    </EditableLink>
                   </div>
                   <div className="services-showcase__visual">
                     <PosterTilt>

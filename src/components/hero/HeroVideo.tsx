@@ -5,26 +5,49 @@ import {
   preloadHeroVideo,
   subscribeHeroVideoCache,
 } from '../../lib/heroVideoCache'
+import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
 import { LOGO_PATH } from '../../lib/constants'
+import { useSiteContent } from '../../context/SiteContentContext'
+import { useSectionFieldEdit } from '../../context/SectionEditContext'
+import { EditableAsset } from '../cms/EditableAsset'
 import './HeroVideo.css'
 
 const base = import.meta.env.BASE_URL
 const CDN_BASE =
   'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
 const POSTER = `${base}${LOGO_PATH}`
+const DEFAULT_VIDEO = 'home/hero-video.mp4'
 
 export function HeroVideo() {
+  const { getBlock } = useSiteContent()
+  const canEditField = useSectionFieldEdit()
+  const hero = getBlock<{ hero: { video?: string } }>('home').hero
+  const cmsVideo = hero.video || DEFAULT_VIDEO
+  const isRemoteVideo = /^https?:\/\//i.test(cmsVideo)
+
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [src, setSrc] = useState(() => getHeroVideoSrc())
-  const [ready, setReady] = useState(() => isHeroVideoReady())
+  const [src, setSrc] = useState(() => (isRemoteVideo ? cmsAssetUrl(cmsVideo) : getHeroVideoSrc()))
+  const [ready, setReady] = useState(() => !isRemoteVideo && isHeroVideoReady())
 
   useEffect(() => {
+    if (isRemoteVideo) {
+      setSrc(cmsAssetUrl(cmsVideo))
+      setReady(false)
+      return
+    }
+
     void preloadHeroVideo()
     return subscribeHeroVideoCache(() => {
       setSrc(getHeroVideoSrc())
       if (isHeroVideoReady()) setReady(true)
     })
-  }, [])
+  }, [cmsVideo, isRemoteVideo])
+
+  useEffect(() => {
+    if (isRemoteVideo) {
+      setSrc(cmsAssetUrl(cmsVideo))
+    }
+  }, [cmsVideo, isRemoteVideo])
 
   useEffect(() => {
     const el = videoRef.current
@@ -41,9 +64,8 @@ export function HeroVideo() {
       if (el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) markReady()
     }
 
-    if (isHeroVideoReady()) play()
-
-    void preloadHeroVideo().then(play)
+    if (!isRemoteVideo && isHeroVideoReady()) play()
+    if (!isRemoteVideo) void preloadHeroVideo().then(play)
 
     el.addEventListener('loadeddata', play)
     el.addEventListener('canplay', play)
@@ -54,7 +76,9 @@ export function HeroVideo() {
       el.removeEventListener('canplay', play)
       el.removeEventListener('playing', markReady)
     }
-  }, [src])
+  }, [src, isRemoteVideo])
+
+  const resolvedSrc = isRemoteVideo ? cmsAssetUrl(cmsVideo) : src
 
   return (
     <div className={`hero-video ${ready ? 'hero-video--ready' : ''}`}>
@@ -71,7 +95,7 @@ export function HeroVideo() {
         <video
           ref={videoRef}
           className="hero-video__player"
-          src={src}
+          src={resolvedSrc}
           poster={POSTER}
           loop
           muted
@@ -85,12 +109,23 @@ export function HeroVideo() {
             if (el && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) setReady(true)
           }}
           onError={() => {
-            if (!src.includes('media.githubusercontent.com') && !src.startsWith('blob:')) {
-              setSrc(`${CDN_BASE}home/hero-video.mp4`)
+            if (isRemoteVideo) return
+            if (!resolvedSrc.includes('media.githubusercontent.com') && !resolvedSrc.startsWith('blob:')) {
+              setSrc(`${CDN_BASE}${DEFAULT_VIDEO}`)
             }
           }}
         />
       </div>
+      {canEditField ? (
+        <EditableAsset
+          contentKey="home"
+          path="hero.video"
+          value={cmsVideo}
+          uploadFolder="hero"
+          accept="video/mp4,video/webm,video/quicktime"
+          label="Replace hero video"
+        />
+      ) : null}
     </div>
   )
 }

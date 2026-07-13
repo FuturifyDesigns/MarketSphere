@@ -462,3 +462,55 @@
   opacity: 0.7;
   word-break: break-all;
 }
+
+.cms-editable-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.btn--cms-preview {
+  pointer-events: auto;
+  cursor: default;
+}
+
+.cms-editable-btn__href {
+  display: grid;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cms-editable-btn__href-value {
+  display: block;
+}
+
+.cms-editable-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+a.btn:has(.cms-editable--active),
+a:has(.cms-editable--active),
+a:has(.cms-editable--editing) {
+  pointer-events: none;
+}
+
+a.btn:has(.cms-editable--active) .cms-editable--active,
+a.btn:has(.cms-editable--active) .cms-editable--editing,
+a:has(.cms-editable--active) .cms-editable--active,
+a:has(.cms-editable--active) .cms-editable--editing,
+.cms-editable__trigger {
+  pointer-events: auto;
+}
+
+.hero-video .cms-asset-edit {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: min(92%, 280px);
+}

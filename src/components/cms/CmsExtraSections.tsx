@@ -7,6 +7,7 @@ import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import { useToast } from '../../context/ToastContext'
 import { EditableText } from './EditableText'
+import { EditableButton } from './EditableButton'
 import { EditableImage } from './EditableImage'
 import { Button } from '../ui/Button'
 import './cms.css'
@@ -96,13 +97,22 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
 
             {section.type === 'cta' ? (
               <div className="cta-panel__actions">
-                <Button to={section.primaryCtaHref || '/contact'} size="lg">
-                  <EditableText contentKey={contentKey} path={`extraSections.${index}.primaryCtaLabel`} as="span" />
-                </Button>
+                <EditableButton
+                  contentKey={contentKey}
+                  labelPath={`extraSections.${index}.primaryCtaLabel`}
+                  hrefPath={`extraSections.${index}.primaryCtaHref`}
+                  to={section.primaryCtaHref || '/contact'}
+                  size="lg"
+                />
                 {section.secondaryCtaLabel ? (
-                  <Button to={section.secondaryCtaHref || '/register'} variant="secondary" size="lg">
-                    <EditableText contentKey={contentKey} path={`extraSections.${index}.secondaryCtaLabel`} as="span" />
-                  </Button>
+                  <EditableButton
+                    contentKey={contentKey}
+                    labelPath={`extraSections.${index}.secondaryCtaLabel`}
+                    hrefPath={`extraSections.${index}.secondaryCtaHref`}
+                    to={section.secondaryCtaHref || '/register'}
+                    variant="secondary"
+                    size="lg"
+                  />
                 ) : null}
               </div>
             ) : null}

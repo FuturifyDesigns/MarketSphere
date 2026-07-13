@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ElementType, type MouseEvent, type ReactNode } from 'react'
 import { Pencil } from 'lucide-react'
 import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
@@ -45,7 +45,9 @@ export function EditableText({
     if (editing) inputRef.current?.focus()
   }, [editing])
 
-  const startEdit = () => {
+  const startEdit = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
     setDraft(display)
     setEditing(true)
   }
@@ -74,7 +76,11 @@ export function EditableText({
 
   if (editing) {
     return (
-      <div className={`cms-editable cms-editable--active ${className}`}>
+      <div
+        className={`cms-editable cms-editable--active cms-editable--editing ${className}`}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         {multiline ? (
           <textarea
             ref={inputRef as React.RefObject<HTMLTextAreaElement>}
@@ -106,7 +112,11 @@ export function EditableText({
   const lines = display.split('\n')
 
   return (
-    <Tag className={`cms-editable ${canEditField ? 'cms-editable--active' : ''} ${className}`.trim()}>
+    <Tag
+      className={`cms-editable ${canEditField ? 'cms-editable--active' : ''} ${className}`.trim()}
+      onClick={canEditField ? (event: MouseEvent<HTMLElement>) => event.stopPropagation() : undefined}
+      onMouseDown={canEditField ? (event: MouseEvent<HTMLElement>) => event.stopPropagation() : undefined}
+    >
       {children ??
         (lines.length > 1
           ? lines.map((line, index) => (
@@ -117,7 +127,13 @@ export function EditableText({
             ))
           : display)}
       {canEditField ? (
-        <button type="button" className="cms-editable__trigger" onClick={startEdit} aria-label="Edit text">
+        <button
+          type="button"
+          className="cms-editable__trigger"
+          onClick={startEdit}
+          onMouseDown={(event) => event.stopPropagation()}
+          aria-label="Edit text"
+        >
           <Pencil size={12} />
           Edit
         </button>

@@ -13,6 +13,7 @@ import { Button } from '../components/ui/Button'
 import { WelcomeModal } from '../components/onboarding/WelcomeModal'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { EditableButton } from '../components/cms/EditableButton'
 import { CmsStringList, cmsStringTexts } from '../components/cms/CmsStringList'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useSiteContent } from '../context/SiteContentContext'
@@ -295,14 +296,25 @@ export function Home() {
             <EditableText contentKey="home" path="hero.subcopy" as="p" className="lead hero__sub" multiline />
             <div className="hero__actions">
               <span className="hero__action-target" data-onboarding="hero-browse">
-                <Button to="/browse" size="lg">
-                  <EditableText contentKey="home" path="hero.ctaBrowse" as="span" /> <ArrowRight size={16} />
-                </Button>
+                <EditableButton
+                  contentKey="home"
+                  labelPath="hero.ctaBrowse"
+                  hrefPath="hero.ctaBrowseHref"
+                  to="/browse"
+                  size="lg"
+                >
+                  <ArrowRight size={16} />
+                </EditableButton>
               </span>
               <span className="hero__action-target" data-onboarding="hero-provider">
-                <Button to="/register?role=provider" variant="secondary" size="lg">
-                  <EditableText contentKey="home" path="hero.ctaProvider" as="span" />
-                </Button>
+                <EditableButton
+                  contentKey="home"
+                  labelPath="hero.ctaProvider"
+                  hrefPath="hero.ctaProviderHref"
+                  to="/register?role=provider"
+                  variant="secondary"
+                  size="lg"
+                />
               </span>
             </div>
           </div>
@@ -454,10 +466,14 @@ export function Home() {
             <p className="home-providers-footer__text">
               <EditableText contentKey="home" path="providersSection.footer" as="span" multiline />
             </p>
-            <Button to="/browse" size="lg">
-              <EditableText contentKey="home" path="providersSection.cta" as="span" />
+            <EditableButton
+              contentKey="home"
+              labelPath="providersSection.cta"
+              to="/browse"
+              size="lg"
+            >
               <ArrowRight size={16} aria-hidden="true" />
-            </Button>
+            </EditableButton>
           </div>
         </div>
       </EditableSection>
@@ -507,12 +523,21 @@ export function Home() {
               <EditableText contentKey="home" path="cta.body" as="p" className="home-section__lead" multiline />
             </header>
             <div className="cta-panel__actions home-section__footer">
-              <Button to={home.cta?.primaryHref || '/register'} size="lg">
-                <EditableText contentKey="home" path="cta.primaryLabel" as="span" />
-              </Button>
-              <Button to={home.cta?.secondaryHref || '/contact'} variant="secondary" size="lg">
-                <EditableText contentKey="home" path="cta.secondaryLabel" as="span" />
-              </Button>
+              <EditableButton
+                contentKey="home"
+                labelPath="cta.primaryLabel"
+                hrefPath="cta.primaryHref"
+                to={home.cta?.primaryHref || '/register'}
+                size="lg"
+              />
+              <EditableButton
+                contentKey="home"
+                labelPath="cta.secondaryLabel"
+                hrefPath="cta.secondaryHref"
+                to={home.cta?.secondaryHref || '/contact'}
+                variant="secondary"
+                size="lg"
+              />
             </div>
           </div>
         </div>

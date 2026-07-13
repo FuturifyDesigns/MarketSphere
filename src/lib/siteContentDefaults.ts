@@ -89,7 +89,10 @@ export const DEFAULT_SITE_CONTENT: Record<SiteContentKey, unknown> = {
       subcopy:
         'A professional marketplace linking customers with verified service providers — from tutoring and real estate to youth empowerment and entrepreneurship.',
       ctaBrowse: 'Explore Providers',
+      ctaBrowseHref: '/browse',
       ctaProvider: 'List Your Business',
+      ctaProviderHref: '/register?role=provider',
+      video: 'home/hero-video.mp4',
     },
     stats: [
       { id: 'stat-1', number: '8+', label: 'Service categories', description: 'From academic tuition to real estate consultancy' },

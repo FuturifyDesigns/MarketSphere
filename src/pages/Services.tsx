@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react'
-import { Button } from '../components/ui/Button'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { EditableButton } from '../components/cms/EditableButton'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useSiteContent } from '../context/SiteContentContext'
 import { ServicesPageShowcase } from '../components/services/ServicesPageShowcase'
@@ -50,12 +50,23 @@ export function Services() {
             <EditableText contentKey="services" path="cta.title" as="h2" className="display-lg" />
             <EditableText contentKey="services" path="cta.body" as="p" multiline />
             <div className="cta-panel__actions">
-              <Button to={cta?.primaryHref || '/browse'} size="lg">
-                <EditableText contentKey="services" path="cta.primaryLabel" as="span" /> <ArrowRight size={16} />
-              </Button>
-              <Button to={cta?.secondaryHref || '/register?role=provider'} variant="secondary" size="lg">
-                <EditableText contentKey="services" path="cta.secondaryLabel" as="span" />
-              </Button>
+              <EditableButton
+                contentKey="services"
+                labelPath="cta.primaryLabel"
+                hrefPath="cta.primaryHref"
+                to={cta?.primaryHref || '/browse'}
+                size="lg"
+              >
+                <ArrowRight size={16} />
+              </EditableButton>
+              <EditableButton
+                contentKey="services"
+                labelPath="cta.secondaryLabel"
+                hrefPath="cta.secondaryHref"
+                to={cta?.secondaryHref || '/register?role=provider'}
+                variant="secondary"
+                size="lg"
+              />
             </div>
           </div>
         </div>
