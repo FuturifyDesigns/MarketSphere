@@ -49,6 +49,11 @@
   white-space: nowrap;
 }
 
+.cms-section__edit--portal {
+  top: auto;
+  right: auto;
+}
+
 .live-editor-bar {
   position: sticky;
   top: 0;

@@ -98,10 +98,15 @@ export function CmsTextEditorProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!active) return
 
+    let frame = 0
     const update = () => {
-      const current = activeRef.current
-      if (!current) return
-      setStyle(panelStyleFor(current.anchor))
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        const current = activeRef.current
+        if (!current) return
+        setStyle(panelStyleFor(current.anchor))
+      })
     }
 
     update()
@@ -109,6 +114,7 @@ export function CmsTextEditorProvider({ children }: { children: ReactNode }) {
     window.addEventListener('resize', update)
 
     return () => {
+      if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', update, true)
       window.removeEventListener('resize', update)
     }

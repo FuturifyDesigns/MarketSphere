@@ -1,5 +1,6 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { isCmsEditActive } from '../lib/cmsEditMode'
 import { prefersReducedMotion } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
@@ -18,6 +19,7 @@ const HERO_CHILD_SELECTORS = [
 const SCROLL_REVEAL_SELECTORS = '.page-reveal, .about-reveal'
 
 export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
+  if (isCmsEditActive()) return () => {}
   if (prefersReducedMotion()) {
     gsap.set(root, { opacity: 1, y: 0, clearProps: 'transform,opacity' })
     return () => {}
@@ -128,6 +130,7 @@ export function runPageEnterAnimation(root: HTMLElement, isHome: boolean) {
 }
 
 export function runAuthPageEnter(root: HTMLElement) {
+  if (isCmsEditActive()) return () => {}
   if (prefersReducedMotion()) return () => {}
 
   const isAuthPage = root.classList.contains('auth-page')

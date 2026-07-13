@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useSiteContent } from '../context/SiteContentContext'
-import { prepareDomForCmsEdit, releaseDomAfterCmsEdit } from '../lib/cmsEditMode'
+import { deferDomSafeUpdate, prepareDomForCmsEdit, releaseDomAfterCmsEdit } from '../lib/cmsEditMode'
 
 const LIVE_EDIT_STORAGE_KEY = 'msg-site-live-edit'
 
@@ -32,9 +32,10 @@ export function SiteEditProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const state = location.state as { liveEdit?: boolean } | null
     if (state?.liveEdit && isAdmin) {
-      prepareDomForCmsEdit()
-      setEditModeState(true)
-      sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
+      deferDomSafeUpdate(() => {
+        setEditModeState(true)
+        sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
+      })
     }
   }, [location.state, isAdmin])
 
@@ -52,40 +53,41 @@ export function SiteEditProvider({ children }: { children: ReactNode }) {
     (next: boolean) => {
       if (!isAdmin) return
       if (next) {
-        prepareDomForCmsEdit()
-      } else {
-        releaseDomAfterCmsEdit()
+        deferDomSafeUpdate(() => {
+          setEditModeState(true)
+          sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
+        })
+        return
       }
-      setEditModeState(next)
-      if (next) {
-        sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
-      } else {
-        sessionStorage.removeItem(LIVE_EDIT_STORAGE_KEY)
-        setActiveSection(null)
-      }
+
+      setEditModeState(false)
+      setActiveSection(null)
+      sessionStorage.removeItem(LIVE_EDIT_STORAGE_KEY)
+      releaseDomAfterCmsEdit()
     },
     [isAdmin],
   )
 
   const toggleEditMode = useCallback(() => {
     if (!isAdmin) return
-    setEditModeState((current) => {
-      const next = !current
-      if (next) {
-        prepareDomForCmsEdit()
-        sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
-      } else {
-        releaseDomAfterCmsEdit()
-        sessionStorage.removeItem(LIVE_EDIT_STORAGE_KEY)
-        setActiveSection(null)
-      }
-      return next
+    if (editMode) {
+      setEditModeState(false)
+      setActiveSection(null)
+      sessionStorage.removeItem(LIVE_EDIT_STORAGE_KEY)
+      releaseDomAfterCmsEdit()
+      return
+    }
+
+    deferDomSafeUpdate(() => {
+      setEditModeState(true)
+      sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
     })
-  }, [isAdmin])
+  }, [editMode, isAdmin])
 
   const toggleSection = useCallback((sectionId: string) => {
-    prepareDomForCmsEdit()
-    setActiveSection((current) => (current === sectionId ? null : sectionId))
+    deferDomSafeUpdate(() => {
+      setActiveSection((current) => (current === sectionId ? null : sectionId))
+    })
   }, [])
 
   const isSectionActive = useCallback(

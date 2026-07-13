@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useSiteEdit } from '../../context/SiteEditContext'
 import './ShowcaseCarousel.css'
 
 interface ShowcaseCarouselProps<T> {
@@ -39,6 +40,7 @@ export function ShowcaseCarousel<T>({
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const mobileMotion = useMobileCarouselMotion()
+  const { editMode } = useSiteEdit()
 
   useEffect(() => {
     setIndex(0)
@@ -70,6 +72,8 @@ export function ShowcaseCarousel<T>({
         exit: { opacity: 0, x: -36 },
       }
 
+  const slideContent = renderItem(currentItem)
+
   return (
     <div
       className={`showcase-carousel ${className}`.trim()}
@@ -79,18 +83,24 @@ export function ShowcaseCarousel<T>({
       onBlur={() => setPaused(false)}
     >
       <div className="showcase-carousel__viewport" aria-roledescription="carousel" aria-label={ariaLabel}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={getKey(currentItem)}
-            className="showcase-carousel__slide"
-            initial={slideVariants.initial}
-            animate={slideVariants.animate}
-            exit={slideVariants.exit}
-            transition={{ duration: mobileMotion ? 0.28 : 0.45, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {renderItem(currentItem)}
-          </motion.div>
-        </AnimatePresence>
+        {editMode ? (
+          <div key={getKey(currentItem)} className="showcase-carousel__slide">
+            {slideContent}
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={getKey(currentItem)}
+              className="showcase-carousel__slide"
+              initial={slideVariants.initial}
+              animate={slideVariants.animate}
+              exit={slideVariants.exit}
+              transition={{ duration: mobileMotion ? 0.28 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {slideContent}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       {items.length > 1 ? (

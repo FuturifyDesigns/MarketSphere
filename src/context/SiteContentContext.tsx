@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { isCmsEditActive } from '../lib/cmsEditMode'
 import { supabase } from '../lib/supabase'
 import {
   cloneDefaults,
@@ -172,6 +173,7 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'site_content' },
         () => {
+          if (isCmsEditActive()) return
           void loadContent()
         },
       )

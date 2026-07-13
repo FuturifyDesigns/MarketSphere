@@ -8,6 +8,7 @@ import { LiveEditorBar, LiveEditorEntry } from '../cms/LiveEditorBar'
 import { useLenis } from '../../hooks/useLenis'
 import { usePageTheme } from '../../hooks/usePageTheme'
 import { useSiteEdit } from '../../context/SiteEditContext'
+import { prepareDomForCmsEdit } from '../../lib/cmsEditMode'
 import { resetIntroActiveClass } from '../../lib/intro'
 
 export function Layout() {
@@ -22,6 +23,17 @@ export function Layout() {
     document.documentElement.setAttribute('data-theme', 'day')
     resetIntroActiveClass()
   }, [])
+
+  useEffect(() => {
+    if (!editMode) return
+
+    prepareDomForCmsEdit()
+    const lateCleanup = window.setTimeout(prepareDomForCmsEdit, 250)
+
+    return () => {
+      window.clearTimeout(lateCleanup)
+    }
+  }, [editMode])
 
   return (
     <div className={`layout ${editMode ? 'layout--live-edit' : ''}`}>

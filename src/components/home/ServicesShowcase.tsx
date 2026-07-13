@@ -2,6 +2,7 @@ import { useRef, useEffect, type ReactNode, type MouseEvent } from 'react'
 import { ArrowRight } from 'lucide-react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { isCmsEditActive } from '../../lib/cmsEditMode'
 import { onIntroComplete } from '../../lib/intro'
 import { onHomeSectionsReady } from '../../lib/homeSectionsReady'
 import { flushScrollRefresh } from '../../lib/scrollRefresh'
@@ -102,7 +103,7 @@ export function ServicesShowcase() {
     let booted = false
 
     const init = () => {
-      if (started) return
+      if (started || isCmsEditActive()) return
       started = true
 
       items.forEach((service) => {
