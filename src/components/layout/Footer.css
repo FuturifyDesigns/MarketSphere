@@ -1,4 +1,6 @@
 .footer {
+  position: relative;
+  z-index: 2;
   background: var(--color-night);
   color: rgba(250, 248, 244, 0.75);
   margin-top: 0;
