@@ -11,7 +11,10 @@ import { ProviderCard } from '../components/ui/ProviderCard'
 import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
 import { Button } from '../components/ui/Button'
 import { WelcomeModal } from '../components/onboarding/WelcomeModal'
-import { COMPANY } from '../lib/constants'
+import { EditableText } from '../components/cms/EditableText'
+import { useSiteContent } from '../context/SiteContentContext'
+import { useSiteEdit } from '../context/SiteEditContext'
+import type { HomeStat } from '../lib/siteContentDefaults'
 import { supabase } from '../lib/supabase'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
@@ -27,7 +30,7 @@ import '../components/ui/ShowcaseCarousel.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const MARQUEE_ITEMS = [
+const MARQUEE_ITEMS_FALLBACK = [
   'Youth Empowerment',
   'Real Estate',
   'Academic Tuition',
@@ -38,7 +41,40 @@ const MARQUEE_ITEMS = [
   'Master Your Field',
 ]
 
+type HomeBlock = {
+  hero: {
+    welcomeEyebrow: string
+    titleLine1: string
+    titleLine2: string
+    titleLine3: string
+    subcopy: string
+    ctaBrowse: string
+    ctaProvider: string
+  }
+  stats: HomeStat[]
+  marquee: string[]
+  providersSection: {
+    eyebrow: string
+    title: string
+    titleEmphasis: string
+    lead: string
+    cta: string
+    footer: string
+  }
+  vision: {
+    eyebrow: string
+    title: string
+    lead: string
+  }
+}
+
 export function Home() {
+  const { getBlock } = useSiteContent()
+  const { editMode } = useSiteEdit()
+  const home = getBlock<HomeBlock>('home')
+  const company = getBlock<{ shortName: string }>('company')
+  const marqueeItems = home.marquee?.length ? home.marquee : MARQUEE_ITEMS_FALLBACK
+  const stats = home.stats?.length ? home.stats : []
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const [providers, setProviders] = useState<Provider[]>([])
@@ -220,27 +256,31 @@ export function Home() {
       <section className="hero" ref={heroRef}>
         <div className="container hero__inner">
           <div className="hero__content">
-            <div className="hero__welcome" aria-label={`Welcome to ${COMPANY.shortName}`}>
-              <span className="hero__welcome-eyebrow">Welcome to</span>
-              <span className="hero__welcome-brand">{COMPANY.shortName}</span>
+            <div className="hero__welcome" aria-label={`Welcome to ${company.shortName}`}>
+              <EditableText contentKey="home" path="hero.welcomeEyebrow" as="span" className="hero__welcome-eyebrow" />
+              <span className="hero__welcome-brand">{company.shortName}</span>
             </div>
             <h1 className="display-xl hero__title">
-              <span className="hero__line">Connect with</span>
-              <span className="hero__line text-gold text-italic">trusted providers</span>
-              <span className="hero__line">across Botswana</span>
+              <span className="hero__line">
+                <EditableText contentKey="home" path="hero.titleLine1" as="span" />
+              </span>
+              <span className="hero__line text-gold text-italic">
+                <EditableText contentKey="home" path="hero.titleLine2" as="span" />
+              </span>
+              <span className="hero__line">
+                <EditableText contentKey="home" path="hero.titleLine3" as="span" />
+              </span>
             </h1>
-            <p className="lead hero__sub">
-              A professional marketplace linking customers with verified service providers — from tutoring and real estate to youth empowerment and entrepreneurship.
-            </p>
+            <EditableText contentKey="home" path="hero.subcopy" as="p" className="lead hero__sub" multiline />
             <div className="hero__actions">
               <span className="hero__action-target" data-onboarding="hero-browse">
                 <Button to="/browse" size="lg">
-                  Explore Providers <ArrowRight size={16} />
+                  <EditableText contentKey="home" path="hero.ctaBrowse" as="span" /> <ArrowRight size={16} />
                 </Button>
               </span>
               <span className="hero__action-target" data-onboarding="hero-provider">
                 <Button to="/register?role=provider" variant="secondary" size="lg">
-                  List Your Business
+                  <EditableText contentKey="home" path="hero.ctaProvider" as="span" />
                 </Button>
               </span>
             </div>
@@ -257,37 +297,41 @@ export function Home() {
       </section>
 
       <div className="home-marquee">
-        <Marquee items={MARQUEE_ITEMS} />
+        <Marquee items={marqueeItems} />
       </div>
 
       {/* Vision + Stats */}
       <section className="section section--vision home-showcase" data-home-section="showcase">
         <div className="home-showcase__pin">
           <div className="home-showcase__intro">
-            <span className="section-label home-section__label">Our Vision</span>
+            <EditableText contentKey="home" path="vision.eyebrow" as="span" className="section-label home-section__label" />
             <h2 className="home-showcase__mega home-showcase__mega--vision">
-              <span className="home-section__title-word">{COMPANY.mission}</span>
+              <span className="home-section__title-word">
+                <EditableText contentKey="home" path="vision.title" as="span" />
+              </span>
             </h2>
-            <p className="home-section__lead">{COMPANY.vision}</p>
+            <EditableText contentKey="home" path="vision.lead" as="p" className="home-section__lead" multiline />
           </div>
           <div className="home-showcase__stage">
             <div className="container">
               <div className="stats-row">
-                <div className="stat-card home-section__item">
-                  <span className="stat-card__number">8+</span>
-                  <span className="stat-card__label">Service categories</span>
-                  <p>From academic tuition to real estate consultancy</p>
-                </div>
-                <div className="stat-card home-section__item">
-                  <span className="stat-card__number">SADC</span>
-                  <span className="stat-card__label">Expansion ready</span>
-                  <p>Built in Botswana, scaling across the region</p>
-                </div>
-                <div className="stat-card home-section__item">
-                  <span className="stat-card__number">100%</span>
-                  <span className="stat-card__label">Verified network</span>
-                  <p>Every provider reviewed by our team</p>
-                </div>
+                {stats.map((stat, index) => (
+                  <div key={stat.id} className="stat-card home-section__item">
+                    {editMode ? (
+                      <>
+                        <EditableText contentKey="home" path={`stats.${index}.number`} as="span" className="stat-card__number" />
+                        <EditableText contentKey="home" path={`stats.${index}.label`} as="span" className="stat-card__label" />
+                        <EditableText contentKey="home" path={`stats.${index}.description`} as="p" multiline />
+                      </>
+                    ) : (
+                      <>
+                        <span className="stat-card__number">{stat.number}</span>
+                        <span className="stat-card__label">{stat.label}</span>
+                        <p>{stat.description}</p>
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -300,15 +344,15 @@ export function Home() {
       <section className="section section--providers home-section">
         <div className="container">
           <header className="home-section__header section-header section-header--center">
-            <span className="section-label home-section__label">Our Network</span>
+            <EditableText contentKey="home" path="providersSection.eyebrow" as="span" className="section-label home-section__label" />
             <h2 className="display-lg home-section__title">
               <span className="home-section__title-word">
-                Featured <em className="text-gold">providers</em>
+                Featured <em className="text-gold">
+                  <EditableText contentKey="home" path="providersSection.titleEmphasis" as="span" />
+                </em>
               </span>
             </h2>
-            <p className="home-section__lead">
-              Browse verified professionals ready to help you master your field.
-            </p>
+            <EditableText contentKey="home" path="providersSection.lead" as="p" className="home-section__lead" multiline />
             <div className="home-providers-trust" aria-label="Provider network highlights">
               <span className="home-providers-trust__item">
                 <BadgeCheck size={15} aria-hidden="true" />
@@ -360,10 +404,10 @@ export function Home() {
 
           <div className="section-cta home-section__footer home-providers-footer">
             <p className="home-providers-footer__text">
-              Discover more categories, locations, and specialists on the full marketplace.
+              <EditableText contentKey="home" path="providersSection.footer" as="span" multiline />
             </p>
             <Button to="/browse" size="lg">
-              Browse all providers
+              <EditableText contentKey="home" path="providersSection.cta" as="span" />
               <ArrowRight size={16} aria-hidden="true" />
             </Button>
           </div>
@@ -408,7 +452,7 @@ export function Home() {
               <h2 className="display-lg home-section__title">
                 <span className="home-section__title-word">Ready to get started?</span>
               </h2>
-              <p className="home-section__lead">Join {COMPANY.shortName} — whether you're looking for services or offering them.</p>
+              <p className="home-section__lead">Join {company.shortName} — whether you're looking for services or offering them.</p>
             </header>
             <div className="cta-panel__actions home-section__footer">
               <Button to="/register" size="lg">Create Account</Button>

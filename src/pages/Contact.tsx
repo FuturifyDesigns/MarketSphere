@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Mail, MapPin, Phone, Clock, ArrowRight, MessageSquare, Building2, Send } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { supabase } from '../lib/supabase'
+import { EditableText } from '../components/cms/EditableText'
 import { useToast } from '../context/ToastContext'
 import {
   clearFieldError,
@@ -77,15 +78,15 @@ export function Contact() {
       <section className="contact-hero">
         <div className="container contact-hero__inner">
           <div className="contact-hero__content page-enter-hero">
-            <span className="section-label">Get in Touch</span>
+            <EditableText contentKey="contact" path="hero.eyebrow" as="span" className="section-label" />
             <h1 className="display-xl">
-              Let&apos;s start a<br />
-              <em className="text-gold">conversation</em>
+              <EditableText contentKey="contact" path="hero.title" as="span" />
+              <br />
+              <em className="text-gold">
+                <EditableText contentKey="contact" path="hero.titleEmphasis" as="span" />
+              </em>
             </h1>
-            <p className="lead">
-              Whether you need a service, want to partner with us, or have a question —
-              our team is ready to help you move forward.
-            </p>
+            <EditableText contentKey="contact" path="hero.lead" as="p" className="lead" multiline />
             <div className="contact-hero__actions">
               <Button to="/browse" size="lg">
                 Browse Providers <ArrowRight size={16} />
@@ -106,7 +107,7 @@ export function Contact() {
                 <Clock size={18} />
                 <div>
                   <strong>Response time</strong>
-                  <p>Within 1–2 business days</p>
+                  <p><EditableText contentKey="contact" path="hero.responseTime" as="span" /></p>
                 </div>
               </div>
               <div className="contact-quick__item">
@@ -137,7 +138,11 @@ export function Contact() {
                 <div className="contact-card__icon"><Mail size={20} /></div>
                 <div>
                   <strong>Email us</strong>
-                  <p>{COMPANY.email}</p>
+                  <p>
+                    <a href={`mailto:${COMPANY.email}`}>
+                      <EditableText contentKey="company" path="email" as="span" />
+                    </a>
+                  </p>
                   <span className="contact-card__hint">Best for detailed enquiries</span>
                 </div>
               </a>
@@ -155,8 +160,10 @@ export function Contact() {
                 <div className="contact-card__icon"><MapPin size={20} /></div>
                 <div>
                   <strong>Visit us</strong>
-                  <p>{COMPANY.address}</p>
-                  <span className="contact-card__hint">{COMPANY.operationalArea}</span>
+                  <p><EditableText contentKey="company" path="address" as="span" multiline /></p>
+                  <span className="contact-card__hint">
+                    <EditableText contentKey="company" path="operationalArea" as="span" />
+                  </span>
                 </div>
               </div>
             </div>

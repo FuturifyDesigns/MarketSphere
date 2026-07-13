@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, X } from 'lucide-react'
 import { MASCOT_PATHS } from '../../lib/mascots'
@@ -7,10 +7,11 @@ import type { OnboardingPlacement, OnboardingStep } from './onboardingSteps'
 import './Onboarding.css'
 
 const SPOTLIGHT_PADDING = 10
-const TOOLTIP_GAP = 14
-const TOOLTIP_MARGIN = 12
+const TOOLTIP_GAP = 16
+const TOOLTIP_MARGIN = 16
+const OVERLAP_GAP = 12
 
-type SpotlightRect = {
+type Box = {
   top: number
   left: number
   width: number
@@ -32,7 +33,7 @@ function isCenterStep(step: OnboardingStep) {
   return !step.target || step.placement === 'center'
 }
 
-function measureTarget(targetId: string | undefined): SpotlightRect | null {
+function measureTarget(targetId: string | undefined): Box | null {
   if (!targetId) return null
   const element = document.querySelector<HTMLElement>(`[data-onboarding="${targetId}"]`)
   if (!element) return null
@@ -46,67 +47,191 @@ function measureTarget(targetId: string | undefined): SpotlightRect | null {
   }
 }
 
+function boxesOverlap(a: Box, b: Box, gap = OVERLAP_GAP): boolean {
+  return !(
+    a.left + a.width + gap <= b.left ||
+    b.left + b.width + gap <= a.left ||
+    a.top + a.height + gap <= b.top ||
+    b.top + b.height + gap <= a.top
+  )
+}
+
+function clampBox(top: number, left: number, width: number, height: number): Box {
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+
+  return {
+    top: Math.max(TOOLTIP_MARGIN, Math.min(top, viewportHeight - height - TOOLTIP_MARGIN)),
+    left: Math.max(TOOLTIP_MARGIN, Math.min(left, viewportWidth - width - TOOLTIP_MARGIN)),
+    width,
+    height,
+  }
+}
+
+function positionForPlacement(spotlight: Box, placement: OnboardingPlacement, cardWidth: number, cardHeight: number) {
+  switch (placement) {
+    case 'top':
+      return {
+        top: spotlight.top - cardHeight - TOOLTIP_GAP,
+        left: spotlight.left + spotlight.width / 2 - cardWidth / 2,
+      }
+    case 'left':
+      return {
+        top: spotlight.top + spotlight.height / 2 - cardHeight / 2,
+        left: spotlight.left - cardWidth - TOOLTIP_GAP,
+      }
+    case 'right':
+      return {
+        top: spotlight.top + spotlight.height / 2 - cardHeight / 2,
+        left: spotlight.left + spotlight.width + TOOLTIP_GAP,
+      }
+    case 'bottom':
+    default:
+      return {
+        top: spotlight.top + spotlight.height + TOOLTIP_GAP,
+        left: spotlight.left + spotlight.width / 2 - cardWidth / 2,
+      }
+  }
+}
+
+function fallbackPositions(cardWidth: number, cardHeight: number): Array<{ top: number; left: number }> {
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const margin = TOOLTIP_MARGIN
+
+  return [
+    { top: margin, left: viewportWidth - cardWidth - margin },
+    { top: margin, left: margin },
+    { top: viewportHeight - cardHeight - margin, left: margin },
+    { top: viewportHeight - cardHeight - margin, left: viewportWidth - cardWidth - margin },
+    {
+      top: (viewportHeight - cardHeight) / 2,
+      left: (viewportWidth - cardWidth) / 2,
+    },
+  ]
+}
+
+function scorePlacement(
+  spotlight: Box,
+  placement: OnboardingPlacement,
+  preferred: OnboardingPlacement,
+  cardWidth: number,
+  cardHeight: number,
+): { box: Box; score: number } | null {
+  const raw = positionForPlacement(spotlight, placement, cardWidth, cardHeight)
+  const box = clampBox(raw.top, raw.left, cardWidth, cardHeight)
+  const shifted = Math.abs(box.top - raw.top) + Math.abs(box.left - raw.left)
+
+  if (boxesOverlap(box, spotlight)) return null
+
+  let score = 1000 - shifted
+  if (placement === preferred) score += 120
+
+  const viewportHeight = window.innerHeight
+  const viewportWidth = window.innerWidth
+  if (box.top <= TOOLTIP_MARGIN + 2) score += 40
+  if (box.left + box.width >= viewportWidth - TOOLTIP_MARGIN - 2) score += 20
+  if (box.top + box.height <= viewportHeight - TOOLTIP_MARGIN - 2) score += 80
+
+  return { box, score }
+}
+
+function isMobileViewport() {
+  return window.innerWidth <= 640
+}
+
 function getTooltipPosition(
-  rect: SpotlightRect | null,
-  placement: OnboardingPlacement | undefined,
+  spotlight: Box | null,
+  preferredPlacement: OnboardingPlacement | undefined,
   cardWidth: number,
   cardHeight: number,
 ): CSSProperties {
-  if (!rect) {
+  if (!spotlight) {
     return {
       position: 'fixed',
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      width: 'min(100%, 540px)',
+      width: 'min(calc(100% - 2rem), 540px)',
+      maxHeight: 'min(88dvh, 760px)',
     }
   }
 
-  const viewportWidth = window.innerWidth
+  const mobile = isMobileViewport()
+  const preferred = preferredPlacement ?? 'bottom'
+  const candidates: OnboardingPlacement[] = mobile
+    ? [preferred === 'left' || preferred === 'right' ? 'bottom' : preferred, 'top', 'bottom']
+    : [preferred, 'right', 'left', 'bottom', 'top']
+
+  let best: { box: Box; score: number } | null = null
+  for (const placement of candidates) {
+    const result = scorePlacement(spotlight, placement, preferred, cardWidth, cardHeight)
+    if (!result) continue
+    if (!best || result.score > best.score) best = result
+  }
+
+  if (!best) {
+    for (const raw of fallbackPositions(cardWidth, cardHeight)) {
+      const box = clampBox(raw.top, raw.left, cardWidth, cardHeight)
+      if (!boxesOverlap(box, spotlight)) {
+        best = { box, score: 0 }
+        break
+      }
+    }
+  }
+
+  if (!best) {
+    const box = clampBox(
+      (window.innerHeight - cardHeight) / 2,
+      (window.innerWidth - cardWidth) / 2,
+      cardWidth,
+      cardHeight,
+    )
+    best = { box, score: 0 }
+  }
+
+  if (mobile) {
+    return {
+      position: 'fixed',
+      top: best.box.top,
+      left: TOOLTIP_MARGIN,
+      right: TOOLTIP_MARGIN,
+      width: 'auto',
+      maxHeight: `min(72dvh, ${window.innerHeight - best.box.top - TOOLTIP_MARGIN}px)`,
+    }
+  }
+
+  return {
+    position: 'fixed',
+    top: best.box.top,
+    left: best.box.left,
+    width: cardWidth,
+    maxHeight: `min(68dvh, ${window.innerHeight - best.box.top - TOOLTIP_MARGIN}px)`,
+  }
+}
+
+function scrollTargetForTooltip(
+  element: HTMLElement,
+  placement: OnboardingPlacement | undefined,
+  cardHeight: number,
+) {
+  const rect = element.getBoundingClientRect()
   const viewportHeight = window.innerHeight
-  let resolvedPlacement = placement ?? 'bottom'
+  const resolved = placement ?? 'bottom'
+  const roomBelow = viewportHeight - (rect.bottom + TOOLTIP_GAP + cardHeight + TOOLTIP_MARGIN)
+  const roomAbove = rect.top - TOOLTIP_GAP - cardHeight - TOOLTIP_MARGIN
 
-  if (resolvedPlacement !== 'center') {
-    const spaceBelow = viewportHeight - (rect.top + rect.height)
-    const spaceAbove = rect.top
-    if (resolvedPlacement === 'bottom' && spaceBelow < cardHeight + TOOLTIP_GAP && spaceAbove > spaceBelow) {
-      resolvedPlacement = 'top'
-    }
-    if (resolvedPlacement === 'top' && spaceAbove < cardHeight + TOOLTIP_GAP && spaceBelow > spaceAbove) {
-      resolvedPlacement = 'bottom'
-    }
+  if (resolved === 'bottom' && roomBelow < 0) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    return
   }
 
-  const clampLeft = (left: number) =>
-    Math.max(TOOLTIP_MARGIN, Math.min(left, viewportWidth - cardWidth - TOOLTIP_MARGIN))
-
-  if (resolvedPlacement === 'top') {
-    const top = Math.max(TOOLTIP_MARGIN, rect.top - cardHeight - TOOLTIP_GAP)
-    const left = clampLeft(rect.left + rect.width / 2 - cardWidth / 2)
-    return { position: 'fixed', top, left, width: cardWidth }
+  if (resolved === 'top' && roomAbove < 0) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    return
   }
 
-  if (resolvedPlacement === 'left') {
-    const left = Math.max(TOOLTIP_MARGIN, rect.left - cardWidth - TOOLTIP_GAP)
-    const top = Math.max(
-      TOOLTIP_MARGIN,
-      Math.min(rect.top + rect.height / 2 - cardHeight / 2, viewportHeight - cardHeight - TOOLTIP_MARGIN),
-    )
-    return { position: 'fixed', top, left, width: cardWidth }
-  }
-
-  if (resolvedPlacement === 'right') {
-    const left = Math.min(rect.left + rect.width + TOOLTIP_GAP, viewportWidth - cardWidth - TOOLTIP_MARGIN)
-    const top = Math.max(
-      TOOLTIP_MARGIN,
-      Math.min(rect.top + rect.height / 2 - cardHeight / 2, viewportHeight - cardHeight - TOOLTIP_MARGIN),
-    )
-    return { position: 'fixed', top, left, width: cardWidth }
-  }
-
-  const top = Math.min(rect.top + rect.height + TOOLTIP_GAP, viewportHeight - cardHeight - TOOLTIP_MARGIN)
-  const left = clampLeft(rect.left + rect.width / 2 - cardWidth / 2)
-  return { position: 'fixed', top, left, width: cardWidth }
+  element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
 }
 
 export function InteractiveOnboarding({
@@ -120,8 +245,9 @@ export function InteractiveOnboarding({
   showSkip = true,
 }: InteractiveOnboardingProps) {
   const maskId = useId().replace(/:/g, '')
+  const cardRef = useRef<HTMLDivElement>(null)
   const [stepIndex, setStepIndex] = useState(0)
-  const [spotlight, setSpotlight] = useState<SpotlightRect | null>(null)
+  const [spotlight, setSpotlight] = useState<Box | null>(null)
   const [tooltipStyle, setTooltipStyle] = useState<CSSProperties>({})
   const step = steps[stepIndex]
   const isLast = stepIndex >= steps.length - 1
@@ -137,7 +263,8 @@ export function InteractiveOnboarding({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: 'min(100%, 540px)',
+        width: 'min(calc(100% - 2rem), 540px)',
+        maxHeight: 'min(88dvh, 760px)',
       })
       return
     }
@@ -145,9 +272,13 @@ export function InteractiveOnboarding({
     const rect = measureTarget(step.target)
     setSpotlight(rect)
 
-    const cardWidth = Math.min(420, window.innerWidth - TOOLTIP_MARGIN * 2)
-    const estimatedHeight = 360
-    setTooltipStyle(getTooltipPosition(rect, step.placement, cardWidth, estimatedHeight))
+    const cardWidth = Math.min(
+      cardRef.current?.offsetWidth || Math.min(400, window.innerWidth - TOOLTIP_MARGIN * 2),
+      window.innerWidth - TOOLTIP_MARGIN * 2,
+    )
+    const cardHeight = cardRef.current?.offsetHeight || 420
+
+    setTooltipStyle(getTooltipPosition(rect, step.placement, cardWidth, cardHeight))
   }, [step])
 
   useEffect(() => {
@@ -168,25 +299,38 @@ export function InteractiveOnboarding({
       ? document.querySelector<HTMLElement>(`[data-onboarding="${step.target}"]`)
       : null
 
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    if (element && !isCenterStep(step)) {
+      scrollTargetForTooltip(element, step.placement, cardRef.current?.offsetHeight || 420)
+    }
 
-    const timers = [0, 120, 320, 600].map((delay) => window.setTimeout(refreshSpotlight, delay))
+    refreshSpotlight()
+
+    const timers = [80, 200, 420, 700].map((delay) => window.setTimeout(refreshSpotlight, delay))
 
     const onLayoutChange = () => refreshSpotlight()
     window.addEventListener('resize', onLayoutChange)
     window.addEventListener('scroll', onLayoutChange, true)
 
-    let observer: ResizeObserver | undefined
-    if (element && typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(onLayoutChange)
-      observer.observe(element)
+    let targetObserver: ResizeObserver | undefined
+    let cardObserver: ResizeObserver | undefined
+
+    if (typeof ResizeObserver !== 'undefined') {
+      if (element) {
+        targetObserver = new ResizeObserver(onLayoutChange)
+        targetObserver.observe(element)
+      }
+      if (cardRef.current) {
+        cardObserver = new ResizeObserver(onLayoutChange)
+        cardObserver.observe(cardRef.current)
+      }
     }
 
     return () => {
       timers.forEach((timer) => window.clearTimeout(timer))
       window.removeEventListener('resize', onLayoutChange)
       window.removeEventListener('scroll', onLayoutChange, true)
-      observer?.disconnect()
+      targetObserver?.disconnect()
+      cardObserver?.disconnect()
     }
   }, [open, step, stepIndex, onStepEnter, refreshSpotlight])
 
@@ -260,6 +404,7 @@ export function InteractiveOnboarding({
           ) : null}
 
           <motion.div
+            ref={cardRef}
             className={`onboarding-card${centered ? ' onboarding-card--centered' : ' onboarding-card--docked'}`}
             style={tooltipStyle}
             role="dialog"

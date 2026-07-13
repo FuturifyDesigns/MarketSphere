@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, BadgeCheck, MapPin } from 'lucide-react'
+import { ArrowRight, BriefcaseBusiness, Images, Mail, MapPin, Phone } from 'lucide-react'
 import type { Provider } from '../../lib/types'
 import { getProviderPrimaryCategory } from '../../lib/providerCategory'
 import './ProviderCard.css'
@@ -12,8 +12,25 @@ interface ProviderCardProps {
   variant?: 'default' | 'featured' | 'showcase'
 }
 
+function getCardImage(provider: Provider) {
+  return provider.cover_url || provider.gallery_urls?.[0] || provider.logo_url || null
+}
+
+function getServiceTitles(provider: Provider, limit = 3) {
+  return (provider.provider_services || [])
+    .map((service) => service.title.trim())
+    .filter(Boolean)
+    .slice(0, limit)
+}
+
 export function ProviderCard({ provider, index = 0, disableAnimation = false, variant = 'default' }: ProviderCardProps) {
   const primaryCategory = getProviderPrimaryCategory(provider)
+  const cardImage = getCardImage(provider)
+  const serviceCount = provider.provider_services?.length || 0
+  const galleryCount = provider.gallery_urls?.length || 0
+  const serviceTitles = getServiceTitles(provider, variant === 'showcase' ? 3 : 2)
+  const descLimit = variant === 'showcase' ? 180 : variant === 'featured' ? 120 : 100
+
   const cardClassName =
     variant === 'showcase'
       ? 'provider-card provider-card--showcase'
@@ -24,19 +41,16 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
   const content = (
     <Link to={`/provider/${provider.id}`} className="provider-card__link">
       <div className="provider-card__image-wrap">
-        {provider.logo_url ? (
-          <img src={provider.logo_url} alt="" className="provider-card__image" />
+        {cardImage ? (
+          <img src={cardImage} alt="" className="provider-card__image" />
         ) : (
           <div className="provider-card__placeholder">
             {provider.business_name.charAt(0)}
           </div>
         )}
         {primaryCategory ? <span className="provider-card__category">{primaryCategory.name}</span> : null}
-        {variant === 'showcase' ? (
-          <span className="provider-card__verified">
-            <BadgeCheck size={13} aria-hidden="true" />
-            Verified
-          </span>
+        {provider.logo_url && cardImage !== provider.logo_url ? (
+          <img src={provider.logo_url} alt="" className="provider-card__logo-badge" />
         ) : null}
       </div>
       <div className="provider-card__body">
@@ -46,12 +60,63 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
             <MapPin size={13} /> {provider.location}
           </p>
         )}
+
+        {(variant === 'showcase' || variant === 'featured') && (serviceCount > 0 || galleryCount > 0) ? (
+          <div className="provider-card__meta">
+            {serviceCount > 0 ? (
+              <span className="provider-card__meta-item">
+                <BriefcaseBusiness size={13} aria-hidden="true" />
+                {serviceCount} {serviceCount === 1 ? 'service' : 'services'}
+              </span>
+            ) : null}
+            {galleryCount > 0 ? (
+              <span className="provider-card__meta-item">
+                <Images size={13} aria-hidden="true" />
+                {galleryCount} {galleryCount === 1 ? 'photo' : 'photos'}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {serviceTitles.length > 0 ? (
+          <ul className="provider-card__services" aria-label="Services offered">
+            {serviceTitles.map((title) => (
+              <li key={title}>{title}</li>
+            ))}
+          </ul>
+        ) : null}
+
         {provider.description && (
           <p className="provider-card__desc">
-            {provider.description.slice(0, variant === 'showcase' ? 160 : 100)}
-            {provider.description.length > (variant === 'showcase' ? 160 : 100) ? '…' : ''}
+            {provider.description.slice(0, descLimit)}
+            {provider.description.length > descLimit ? '…' : ''}
           </p>
         )}
+
+        {variant === 'showcase' && (provider.contact_phone || provider.contact_email) ? (
+          <div className="provider-card__contact">
+            {provider.contact_phone ? (
+              <span className="provider-card__contact-item">
+                <Phone size={13} aria-hidden="true" />
+                {provider.contact_phone}
+              </span>
+            ) : null}
+            {provider.contact_email ? (
+              <span className="provider-card__contact-item">
+                <Mail size={13} aria-hidden="true" />
+                {provider.contact_email}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {variant === 'default' && serviceCount > 0 ? (
+          <p className="provider-card__service-count">
+            <BriefcaseBusiness size={12} aria-hidden="true" />
+            {serviceCount} {serviceCount === 1 ? 'service listed' : 'services listed'}
+          </p>
+        ) : null}
+
         {variant === 'showcase' ? (
           <span className="provider-card__cta">
             View profile

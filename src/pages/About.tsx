@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { COMPANY, LOGO_PATH } from '../lib/constants'
+import { LOGO_PATH } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { AboutCompanyTree } from '../components/about/AboutCompanyTree'
+import { EditableText } from '../components/cms/EditableText'
 import { initAboutTreeAnimation } from '../animations/aboutTreeReveal'
 import { onIntroComplete } from '../lib/intro'
 import './About.css'
@@ -36,12 +37,15 @@ export function About() {
       <section className="about-hero">
         <div className="container about-hero__inner">
           <div className="about-hero__content page-enter-hero">
-            <span className="section-label">About Us</span>
+            <EditableText contentKey="about" path="hero.eyebrow" as="span" className="section-label" />
             <h1 className="display-xl">
-              Building Botswana&apos;s<br />
-              <em className="text-gold">service marketplace</em>
+              <EditableText contentKey="about" path="hero.title" as="span" />
+              <br />
+              <em className="text-gold">
+                <EditableText contentKey="about" path="hero.titleEmphasis" as="span" />
+              </em>
             </h1>
-            <p className="lead">{COMPANY.tagline}</p>
+            <EditableText contentKey="about" path="hero.lead" as="p" className="lead" />
             <Button to="/contact" size="lg">
               Work With Us <ArrowRight size={16} />
             </Button>

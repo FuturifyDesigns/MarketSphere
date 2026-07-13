@@ -38,6 +38,20 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  z-index: 1;
+}
+
+.provider-card__logo-badge {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  z-index: 1;
 }
 
 .provider-card__image {
@@ -90,6 +104,68 @@
   color: var(--text-secondary);
 }
 
+.provider-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.provider-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.provider-card__services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  list-style: none;
+}
+
+.provider-card__services li {
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-gold) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 24%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.provider-card__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.provider-card__contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.provider-card__service-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
 /* Featured carousel card — compact horizontal layout */
 .provider-card--featured .provider-card__link {
   display: grid;
@@ -137,6 +213,19 @@
 .provider-card--featured .provider-card__location {
   margin-bottom: 0.45rem;
   font-size: 0.8125rem;
+}
+
+.provider-card--featured .provider-card__meta {
+  margin-bottom: 0.45rem;
+}
+
+.provider-card--featured .provider-card__services {
+  margin-bottom: 0.5rem;
+}
+
+.provider-card--featured .provider-card__services li {
+  font-size: 0.625rem;
+  padding: 0.18rem 0.45rem;
 }
 
 .provider-card--featured .provider-card__desc {
@@ -221,22 +310,11 @@
   backdrop-filter: blur(8px);
 }
 
-.provider-card--showcase .provider-card__verified {
-  position: absolute;
-  right: 1rem;
+.provider-card--showcase .provider-card__logo-badge {
+  left: 1rem;
   bottom: 1rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(14, 17, 22, 0.78);
-  color: var(--color-gold);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  backdrop-filter: blur(8px);
+  width: 3rem;
+  height: 3rem;
 }
 
 .provider-card--showcase .provider-card__body {
@@ -258,11 +336,27 @@
   margin-bottom: 0.65rem;
 }
 
+.provider-card--showcase .provider-card__meta {
+  margin-bottom: 0.7rem;
+}
+
+.provider-card--showcase .provider-card__meta-item {
+  font-size: 0.8125rem;
+}
+
+.provider-card--showcase .provider-card__services li {
+  font-size: 0.75rem;
+  padding: 0.28rem 0.65rem;
+}
+
 .provider-card--showcase .provider-card__desc {
   font-size: 0.9rem;
   line-height: 1.65;
-  -webkit-line-clamp: 4;
-  margin-bottom: 1rem;
+  -webkit-line-clamp: 3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
 }
 
 .provider-card--showcase .provider-card__cta {

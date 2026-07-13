@@ -5,6 +5,7 @@ export const UPLOAD_LIMITS = {
   logo: { maxWidth: 768, maxHeight: 768, maxBytes: 400_000, quality: 0.88 },
   cover: { maxWidth: 1920, maxHeight: 1080, maxBytes: 900_000, quality: 0.9 },
   gallery: { maxWidth: 1920, maxHeight: 1440, maxBytes: 900_000, quality: 0.9, maxCount: 6 },
+  site: { maxWidth: 1920, maxHeight: 1920, maxBytes: 900_000, quality: 0.88 },
 } as const
 
 const ACCEPTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
@@ -116,5 +117,12 @@ export function prepareCoverImage(file: File) {
   return compressImage(file, {
     ...UPLOAD_LIMITS.cover,
     fileName: `cover-${crypto.randomUUID()}.jpg`,
+  })
+}
+
+export function prepareSiteImage(file: File) {
+  return compressImage(file, {
+    ...UPLOAD_LIMITS.site,
+    fileName: `site-${crypto.randomUUID()}.jpg`,
   })
 }

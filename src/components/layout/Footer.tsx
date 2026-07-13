@@ -1,21 +1,41 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react'
-import { COMPANY, FUTURIFY_DESIGNS, LOGO_PATH } from '../../lib/constants'
+import { FUTURIFY_DESIGNS, LOGO_PATH } from '../../lib/constants'
 import { useCookieConsent } from '../../context/CookieConsentContext'
+import { useSiteContent } from '../../context/SiteContentContext'
+import { EditableText } from '../cms/EditableText'
 import { Button } from '../ui/Button'
 import './Footer.css'
 
+type CompanyBlock = {
+  name: string
+  shortName: string
+  mission: string
+  registration: string
+  address: string
+  email: string
+  phones: string[]
+  operationalArea: string
+  footer?: {
+    ctaEyebrow: string
+    ctaTitle: string
+    ctaDesc: string
+  }
+}
+
 export function Footer() {
   const { openCookieSettings } = useCookieConsent()
+  const { getBlock } = useSiteContent()
+  const company = getBlock<CompanyBlock>('company')
 
   return (
     <footer className="footer">
       <div className="footer__cta-band">
         <div className="container footer__cta-inner">
           <div>
-            <p className="footer__cta-eyebrow">Market Sphere Group</p>
-            <h2 className="footer__cta-title">{COMPANY.tagline}</h2>
-            <p className="footer__cta-desc">Connecting Botswana with verified professionals across every field.</p>
+            <EditableText contentKey="company" path="footer.ctaEyebrow" as="p" className="footer__cta-eyebrow" />
+            <EditableText contentKey="company" path="footer.ctaTitle" as="h2" className="footer__cta-title" />
+            <EditableText contentKey="company" path="footer.ctaDesc" as="p" className="footer__cta-desc" multiline />
           </div>
           <Button to="/register" size="lg">
             Get Started <ArrowUpRight size={16} />
@@ -27,9 +47,9 @@ export function Footer() {
         <div className="footer__grid">
           <div className="footer__brand">
             <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" className="footer__logo" loading="eager" decoding="sync" />
-            <h3>{COMPANY.shortName}</h3>
-            <p className="footer__tagline">{COMPANY.mission}</p>
-            <p className="footer__reg">{COMPANY.registration}</p>
+            <EditableText contentKey="company" path="shortName" as="h3" />
+            <EditableText contentKey="company" path="mission" as="p" className="footer__tagline" multiline />
+            <EditableText contentKey="company" path="registration" as="p" className="footer__reg" />
           </div>
 
           <div className="footer__col">
@@ -59,10 +79,23 @@ export function Footer() {
 
           <div className="footer__col footer__contact">
             <h4>Reach Us</h4>
-            <p><MapPin size={15} /> {COMPANY.address}</p>
-            <p><Mail size={15} /> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
-            {COMPANY.phones.map((p) => (
-              <p key={p}><Phone size={15} /> <a href={`tel:${p.replace(/\s/g, '')}`}>{p}</a></p>
+            <p>
+              <MapPin size={15} />{' '}
+              <EditableText contentKey="company" path="address" as="span" multiline />
+            </p>
+            <p>
+              <Mail size={15} />{' '}
+              <a href={`mailto:${company.email}`}>
+                <EditableText contentKey="company" path="email" as="span" />
+              </a>
+            </p>
+            {(company.phones || []).map((p, index) => (
+              <p key={p}>
+                <Phone size={15} />{' '}
+                <a href={`tel:${p.replace(/\s/g, '')}`}>
+                  <EditableText contentKey="company" path={`phones.${index}`} as="span" />
+                </a>
+              </p>
             ))}
           </div>
         </div>
@@ -71,8 +104,13 @@ export function Footer() {
       <div className="footer__bottom">
         <div className="container footer__bottom-inner">
           <div className="footer__bottom-copy">
-            <p>&copy; {new Date().getFullYear()} {COMPANY.name}</p>
-            <p>Serving {COMPANY.operationalArea}</p>
+            <p>
+              &copy; {new Date().getFullYear()}{' '}
+              <EditableText contentKey="company" path="name" as="span" />
+            </p>
+            <p>
+              Serving <EditableText contentKey="company" path="operationalArea" as="span" />
+            </p>
           </div>
           <p className="footer__credit">
             Built by{' '}

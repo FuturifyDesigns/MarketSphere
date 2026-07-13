@@ -3,6 +3,7 @@ import { Navbar } from './Navbar'
 import { Footer } from './Footer'
 import { PageTransition } from './PageTransition'
 import { AccountNoticeListener } from '../auth/AccountNoticeListener'
+import { SiteEditToolbar } from '../cms/SiteEditToolbar'
 import { useLenis } from '../../hooks/useLenis'
 import { usePageTheme } from '../../hooks/usePageTheme'
 import { resetIntroActiveClass } from '../../lib/intro'
@@ -27,6 +28,7 @@ export function Layout() {
         <PageTransition />
       </main>
       <Footer />
+      <SiteEditToolbar />
     </div>
   )
 }

@@ -67,7 +67,7 @@ export const PROVIDER_ONBOARDING_STEPS: OnboardingStep[] = [
     mascot: 'explaining',
     target: 'provider-tab-profile',
     tab: 'profile',
-    placement: 'bottom',
+    placement: 'right',
     description: 'Start on Profile to set up your business details, branding, and gallery.',
   },
   {
@@ -75,7 +75,7 @@ export const PROVIDER_ONBOARDING_STEPS: OnboardingStep[] = [
     mascot: 'explaining',
     target: 'provider-branding',
     tab: 'profile',
-    placement: 'top',
+    placement: 'right',
     description: 'Upload a logo, cover image, and gallery photos so customers trust your listing immediately.',
   },
   {
@@ -83,7 +83,7 @@ export const PROVIDER_ONBOARDING_STEPS: OnboardingStep[] = [
     mascot: 'explaining',
     target: 'provider-tab-services',
     tab: 'services',
-    placement: 'bottom',
+    placement: 'right',
     description: 'Add the services you offer — we can auto-suggest a category from your business details.',
   },
   {
@@ -91,7 +91,7 @@ export const PROVIDER_ONBOARDING_STEPS: OnboardingStep[] = [
     mascot: 'explaining',
     target: 'provider-services',
     tab: 'services',
-    placement: 'top',
+    placement: 'right',
     description: 'List clear titles and descriptions so customers know exactly what you provide.',
   },
   {
@@ -99,7 +99,7 @@ export const PROVIDER_ONBOARDING_STEPS: OnboardingStep[] = [
     mascot: 'explaining',
     target: 'provider-tab-inbox',
     tab: 'inbox',
-    placement: 'bottom',
+    placement: 'right',
     description: 'All customer enquiries land here. You will also get real-time bell notifications.',
   },
   {

@@ -3,6 +3,8 @@ import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CookieConsentProvider } from './context/CookieConsentContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { SiteContentProvider } from './context/SiteContentContext'
+import { SiteEditProvider } from './context/SiteEditContext'
 import { ToastProvider } from './context/ToastContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
@@ -75,6 +77,8 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <CookieConsentProvider>
+          <SiteContentProvider>
+            <SiteEditProvider>
           <SiteIntro />
           <HashRouter>
             <ScrollToTop />
@@ -126,6 +130,8 @@ export default function App() {
         </Routes>
             </NotificationProvider>
       </HashRouter>
+            </SiteEditProvider>
+          </SiteContentProvider>
         </CookieConsentProvider>
       </ToastProvider>
     </AuthProvider>

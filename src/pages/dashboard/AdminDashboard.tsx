@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   Mail,
   MessageSquare,
+  Pencil,
   Quote,
   Shield,
   Users,
@@ -19,6 +20,7 @@ import { banUser, deleteUser, unbanUser } from '../../lib/adminUsers'
 import { isProfileBanned } from '../../lib/accountGuard'
 import { supabase } from '../../lib/supabase'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
+import { SiteContentPanel } from '../../components/admin/SiteContentPanel'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
@@ -44,7 +46,7 @@ import './Dashboard.css'
 
 type CategoryFields = 'name' | 'slug' | 'description'
 type TestimonialFields = 'client_name' | 'service_type' | 'content'
-type AdminTab = 'overview' | 'providers' | 'users' | 'enquiries' | 'contacts' | 'categories' | 'testimonials'
+type AdminTab = 'overview' | 'providers' | 'users' | 'enquiries' | 'contacts' | 'categories' | 'testimonials' | 'site-content'
 
 type AdminStats = {
   users: number
@@ -77,6 +79,7 @@ const ADMIN_TABS: Array<{ id: AdminTab; label: string; icon: typeof Users }> = [
   { id: 'contacts', label: 'Contacts', icon: Mail },
   { id: 'categories', label: 'Categories', icon: FolderOpen },
   { id: 'testimonials', label: 'Testimonials', icon: Quote },
+  { id: 'site-content', label: 'Site Content', icon: Pencil },
 ]
 
 export function AdminDashboard() {
@@ -677,6 +680,8 @@ export function AdminDashboard() {
             </section>
           </div>
         )}
+
+        {tab === 'site-content' && <SiteContentPanel />}
 
         {tab === 'testimonials' && (
           <div className="admin-dashboard__split">
