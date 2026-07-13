@@ -34,31 +34,10 @@ export function LegalDocument({
   const navigate = useNavigate()
   const rightsSectionId = 'your-rights'
   const hasRightsSection = sections.some((section) => section.id === rightsSectionId)
-  const [activeId, setActiveId] = useState(sections[0]?.id ?? '')
+  const [activeId, setActiveId] = useState('')
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(sections.map((section, index) => [section.id, index === 0])),
   )
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-        if (visible[0]?.target.id) {
-          setActiveId(visible[0].target.id)
-        }
-      },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0.1, 0.35, 0.6] },
-    )
-
-    sections.forEach((section) => {
-      const element = document.getElementById(section.id)
-      if (element) observer.observe(element)
-    })
-
-    return () => observer.disconnect()
-  }, [sections])
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }))
