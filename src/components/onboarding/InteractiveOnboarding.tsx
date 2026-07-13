@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, X } from 'lucide-react'
 import { MASCOT_PATHS } from '../../lib/mascots'
+import { scrollTourAfterLayout } from '../../lib/tourScroll'
 import { Button } from '../ui/Button'
 import type { OnboardingPlacement, OnboardingStep } from './onboardingSteps'
 import './Onboarding.css'
@@ -140,6 +141,32 @@ function isMobileViewport() {
   return window.innerWidth <= 640
 }
 
+function getCenteredTooltipStyle(cardHeight: number): CSSProperties {
+  const viewportHeight = window.innerHeight
+  const width = `min(calc(100% - ${TOOLTIP_MARGIN * 2}px), 540px)`
+  const maxHeight = Math.min(viewportHeight - TOOLTIP_MARGIN * 2, 760)
+
+  if (cardHeight > 0 && cardHeight <= viewportHeight - TOOLTIP_MARGIN * 2) {
+    return {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width,
+      maxHeight,
+    }
+  }
+
+  return {
+    position: 'fixed',
+    top: TOOLTIP_MARGIN,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width,
+    maxHeight,
+  }
+}
+
 function getTooltipPosition(
   spotlight: Box | null,
   preferredPlacement: OnboardingPlacement | undefined,
@@ -147,14 +174,7 @@ function getTooltipPosition(
   cardHeight: number,
 ): CSSProperties {
   if (!spotlight) {
-    return {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: 'min(calc(100% - 2rem), 540px)',
-      maxHeight: 'min(88dvh, 760px)',
-    }
+    return getCenteredTooltipStyle(cardHeight)
   }
 
   const mobile = isMobileViewport()
@@ -214,24 +234,15 @@ function scrollTargetForTooltip(
   element: HTMLElement,
   placement: OnboardingPlacement | undefined,
   cardHeight: number,
+  cardWidth: number,
+  centered: boolean,
 ) {
-  const rect = element.getBoundingClientRect()
-  const viewportHeight = window.innerHeight
-  const resolved = placement ?? 'bottom'
-  const roomBelow = viewportHeight - (rect.bottom + TOOLTIP_GAP + cardHeight + TOOLTIP_MARGIN)
-  const roomAbove = rect.top - TOOLTIP_GAP - cardHeight - TOOLTIP_MARGIN
-
-  if (resolved === 'bottom' && roomBelow < 0) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
-    return
-  }
-
-  if (resolved === 'top' && roomAbove < 0) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
-    return
-  }
-
-  element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+  scrollTourAfterLayout(element, {
+    centered,
+    cardHeight,
+    cardWidth,
+    placement: placement ?? 'right',
+  })
 }
 
 export function InteractiveOnboarding({
@@ -256,28 +267,20 @@ export function InteractiveOnboarding({
   const centered = step ? isCenterStep(step) : true
 
   const refreshSpotlight = useCallback(() => {
+    const cardHeight = cardRef.current?.offsetHeight || 420
+    const cardWidth = Math.min(
+      cardRef.current?.offsetWidth || Math.min(400, window.innerWidth - TOOLTIP_MARGIN * 2),
+      window.innerWidth - TOOLTIP_MARGIN * 2,
+    )
+
     if (!step || isCenterStep(step)) {
       setSpotlight(null)
-      setTooltipStyle({
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 'min(calc(100% - 2rem), 540px)',
-        maxHeight: 'min(88dvh, 760px)',
-      })
+      setTooltipStyle(getCenteredTooltipStyle(cardHeight))
       return
     }
 
     const rect = measureTarget(step.target)
     setSpotlight(rect)
-
-    const cardWidth = Math.min(
-      cardRef.current?.offsetWidth || Math.min(400, window.innerWidth - TOOLTIP_MARGIN * 2),
-      window.innerWidth - TOOLTIP_MARGIN * 2,
-    )
-    const cardHeight = cardRef.current?.offsetHeight || 420
-
     setTooltipStyle(getTooltipPosition(rect, step.placement, cardWidth, cardHeight))
   }, [step])
 
@@ -295,17 +298,32 @@ export function InteractiveOnboarding({
 
     onStepEnter?.(step, stepIndex)
 
+    const centeredStep = isCenterStep(step)
     const element = step.target
       ? document.querySelector<HTMLElement>(`[data-onboarding="${step.target}"]`)
       : null
 
-    if (element && !isCenterStep(step)) {
-      scrollTargetForTooltip(element, step.placement, cardRef.current?.offsetHeight || 420)
+    const cardHeight = cardRef.current?.offsetHeight || 420
+    const cardWidth = Math.min(
+      cardRef.current?.offsetWidth || Math.min(400, window.innerWidth - TOOLTIP_MARGIN * 2),
+      window.innerWidth - TOOLTIP_MARGIN * 2,
+    )
+
+    const layoutDelay = step.tab ? 200 : centeredStep ? 0 : 60
+
+    const runScrollAndMeasure = () => {
+      if (centeredStep) {
+        scrollTourAfterLayout(null, { centered: true }, refreshSpotlight)
+      } else if (element) {
+        scrollTargetForTooltip(element, step.placement, cardHeight, cardWidth, false)
+      }
+      refreshSpotlight()
     }
 
-    refreshSpotlight()
-
-    const timers = [80, 200, 420, 700].map((delay) => window.setTimeout(refreshSpotlight, delay))
+    const startTimer = window.setTimeout(runScrollAndMeasure, layoutDelay)
+    const timers = [layoutDelay + 120, layoutDelay + 320, layoutDelay + 620, layoutDelay + 950].map((delay) =>
+      window.setTimeout(refreshSpotlight, delay),
+    )
 
     const onLayoutChange = () => refreshSpotlight()
     window.addEventListener('resize', onLayoutChange)
@@ -326,6 +344,7 @@ export function InteractiveOnboarding({
     }
 
     return () => {
+      window.clearTimeout(startTimer)
       timers.forEach((timer) => window.clearTimeout(timer))
       window.removeEventListener('resize', onLayoutChange)
       window.removeEventListener('scroll', onLayoutChange, true)

@@ -26,6 +26,126 @@
   background: var(--color-sand);
 }
 
+.provider-card__gallery {
+  position: absolute;
+  inset: 0;
+}
+
+.provider-card__gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.provider-card__gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(14, 17, 22, 0.62);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.provider-card__gallery-nav:hover {
+  background: rgba(14, 17, 22, 0.82);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.provider-card__gallery-nav--prev {
+  left: 0.65rem;
+}
+
+.provider-card__gallery-nav--next {
+  right: 0.65rem;
+}
+
+.provider-card__gallery-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 5.5rem;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.provider-card__gallery-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.provider-card__gallery-dot--active {
+  width: 1.1rem;
+  background: var(--color-gold);
+}
+
+.provider-card__gallery-counter {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(14, 17, 22, 0.72);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(8px);
+}
+
+.provider-card__image-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 2.5rem 1rem 1rem;
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 12, 16, 0.55) 35%, rgba(10, 12, 16, 0.92) 100%);
+  pointer-events: none;
+}
+
+.provider-card__image-overlay-name {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.2vw, 1.45rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.provider-card__image-overlay-location,
+.provider-card__image-overlay-contact {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+  font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.92);
+  word-break: break-word;
+}
+
+.provider-card__image-overlay-location {
+  color: var(--color-gold);
+}
+
 .provider-card__category {
   position: absolute;
   left: 0.75rem;
@@ -38,7 +158,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  z-index: 1;
+  z-index: 4;
 }
 
 .provider-card__logo-badge {
@@ -312,61 +432,71 @@
 
 .provider-card--showcase .provider-card__logo-badge {
   left: 1rem;
-  bottom: 1rem;
+  bottom: 6.5rem;
   width: 3rem;
   height: 3rem;
+  z-index: 3;
+}
+
+.provider-card--showcase .provider-card__gallery-dots {
+  bottom: 5.75rem;
 }
 
 .provider-card--showcase .provider-card__body {
-  padding: 1.5rem 1.6rem;
+  padding: 1.65rem 1.75rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .provider-card--showcase .provider-card__body h3 {
-  font-size: clamp(1.25rem, 2.5vw, 1.6rem);
-  margin-bottom: 0.45rem;
-  line-height: 1.15;
+  font-size: clamp(1.45rem, 2.8vw, 1.85rem);
+  margin-bottom: 0.5rem;
+  line-height: 1.12;
 }
 
 .provider-card--showcase .provider-card__location {
-  font-size: 0.875rem;
-  margin-bottom: 0.65rem;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .provider-card--showcase .provider-card__meta {
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.8rem;
 }
 
 .provider-card--showcase .provider-card__meta-item {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
 }
 
 .provider-card--showcase .provider-card__services li {
-  font-size: 0.75rem;
-  padding: 0.28rem 0.65rem;
+  font-size: 0.8125rem;
+  padding: 0.32rem 0.7rem;
 }
 
 .provider-card--showcase .provider-card__desc {
-  font-size: 0.9rem;
-  line-height: 1.65;
-  -webkit-line-clamp: 3;
+  font-size: 1rem;
+  line-height: 1.7;
+  -webkit-line-clamp: 4;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.provider-card--showcase .provider-card__contact-item {
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 
 .provider-card--showcase .provider-card__cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   margin-top: auto;
   width: fit-content;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 700;
   color: var(--color-gold);
   transition: gap 0.2s ease;
 }
@@ -390,11 +520,30 @@
     min-height: 12.5rem;
   }
 
+  .provider-card--showcase .provider-card__image-overlay-name {
+    font-size: 1.05rem;
+  }
+
+  .provider-card--showcase .provider-card__logo-badge {
+    bottom: 5.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .provider-card--showcase .provider-card__gallery-dots {
+    bottom: 4.75rem;
+  }
+
   .provider-card--showcase .provider-card__body {
     padding: 1.2rem 1.15rem 1.35rem;
   }
 
+  .provider-card--showcase .provider-card__body h3 {
+    font-size: 1.3rem;
+  }
+
   .provider-card--showcase .provider-card__desc {
     -webkit-line-clamp: 3;
+    font-size: 0.9375rem;
   }
 }

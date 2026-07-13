@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, BriefcaseBusiness, Images, Mail, MapPin, Phone } from 'lucide-react'
 import type { Provider } from '../../lib/types'
 import { getProviderPrimaryCategory } from '../../lib/providerCategory'
+import { ProviderCardGallery } from './ProviderCardGallery'
 import './ProviderCard.css'
 
 interface ProviderCardProps {
@@ -12,8 +13,21 @@ interface ProviderCardProps {
   variant?: 'default' | 'featured' | 'showcase'
 }
 
-function getCardImage(provider: Provider) {
-  return provider.cover_url || provider.gallery_urls?.[0] || provider.logo_url || null
+function getSlideImages(provider: Provider) {
+  const slides: string[] = []
+  const seen = new Set<string>()
+
+  const add = (url: string | null | undefined) => {
+    if (!url || seen.has(url)) return
+    seen.add(url)
+    slides.push(url)
+  }
+
+  add(provider.cover_url)
+  for (const url of provider.gallery_urls || []) add(url)
+  if (!slides.length) add(provider.logo_url)
+
+  return slides
 }
 
 function getServiceTitles(provider: Provider, limit = 3) {
@@ -25,11 +39,13 @@ function getServiceTitles(provider: Provider, limit = 3) {
 
 export function ProviderCard({ provider, index = 0, disableAnimation = false, variant = 'default' }: ProviderCardProps) {
   const primaryCategory = getProviderPrimaryCategory(provider)
-  const cardImage = getCardImage(provider)
+  const slideImages = getSlideImages(provider)
+  const cardImage = slideImages[0] || null
   const serviceCount = provider.provider_services?.length || 0
   const galleryCount = provider.gallery_urls?.length || 0
   const serviceTitles = getServiceTitles(provider, variant === 'showcase' ? 3 : 2)
-  const descLimit = variant === 'showcase' ? 180 : variant === 'featured' ? 120 : 100
+  const descLimit = variant === 'showcase' ? 220 : variant === 'featured' ? 120 : 100
+  const useGallery = variant === 'showcase' && slideImages.length > 1
 
   const cardClassName =
     variant === 'showcase'
@@ -41,23 +57,52 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
   const content = (
     <Link to={`/provider/${provider.id}`} className="provider-card__link">
       <div className="provider-card__image-wrap">
-        {cardImage ? (
+        {useGallery ? (
+          <ProviderCardGallery images={slideImages} />
+        ) : cardImage ? (
           <img src={cardImage} alt="" className="provider-card__image" />
         ) : (
           <div className="provider-card__placeholder">
             {provider.business_name.charAt(0)}
           </div>
         )}
+
         {primaryCategory ? <span className="provider-card__category">{primaryCategory.name}</span> : null}
+
         {provider.logo_url && cardImage !== provider.logo_url ? (
           <img src={provider.logo_url} alt="" className="provider-card__logo-badge" />
         ) : null}
+
+        {variant === 'showcase' ? (
+          <div className="provider-card__image-overlay">
+            <p className="provider-card__image-overlay-name">{provider.business_name}</p>
+            {provider.location ? (
+              <p className="provider-card__image-overlay-location">
+                <MapPin size={15} aria-hidden="true" />
+                {provider.location}
+              </p>
+            ) : null}
+            {provider.contact_phone ? (
+              <p className="provider-card__image-overlay-contact">
+                <Phone size={15} aria-hidden="true" />
+                {provider.contact_phone}
+              </p>
+            ) : null}
+            {provider.contact_email ? (
+              <p className="provider-card__image-overlay-contact">
+                <Mail size={15} aria-hidden="true" />
+                {provider.contact_email}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
+
       <div className="provider-card__body">
         <h3>{provider.business_name}</h3>
         {provider.location && (
           <p className="provider-card__location">
-            <MapPin size={13} /> {provider.location}
+            <MapPin size={14} /> {provider.location}
           </p>
         )}
 
@@ -65,13 +110,13 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
           <div className="provider-card__meta">
             {serviceCount > 0 ? (
               <span className="provider-card__meta-item">
-                <BriefcaseBusiness size={13} aria-hidden="true" />
+                <BriefcaseBusiness size={14} aria-hidden="true" />
                 {serviceCount} {serviceCount === 1 ? 'service' : 'services'}
               </span>
             ) : null}
             {galleryCount > 0 ? (
               <span className="provider-card__meta-item">
-                <Images size={13} aria-hidden="true" />
+                <Images size={14} aria-hidden="true" />
                 {galleryCount} {galleryCount === 1 ? 'photo' : 'photos'}
               </span>
             ) : null}
@@ -97,13 +142,13 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
           <div className="provider-card__contact">
             {provider.contact_phone ? (
               <span className="provider-card__contact-item">
-                <Phone size={13} aria-hidden="true" />
+                <Phone size={15} aria-hidden="true" />
                 {provider.contact_phone}
               </span>
             ) : null}
             {provider.contact_email ? (
               <span className="provider-card__contact-item">
-                <Mail size={13} aria-hidden="true" />
+                <Mail size={15} aria-hidden="true" />
                 {provider.contact_email}
               </span>
             ) : null}
@@ -120,7 +165,7 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
         {variant === 'showcase' ? (
           <span className="provider-card__cta">
             View profile
-            <ArrowRight size={15} aria-hidden="true" />
+            <ArrowRight size={16} aria-hidden="true" />
           </span>
         ) : null}
       </div>

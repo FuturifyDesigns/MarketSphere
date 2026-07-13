@@ -257,14 +257,14 @@
 
 @media (max-width: 640px) {
   .onboarding-card--centered {
+    top: 50% !important;
     left: 1rem !important;
     right: 1rem !important;
+    bottom: auto !important;
     width: auto !important;
     max-width: none !important;
-    transform: none !important;
-    top: auto !important;
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
-    max-height: min(82dvh, calc(100dvh - 1.5rem)) !important;
+    transform: translateY(-50%) !important;
+    max-height: min(86dvh, calc(100dvh - 2rem)) !important;
   }
 
   .onboarding-card--docked {
@@ -272,7 +272,7 @@
     right: 1rem !important;
     width: auto !important;
     max-width: none !important;
-    max-height: min(72dvh, calc(100dvh - 1.5rem)) !important;
+    max-height: min(72dvh, calc(100dvh - 2rem)) !important;
   }
 
   .onboarding-card {
