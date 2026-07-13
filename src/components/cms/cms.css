@@ -500,9 +500,23 @@
   gap: 8px;
 }
 
-.btn--cms-preview {
+.btn--cms-static {
+  pointer-events: none;
+}
+
+.btn--cms-static .cms-editable--clickable {
   pointer-events: auto;
-  cursor: default;
+}
+
+html.cms-editing .services-showcase__pin,
+html.cms-editing .home-showcase__pin,
+html.cms-editing .about-tree__pin,
+html.cms-editing .svc-page__pin {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  width: auto !important;
+  transform: none !important;
 }
 
 .cms-editable-btn__href {

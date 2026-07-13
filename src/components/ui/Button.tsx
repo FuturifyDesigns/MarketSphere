@@ -15,20 +15,27 @@ export function Button({
   to,
   children,
   className = '',
+  onClick,
+  'aria-disabled': ariaDisabled,
   ...props
 }: ButtonProps) {
   const classes = `btn btn--${variant} btn--${size} ${className}`
 
   if (to) {
     return (
-      <Link to={to} className={classes}>
+      <Link
+        to={to}
+        className={classes}
+        onClick={onClick as React.MouseEventHandler<HTMLAnchorElement> | undefined}
+        aria-disabled={ariaDisabled}
+      >
         {children}
       </Link>
     )
   }
 
   return (
-    <button className={classes} {...props}>
+    <button className={classes} onClick={onClick} aria-disabled={ariaDisabled} {...props}>
       {children}
     </button>
   )

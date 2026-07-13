@@ -42,27 +42,32 @@ export function EditableButton({
   const block = getBlock<Record<string, unknown>>(contentKey)
   const resolvedTo = hrefPath ? readPath(block, hrefPath) || to : to
 
-  if (canEditField) {
-    return (
-      <span className="cms-editable-btn">
-        <span className={`btn btn--${variant} btn--${size} btn--cms-preview ${className}`.trim()}>
-          <EditableText contentKey={contentKey} path={labelPath} as="span" />
-          {children}
-        </span>
-        {hrefPath ? (
-          <label className="cms-editable-btn__href">
-            <span>Link URL</span>
-            <EditableText contentKey={contentKey} path={hrefPath} as="span" className="cms-editable-btn__href-value" />
-          </label>
-        ) : null}
-      </span>
-    )
-  }
-
   return (
-    <Button to={resolvedTo} variant={variant} size={size} className={className}>
-      <EditableText contentKey={contentKey} path={labelPath} as="span" />
-      {children}
-    </Button>
+    <span className="cms-editable-btn">
+      <Button
+        to={resolvedTo}
+        variant={variant}
+        size={size}
+        className={`${className} ${canEditField ? 'btn--cms-static' : ''}`.trim()}
+        aria-disabled={canEditField || undefined}
+        onClick={
+          canEditField
+            ? (event) => {
+                event.preventDefault()
+                event.stopPropagation()
+              }
+            : undefined
+        }
+      >
+        <EditableText contentKey={contentKey} path={labelPath} as="span" />
+        {children}
+      </Button>
+      {canEditField && hrefPath ? (
+        <label className="cms-editable-btn__href">
+          <span>Link URL</span>
+          <EditableText contentKey={contentKey} path={hrefPath} as="span" className="cms-editable-btn__href-value" />
+        </label>
+      ) : null}
+    </span>
   )
 }

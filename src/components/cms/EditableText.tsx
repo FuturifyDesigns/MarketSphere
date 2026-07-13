@@ -1,4 +1,4 @@
-import type { ElementType, KeyboardEvent, MouseEvent, ReactNode } from 'react'
+import type { ElementType, MouseEvent, ReactNode } from 'react'
 import { useSiteContent } from '../../context/SiteContentContext'
 import { useCmsTextEditor } from '../../context/CmsTextEditorContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
@@ -39,7 +39,7 @@ export function EditableText({
   const display = readDisplayValue(getBlock<Record<string, unknown>>(contentKey), path)
   const isActive = isFieldActive(contentKey, path)
 
-  const startEdit = (event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>) => {
+  const startEdit = (event: MouseEvent<HTMLElement>) => {
     if (!canEditField) return
     event.preventDefault()
     event.stopPropagation()
@@ -67,15 +67,7 @@ export function EditableText({
     <Tag
       className={`cms-editable ${canEditField ? 'cms-editable--active cms-editable--clickable' : ''} ${isActive ? 'cms-editable--editing' : ''} ${className}`.trim()}
       onClick={canEditField ? startEdit : undefined}
-      onKeyDown={
-        canEditField
-          ? (event: KeyboardEvent<HTMLElement>) => {
-              if (event.key === 'Enter' || event.key === ' ') startEdit(event)
-            }
-          : undefined
-      }
-      role={canEditField ? 'button' : undefined}
-      tabIndex={canEditField ? 0 : undefined}
+      data-cms-field={canEditField ? `${contentKey}.${path}` : undefined}
       title={canEditField ? 'Click to edit' : undefined}
     >
       {content}

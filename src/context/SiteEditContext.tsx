@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useSiteContent } from '../context/SiteContentContext'
+import { prepareDomForCmsEdit, releaseDomAfterCmsEdit } from '../lib/cmsEditMode'
 
 const LIVE_EDIT_STORAGE_KEY = 'msg-site-live-edit'
 
@@ -22,13 +23,16 @@ export function SiteEditProvider({ children }: { children: ReactNode }) {
   const location = useLocation()
   const [editMode, setEditModeState] = useState(() => {
     if (typeof window === 'undefined') return false
-    return sessionStorage.getItem(LIVE_EDIT_STORAGE_KEY) === '1'
+    const persisted = sessionStorage.getItem(LIVE_EDIT_STORAGE_KEY) === '1'
+    if (persisted) prepareDomForCmsEdit()
+    return persisted
   })
   const [activeSection, setActiveSection] = useState<string | null>(null)
 
   useEffect(() => {
     const state = location.state as { liveEdit?: boolean } | null
     if (state?.liveEdit && isAdmin) {
+      prepareDomForCmsEdit()
       setEditModeState(true)
       sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
     }
@@ -38,9 +42,20 @@ export function SiteEditProvider({ children }: { children: ReactNode }) {
     setActiveSection(null)
   }, [location.pathname])
 
+  useEffect(() => {
+    return () => {
+      releaseDomAfterCmsEdit()
+    }
+  }, [])
+
   const setEditMode = useCallback(
     (next: boolean) => {
       if (!isAdmin) return
+      if (next) {
+        prepareDomForCmsEdit()
+      } else {
+        releaseDomAfterCmsEdit()
+      }
       setEditModeState(next)
       if (next) {
         sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
@@ -57,8 +72,10 @@ export function SiteEditProvider({ children }: { children: ReactNode }) {
     setEditModeState((current) => {
       const next = !current
       if (next) {
+        prepareDomForCmsEdit()
         sessionStorage.setItem(LIVE_EDIT_STORAGE_KEY, '1')
       } else {
+        releaseDomAfterCmsEdit()
         sessionStorage.removeItem(LIVE_EDIT_STORAGE_KEY)
         setActiveSection(null)
       }
@@ -67,6 +84,7 @@ export function SiteEditProvider({ children }: { children: ReactNode }) {
   }, [isAdmin])
 
   const toggleSection = useCallback((sectionId: string) => {
+    prepareDomForCmsEdit()
     setActiveSection((current) => (current === sectionId ? null : sectionId))
   }, [])
 
