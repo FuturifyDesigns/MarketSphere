@@ -50,6 +50,7 @@ export function ProviderDashboard() {
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingGallery, setUploadingGallery] = useState(false)
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [uploadError, setUploadError] = useState('')
   const [profileErrors, setProfileErrors] = useState<FieldErrors<ProfileFields>>({})
   const [serviceErrors, setServiceErrors] = useState<FieldErrors<ServiceFields>>({})
@@ -225,35 +226,58 @@ export function ProviderDashboard() {
   }
 
   const handleGalleryUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const files = Array.from(e.target.files ?? [])
     e.target.value = ''
-    if (!file) return
+    if (files.length === 0) return
 
     setUploadError('')
     setUploadingGallery(true)
+    setGalleryUploadProgress(null)
 
     try {
-      const activeProvider = await ensureProvider()
+      let activeProvider = await ensureProvider()
       if (!activeProvider) return
 
-      const currentCount = activeProvider.gallery_urls?.length || 0
-      if (currentCount >= UPLOAD_LIMITS.gallery.maxCount) {
+      const slotsLeft = UPLOAD_LIMITS.gallery.maxCount - (activeProvider.gallery_urls?.length || 0)
+      if (slotsLeft <= 0) {
         setUploadError(`Gallery limit is ${UPLOAD_LIMITS.gallery.maxCount} images.`)
         return
       }
 
-      const prepared = await prepareGalleryImage(file)
-      const path = `${activeProvider.id}/${prepared.name}`
-      const url = await uploadPreparedFile('provider-gallery', path, prepared)
-      if (!url) throw new Error('Gallery upload failed')
+      const filesToUpload = files.slice(0, slotsLeft)
+      if (files.length > slotsLeft) {
+        setUploadError(
+          `Only ${slotsLeft} more photo${slotsLeft === 1 ? '' : 's'} fit in your gallery. Extra files were skipped.`,
+        )
+      }
 
-      const gallery_urls = [...(activeProvider.gallery_urls || []), url]
-      await supabase.from('providers').update({ gallery_urls }).eq('id', activeProvider.id)
-      setProvider({ ...activeProvider, gallery_urls })
+      setGalleryUploadProgress({ done: 0, total: filesToUpload.length })
+
+      for (let index = 0; index < filesToUpload.length; index++) {
+        const file = filesToUpload[index]
+
+        try {
+          assertImageFile(file)
+          const prepared = await prepareGalleryImage(file)
+          const path = `${activeProvider.id}/${prepared.name}`
+          const url = await uploadPreparedFile('provider-gallery', path, prepared)
+          if (!url) throw new Error('Gallery upload failed')
+
+          const gallery_urls: string[] = [...(activeProvider.gallery_urls || []), url]
+          await supabase.from('providers').update({ gallery_urls }).eq('id', activeProvider.id)
+          activeProvider = { ...activeProvider, gallery_urls }
+          setProvider(activeProvider)
+          setGalleryUploadProgress({ done: index + 1, total: filesToUpload.length })
+        } catch (err) {
+          setUploadError(err instanceof Error ? err.message : `Could not upload ${file.name}`)
+          break
+        }
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Gallery upload failed')
     } finally {
       setUploadingGallery(false)
+      setGalleryUploadProgress(null)
     }
   }
 
@@ -432,10 +456,15 @@ export function ProviderDashboard() {
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
+                        multiple
                         onChange={handleGalleryUpload}
                         disabled={uploadingGallery}
                       />
-                      {uploadingGallery ? 'Uploading photo…' : 'Add gallery photo'}
+                      {uploadingGallery && galleryUploadProgress
+                        ? `Uploading ${galleryUploadProgress.done}/${galleryUploadProgress.total}…`
+                        : uploadingGallery
+                          ? 'Uploading photos…'
+                          : 'Add gallery photos'}
                     </label>
                   )}
                 </div>
