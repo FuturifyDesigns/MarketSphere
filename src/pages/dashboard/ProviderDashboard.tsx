@@ -63,6 +63,8 @@ export function ProviderDashboard() {
   const [saveError, setSaveError] = useState('')
   const [logoCropFile, setLogoCropFile] = useState<File | null>(null)
   const [logoCropOpen, setLogoCropOpen] = useState(false)
+  const [coverCropFile, setCoverCropFile] = useState<File | null>(null)
+  const [coverCropOpen, setCoverCropOpen] = useState(false)
   const [galleryCropFile, setGalleryCropFile] = useState<File | null>(null)
   const [galleryCropOpen, setGalleryCropOpen] = useState(false)
   const [galleryEditingUrl, setGalleryEditingUrl] = useState<string | null>(null)
@@ -352,20 +354,49 @@ export function ProviderDashboard() {
     }
   }
 
-  const handleCoverPick = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleCoverPick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
 
+    try {
+      assertImageFile(file)
+      setUploadError('')
+      setCoverCropFile(file)
+      setCoverCropOpen(true)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not open cover image')
+    }
+  }
+
+  const openCoverEditor = async () => {
+    if (!provider?.cover_url) {
+      coverInputRef.current?.click()
+      return
+    }
+
+    setLoadingMediaEditor(true)
+    setUploadError('')
+    try {
+      const file = await urlToImageFile(provider.cover_url, 'cover.jpg')
+      setCoverCropFile(file)
+      setCoverCropOpen(true)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Could not open cover for editing')
+    } finally {
+      setLoadingMediaEditor(false)
+    }
+  }
+
+  const handleCoverCroppedUpload = async (croppedFile: File) => {
     setUploadingCover(true)
     setUploadError('')
 
     try {
-      assertImageFile(file)
       const activeProvider = await ensureProvider()
       if (!activeProvider) return
 
-      const prepared = await prepareCoverImage(file)
+      const prepared = await prepareCoverImage(croppedFile)
       const url = await uploadPreparedFile('provider-gallery', `${activeProvider.id}/cover`, prepared)
       if (!url) throw new Error('Cover upload failed')
 
@@ -382,6 +413,7 @@ export function ProviderDashboard() {
       showToast(err instanceof Error ? err.message : 'Cover upload failed', 'error')
     } finally {
       setUploadingCover(false)
+      setCoverCropFile(null)
     }
   }
 
@@ -662,9 +694,9 @@ export function ProviderDashboard() {
                     <button
                       type="button"
                       className="provider-branding-panel__cover-btn"
-                      onClick={() => coverInputRef.current?.click()}
-                      disabled={uploadingCover}
-                      aria-label="Change profile cover image"
+                      onClick={() => void openCoverEditor()}
+                      disabled={uploadingCover || loadingMediaEditor}
+                      aria-label="Edit profile cover image"
                     >
                       <img src={provider.cover_url} alt="" className="provider-branding-panel__cover-img" />
                     </button>
@@ -695,9 +727,9 @@ export function ProviderDashboard() {
                       </button>
                       {provider?.cover_url ? (
                         <MediaEditActions
-                          onEdit={() => coverInputRef.current?.click()}
+                          onEdit={() => void openCoverEditor()}
                           onDelete={() => void removeCover()}
-                          disabled={uploadingCover}
+                          disabled={uploadingCover || loadingMediaEditor}
                         />
                       ) : null}
                     </div>
@@ -1000,6 +1032,19 @@ export function ProviderDashboard() {
           setGalleryEditingUrl(null)
         }}
         onConfirm={(file) => void handleGalleryCroppedUpload(file)}
+      />
+      <ImageCropModal
+        file={coverCropFile}
+        open={coverCropOpen}
+        title="Edit profile cover"
+        aspectRatio={16 / 9}
+        outputWidth={UPLOAD_LIMITS.cover.maxWidth}
+        outputHeight={UPLOAD_LIMITS.cover.maxHeight}
+        onClose={() => {
+          setCoverCropOpen(false)
+          setCoverCropFile(null)
+        }}
+        onConfirm={(file) => void handleCoverCroppedUpload(file)}
       />
     </div>
   )

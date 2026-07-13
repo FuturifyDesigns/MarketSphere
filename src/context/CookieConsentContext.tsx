@@ -36,6 +36,13 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     initCookieConsent()
   }, [])
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('cookie-banner-open', bannerOpen)
+    return () => {
+      document.documentElement.classList.remove('cookie-banner-open')
+    }
+  }, [bannerOpen])
+
   const persistChoice = useCallback((preference: CookiePreference, message: string) => {
     const record = writeCookieConsent(preference)
     setConsent(record)

@@ -46,6 +46,7 @@
   .app-toast {
     left: 1rem;
     right: 1rem;
-    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    max-width: none;
   }
 }

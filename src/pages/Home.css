@@ -777,4 +777,13 @@
   .home-providers-carousel.showcase-carousel {
     max-width: 100%;
   }
+
+  .home-testimonials-carousel.showcase-carousel {
+    max-width: 100%;
+  }
+
+  .section--providers .home-showcase__stage,
+  .section--testimonials .home-showcase__stage {
+    padding-inline: 1rem;
+  }
 }

@@ -157,6 +157,18 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+html.cookie-banner-open .main {
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+
+html.cookie-banner-open .provider-showcase-mobile-cta {
+  bottom: calc(5.75rem + env(safe-area-inset-bottom));
+}
+
+html.cookie-banner-open .app-toast {
+  bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+
 .section--day { color: var(--color-bronze); }
 .section--night { color: var(--color-day); }
 

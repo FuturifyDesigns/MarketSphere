@@ -42,6 +42,22 @@ export function getBaseCoverScale(img: HTMLImageElement, viewportSize: number) {
   return Math.max(viewportSize / img.width, viewportSize / img.height)
 }
 
+export function getBaseCoverScaleRect(
+  img: HTMLImageElement,
+  viewportWidth: number,
+  viewportHeight: number,
+) {
+  return Math.max(viewportWidth / img.width, viewportHeight / img.height)
+}
+
+export function getCropViewportSize(aspectRatio = 1, maxWidth = 360) {
+  if (aspectRatio >= 1) {
+    return { width: maxWidth, height: Math.round(maxWidth / aspectRatio) }
+  }
+  const height = maxWidth
+  return { width: Math.round(maxWidth * aspectRatio), height }
+}
+
 export async function exportCroppedSquare(
   img: HTMLImageElement,
   transform: CropTransform,
@@ -72,6 +88,48 @@ export async function exportCroppedSquare(
   if (!octx) throw new Error('Could not export image')
 
   octx.drawImage(temp, 0, 0, viewportSize, viewportSize, 0, 0, outputSize, outputSize)
+
+  return new Promise((resolve, reject) => {
+    output.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Image export failed'))),
+      'image/jpeg',
+      0.92,
+    )
+  })
+}
+
+export async function exportCroppedRect(
+  img: HTMLImageElement,
+  transform: CropTransform,
+  outputWidth: number,
+  outputHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): Promise<Blob> {
+  const temp = document.createElement('canvas')
+  temp.width = viewportWidth
+  temp.height = viewportHeight
+  const tctx = temp.getContext('2d')
+  if (!tctx) throw new Error('Could not prepare crop')
+
+  const baseScale = getBaseCoverScaleRect(img, viewportWidth, viewportHeight)
+  const drawScale = baseScale * transform.scale
+
+  tctx.clearRect(0, 0, viewportWidth, viewportHeight)
+  tctx.save()
+  tctx.translate(viewportWidth / 2 + transform.offsetX, viewportHeight / 2 + transform.offsetY)
+  tctx.rotate((transform.rotation * Math.PI) / 180)
+  tctx.scale(drawScale, drawScale)
+  tctx.drawImage(img, -img.width / 2, -img.height / 2)
+  tctx.restore()
+
+  const output = document.createElement('canvas')
+  output.width = outputWidth
+  output.height = outputHeight
+  const octx = output.getContext('2d')
+  if (!octx) throw new Error('Could not export image')
+
+  octx.drawImage(temp, 0, 0, viewportWidth, viewportHeight, 0, 0, outputWidth, outputHeight)
 
   return new Promise((resolve, reject) => {
     output.toBlob(

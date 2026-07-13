@@ -67,6 +67,15 @@ export function GallerySlideshow({ images, onImageClick, autoplayMs = 4500 }: Ga
       </div>
 
       {images.length > 1 ? (
+        <div className="gallery-slideshow__meta">
+          <p className="gallery-slideshow__meta-label">Gallery slideshow</p>
+          <p className="gallery-slideshow__meta-count" aria-live="polite">
+            Photo {index + 1} of {images.length}
+          </p>
+        </div>
+      ) : null}
+
+      {images.length > 1 ? (
         <div className="gallery-slideshow__thumbs">
           {images.map((url, thumbIndex) => (
             <button

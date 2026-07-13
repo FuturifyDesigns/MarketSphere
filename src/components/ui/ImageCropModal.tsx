@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { RotateCcw, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react'
 import {
   CROP_VIEWPORT_SIZE,
+  exportCroppedRect,
   exportCroppedSquare,
   getBaseCoverScale,
+  getBaseCoverScaleRect,
+  getCropViewportSize,
   loadImageFile,
   type CropTransform,
 } from '../../lib/imageCrop'
@@ -15,6 +18,9 @@ interface ImageCropModalProps {
   open: boolean
   title?: string
   outputSize?: number
+  outputWidth?: number
+  outputHeight?: number
+  aspectRatio?: number
   onClose: () => void
   onConfirm: (file: File) => void
 }
@@ -31,6 +37,9 @@ export function ImageCropModal({
   open,
   title = 'Edit photo',
   outputSize = 256,
+  outputWidth,
+  outputHeight,
+  aspectRatio = 1,
   onClose,
   onConfirm,
 }: ImageCropModalProps) {
@@ -127,8 +136,24 @@ export function ImageCropModal({
     if (!image || !file) return
     setLoading(true)
     try {
-      const blob = await exportCroppedSquare(image, transform, outputSize)
-      const cropped = new File([blob], 'avatar.jpg', { type: 'image/jpeg', lastModified: Date.now() })
+      const viewport = getCropViewportSize(aspectRatio, CROP_VIEWPORT_SIZE)
+      const finalWidth = outputWidth ?? outputSize
+      const finalHeight = outputHeight ?? (aspectRatio === 1 ? outputSize : Math.round(finalWidth / aspectRatio))
+      const blob =
+        aspectRatio === 1
+          ? await exportCroppedSquare(image, transform, outputSize)
+          : await exportCroppedRect(
+              image,
+              transform,
+              finalWidth,
+              finalHeight,
+              viewport.width,
+              viewport.height,
+            )
+      const cropped = new File([blob], file.name.endsWith('.jpg') ? file.name : 'photo.jpg', {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      })
       onConfirm(cropped)
       onClose()
     } finally {
@@ -138,13 +163,19 @@ export function ImageCropModal({
 
   if (!open || !file) return null
 
-  const baseScale = image ? getBaseCoverScale(image, CROP_VIEWPORT_SIZE) : 1
+  const viewport = getCropViewportSize(aspectRatio, CROP_VIEWPORT_SIZE)
+  const baseScale = image
+    ? aspectRatio === 1
+      ? getBaseCoverScale(image, CROP_VIEWPORT_SIZE)
+      : getBaseCoverScaleRect(image, viewport.width, viewport.height)
+    : 1
   const drawScale = baseScale * transform.scale
+  const isWide = aspectRatio > 1
 
   return (
     <div className="image-crop-modal" role="dialog" aria-modal="true" aria-labelledby="image-crop-title">
       <button type="button" className="image-crop-modal__backdrop" aria-label="Close" onClick={onClose} />
-      <div className="image-crop-modal__panel">
+      <div className={`image-crop-modal__panel${isWide ? ' image-crop-modal__panel--wide' : ''}`}>
         <header className="image-crop-modal__header">
           <h2 id="image-crop-title">{title}</h2>
           <button type="button" className="image-crop-modal__close" onClick={onClose} aria-label="Close">
@@ -153,7 +184,8 @@ export function ImageCropModal({
         </header>
 
         <div
-          className={`image-crop-modal__viewport${dragging ? ' image-crop-modal__viewport--dragging' : ''}`}
+          className={`image-crop-modal__viewport${dragging ? ' image-crop-modal__viewport--dragging' : ''}${isWide ? ' image-crop-modal__viewport--wide' : ''}`}
+          style={isWide ? { width: viewport.width, height: viewport.height } : undefined}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}

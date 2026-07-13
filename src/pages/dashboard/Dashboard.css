@@ -729,6 +729,25 @@
   }
 }
 
+@media (max-width: 480px) {
+  .provider-branding-panel__action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .provider-branding-panel__upload-btn,
+  .provider-branding-panel__gallery-upload {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+}
+
 .dashboard-profile-layout {
   display: flex;
   flex-direction: column;
