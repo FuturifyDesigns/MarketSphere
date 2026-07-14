@@ -115,11 +115,45 @@ function runServicesPagePin(root: HTMLElement, config: ServicesPageConfig) {
 }
 
 function runMobileServicesPageStack(root: HTMLElement) {
+  const pin = root.querySelector<HTMLElement>('.svc-page__pin')
   const intro = root.querySelector<HTMLElement>('.svc-page__intro')
+  const stage = root.querySelector<HTMLElement>('.svc-page__stage')
   const slides = gsap.utils.toArray<HTMLElement>('.svc-page__slide', root)
 
+  // Clear any leftover pin/overlay styles from desktop transitions or previous inits.
+  if (pin) gsap.set(pin, { clearProps: 'height,overflow,transform' })
+  if (stage) gsap.set(stage, { clearProps: 'all' })
   if (intro) {
-    gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto', clearProps: 'transform' })
+    gsap.set(intro, {
+      autoAlpha: 1,
+      pointerEvents: 'auto',
+      clearProps: 'position,inset,top,left,right,bottom,transform,width,height',
+    })
+  }
+
+  gsap.set(slides, {
+    opacity: 1,
+    autoAlpha: 1,
+    pointerEvents: 'auto',
+    visibility: 'visible',
+    clearProps: 'position,inset,top,left,right,bottom,transform,zIndex,width,height',
+  })
+
+  slides.forEach((slide) => {
+    gsap.set(slide.querySelectorAll('.svc-page__copy > *'), {
+      opacity: 1,
+      y: 0,
+      clearProps: 'transform,opacity',
+    })
+    gsap.set(slide.querySelector('.svc-page__media'), {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      clearProps: 'transform,opacity',
+    })
+  })
+
+  if (intro) {
     gsap.fromTo(
       intro.children,
       { opacity: 0, y: 22 },
@@ -140,7 +174,6 @@ function runMobileServicesPageStack(root: HTMLElement) {
   }
 
   slides.forEach((slide) => {
-    gsap.set(slide, { opacity: 1, pointerEvents: 'auto', visibility: 'visible', clearProps: 'transform' })
     const media = slide.querySelector('.svc-page__media')
     const copy = slide.querySelectorAll('.svc-page__copy > *')
 
