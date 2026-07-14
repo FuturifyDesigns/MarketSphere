@@ -1,6 +1,5 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { isCmsEditActive } from '../lib/cmsEditMode'
 import { isMobileViewport } from '../lib/nativeScroll'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 
@@ -155,7 +154,6 @@ let activeCleanup: (() => void) | undefined
 
 /** Providers + Testimonials — init after Services pin so ScrollTrigger positions stay correct. */
 export function initBelowFoldSections(root: HTMLElement): (() => void) | undefined {
-  if (isCmsEditActive()) return undefined
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
 
   activeCleanup?.()

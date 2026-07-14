@@ -1,6 +1,5 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { isCmsEditActive } from '../lib/cmsEditMode'
 import { prefersReducedMotion } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
@@ -350,7 +349,6 @@ function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
 }
 
 export function initAboutTreeAnimation(root: HTMLElement) {
-  if (isCmsEditActive()) return () => {}
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.about-tree__step'), { autoAlpha: 1, pointerEvents: 'auto' })
     gsap.set(root.querySelectorAll('.about-tree__reveal-item'), {

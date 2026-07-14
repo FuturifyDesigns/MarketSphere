@@ -1,6 +1,5 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { isCmsEditActive } from '../lib/cmsEditMode'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -373,7 +372,6 @@ function setupMarquee(root: HTMLElement, mobile = false) {
 }
 
 export function initHomeSectionReveals(root: HTMLElement): (() => void) | undefined {
-  if (isCmsEditActive()) return undefined
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
 
   const showcaseSections = gsap.utils.toArray<HTMLElement>(
@@ -409,7 +407,6 @@ export function initHomeSectionReveals(root: HTMLElement): (() => void) | undefi
 let belowFoldInitialized = false
 
 export function initBelowFoldHomeSections(root: HTMLElement): (() => void) | undefined {
-  if (isCmsEditActive()) return undefined
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
   if (belowFoldInitialized) return undefined
   belowFoldInitialized = true

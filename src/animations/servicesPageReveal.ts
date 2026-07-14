@@ -1,6 +1,5 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { isCmsEditActive } from '../lib/cmsEditMode'
 import { prefersReducedMotion } from '../lib/intro'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 
@@ -116,7 +115,6 @@ function runServicesPagePin(root: HTMLElement, config: ServicesPageConfig) {
 }
 
 export function initServicesPageShowcase(root: HTMLElement) {
-  if (isCmsEditActive()) return () => {}
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__intro'), {
       opacity: 1,

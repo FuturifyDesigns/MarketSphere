@@ -22,7 +22,6 @@ import type { HomeStat } from '../lib/siteContentDefaults'
 import type { CmsStringItem } from '../lib/cmsTypes'
 import { createHomeStat } from '../lib/cmsTypes'
 import { supabase } from '../lib/supabase'
-import { isCmsEditActive } from '../lib/cmsEditMode'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 import { isMobileViewport } from '../lib/nativeScroll'
@@ -170,7 +169,7 @@ export function Home() {
     let started = false
 
     const initAnimations = () => {
-      if (started || isCmsEditActive()) return
+      if (started) return
       started = true
 
       ctx = gsap.context(() => {
