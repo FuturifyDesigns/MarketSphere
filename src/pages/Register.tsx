@@ -90,7 +90,7 @@ export function Register() {
     const { error: err } = await signUp(form.email.trim(), form.password, {
       full_name: form.full_name.trim(),
       phone: phone || undefined,
-      role: form.role,
+      role: form.role === 'provider' ? 'provider' : 'customer',
     })
     setLoading(false)
     if (err) {

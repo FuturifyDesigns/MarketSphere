@@ -21,12 +21,15 @@ import {
   validatePhone,
   type FieldErrors,
 } from '../lib/validation'
+import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Textarea } from '../components/ui/Textarea'
 import './Contact.css'
 
 type ContactFields = 'name' | 'email' | 'phone' | 'message'
+
+const CONTACT_RATE_LIMIT_MS = 60_000
 
 export function Contact() {
   const { showToast } = useToast()
@@ -41,7 +44,7 @@ export function Contact() {
     phones: CmsStringItem[]
   }>('company')
   const phones = company.phones || []
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '', companyWebsite: '' })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<ContactFields>>({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -56,6 +59,12 @@ export function Contact() {
     e.preventDefault()
     setError('')
 
+    // Honeypot: bots fill hidden fields — silently accept without sending.
+    if (form.companyWebsite.trim()) {
+      setSubmitted(true)
+      return
+    }
+
     const errors = collectErrors<ContactFields>([
       ['name', validateName(form.name, 'Full name')],
       ['email', validateEmail(form.email)],
@@ -65,24 +74,37 @@ export function Contact() {
     setFieldErrors(errors)
     if (hasErrors(errors)) return
 
+    if (isClientRateLimited('contact', CONTACT_RATE_LIMIT_MS)) {
+      const msg = clientRateLimitMessage(CONTACT_RATE_LIMIT_MS)
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
+
     setLoading(true)
 
-    const { error: insertError } = await supabase.from('contact_messages').insert({
-      full_name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || null,
-      message: form.message.trim(),
+    const { error: insertError } = await supabase.rpc('submit_contact_message', {
+      p_full_name: form.name.trim(),
+      p_email: form.email.trim(),
+      p_phone: form.phone.trim() || null,
+      p_message: form.message.trim(),
+      p_honeypot: form.companyWebsite.trim() || null,
     })
 
     setLoading(false)
 
     if (insertError) {
-      setError('Could not send your message. Please try again or email us directly.')
-      showToast('Could not send your message. Please try again.', 'error')
+      const msg =
+        insertError.message?.includes('Too many') || insertError.message?.includes('busy')
+          ? insertError.message
+          : 'Could not send your message. Please try again or email us directly.'
+      setError(msg)
+      showToast(msg, 'error')
       return
     }
 
-    setForm({ name: '', email: '', phone: '', message: '' })
+    markClientRateLimited('contact')
+    setForm({ name: '', email: '', phone: '', message: '', companyWebsite: '' })
     setSubmitted(true)
     showToast('Message sent. Our team has been notified and will get back to you soon.')
   }
@@ -233,6 +255,18 @@ export function Contact() {
                   </div>
                 </div>
                 <div className="contact-form__fields">
+                  <div className="contact-form__hp" aria-hidden="true">
+                    <label htmlFor="companyWebsite">Company website</label>
+                    <input
+                      id="companyWebsite"
+                      name="companyWebsite"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={form.companyWebsite}
+                      onChange={(e) => setForm((prev) => ({ ...prev, companyWebsite: e.target.value }))}
+                    />
+                  </div>
                   <Input
                     label="Full Name"
                     autoComplete="name"

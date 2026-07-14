@@ -13,7 +13,6 @@ import {
   FIELD_HINTS,
   hasErrors,
   validateEmail,
-  validatePassword,
   type FieldErrors,
 } from '../lib/validation'
 import { Button } from '../components/ui/Button'
@@ -43,7 +42,7 @@ export function Login() {
 
     const errors = collectErrors<LoginFields>([
       ['email', validateEmail(email)],
-      ['password', validatePassword(password)],
+      ['password', password ? null : 'Password is required'],
     ])
     setFieldErrors(errors)
     if (hasErrors(errors)) return

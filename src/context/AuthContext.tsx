@@ -125,11 +125,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     meta: { full_name: string; phone?: string; role: string }
   ) => {
+    const role = meta.role === 'provider' ? 'provider' : 'customer'
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: meta,
+        data: {
+          full_name: meta.full_name,
+          phone: meta.phone,
+          role,
+        },
         emailRedirectTo: getAuthRouteUrl('/auth/verify'),
       },
     })
