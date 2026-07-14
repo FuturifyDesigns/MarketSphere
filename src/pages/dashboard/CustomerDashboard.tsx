@@ -43,6 +43,9 @@ export function CustomerDashboard() {
     )
   }, [user])
 
+  const loadDashboardDataRef = useRef(loadDashboardData)
+  loadDashboardDataRef.current = loadDashboardData
+
   useEffect(() => {
     void loadDashboardData()
   }, [loadDashboardData])
@@ -50,28 +53,52 @@ export function CustomerDashboard() {
   useEffect(() => {
     if (!user) return
 
+    let timer: number | undefined
+    const scheduleRefresh = (message?: string) => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        timer = undefined
+        void loadDashboardDataRef.current()
+        if (message) showToast(message, 'info')
+      }, 300)
+    }
+
     const channel = supabase
       .channel(`customer-dashboard-${user.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'enquiries', filter: `customer_id=eq.${user.id}` },
-        () => {
-          void loadDashboardData()
-        },
+        { event: 'INSERT', schema: 'public', table: 'enquiries', filter: `customer_id=eq.${user.id}` },
+        () => scheduleRefresh(),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'enquiries', filter: `customer_id=eq.${user.id}` },
+        () => scheduleRefresh('Enquiry status updated.'),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'enquiries', filter: `customer_id=eq.${user.id}` },
+        () => scheduleRefresh(),
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'favorites', filter: `customer_id=eq.${user.id}` },
-        () => {
-          void loadDashboardData()
-        },
+        () => scheduleRefresh(),
       )
       .subscribe()
 
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void loadDashboardDataRef.current()
+      }
+    }, 20_000)
+
     return () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      window.clearInterval(poll)
       void supabase.removeChannel(channel)
     }
-  }, [loadDashboardData, user])
+  }, [showToast, user])
 
   useEffect(() => {
     const highlight = (location.state as { enquirySent?: boolean } | null)?.enquirySent

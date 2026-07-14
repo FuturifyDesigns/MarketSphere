@@ -115,35 +115,55 @@ export function ProviderDashboard() {
   useEffect(() => {
     if (!provider) return
 
-    const loadEnquiries = () => {
-      void supabase
+    const loadEnquiries = async () => {
+      const { data } = await supabase
         .from('enquiries')
         .select('*, profiles(full_name, email)')
         .eq('provider_id', provider.id)
         .order('created_at', { ascending: false })
-        .then(({ data }) => setEnquiries(data || []))
+      setEnquiries(data || [])
     }
 
-    loadEnquiries()
+    void loadEnquiries()
+
+    let timer: number | undefined
+    const scheduleRefresh = (message?: string) => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        timer = undefined
+        void loadEnquiries()
+        if (message) showToast(message, 'info')
+      }, 300)
+    }
 
     const channel = supabase
       .channel(`provider-enquiries-${provider.id}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'enquiries', filter: `provider_id=eq.${provider.id}` },
-        () => {
-          loadEnquiries()
-          showToast('New enquiry received.', 'info')
-        },
+        () => scheduleRefresh('New enquiry received.'),
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'enquiries', filter: `provider_id=eq.${provider.id}` },
-        () => loadEnquiries(),
+        () => scheduleRefresh(),
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'enquiries', filter: `provider_id=eq.${provider.id}` },
+        () => scheduleRefresh(),
       )
       .subscribe()
 
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void loadEnquiries()
+      }
+    }, 20_000)
+
     return () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      window.clearInterval(poll)
       void supabase.removeChannel(channel)
     }
   }, [provider, showToast])
@@ -1037,12 +1057,26 @@ export function ProviderDashboard() {
                       From: {(e.profiles as { full_name: string; email: string })?.full_name} ({(e.profiles as { email: string })?.email})
                     </p>
                     <p className="enquiry-detail__msg">{e.message}</p>
-                    {e.status === 'new' && (
-                      <div className="enquiry-actions">
-                        <Button size="sm" onClick={() => void updateEnquiryStatus(e.id, 'read')}>Mark Read</Button>
-                        <Button size="sm" variant="secondary" onClick={() => void updateEnquiryStatus(e.id, 'replied')}>Mark Replied</Button>
-                      </div>
-                    )}
+                    <div className="enquiry-actions">
+                      {(e.profiles as { email?: string } | null)?.email ? (
+                        <a
+                          className="btn btn--primary btn--sm"
+                          href={`mailto:${(e.profiles as { email: string }).email}?subject=${encodeURIComponent(`Re: ${e.subject}`)}&body=${encodeURIComponent(`Hi ${(e.profiles as { full_name?: string }).full_name || 'there'},\n\nThanks for your enquiry on Market Sphere Group.\n\nRegarding:\n"${e.message}"\n\n`)}`}
+                        >
+                          Reply to email
+                        </a>
+                      ) : null}
+                      {e.status === 'new' ? (
+                        <Button size="sm" variant="secondary" onClick={() => void updateEnquiryStatus(e.id, 'read')}>
+                          Mark Read
+                        </Button>
+                      ) : null}
+                      {e.status !== 'replied' && e.status !== 'closed' ? (
+                        <Button size="sm" variant="secondary" onClick={() => void updateEnquiryStatus(e.id, 'replied')}>
+                          Mark Replied
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
