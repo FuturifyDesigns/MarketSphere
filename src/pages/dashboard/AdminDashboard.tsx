@@ -123,45 +123,71 @@ export function AdminDashboard() {
       supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(200),
     ])
 
+    const nextContacts = contactsRes.data || []
     setUsers(usersRes.data || [])
     setProviders(providersRes.data || [])
     setEnquiries(enquiriesRes.data || [])
     setCategories(catsRes.data || [])
     setTestimonials(testRes.data || [])
-    setContactMessages(contactsRes.data || [])
+    setContactMessages(nextContacts)
     setLoading(false)
+    contactCountRef.current = nextContacts.length
+    return nextContacts.length
   }, [])
 
   const loadDataRef = useRef(loadData)
   loadDataRef.current = loadData
+  const contactCountRef = useRef(0)
 
   useEffect(() => {
     void loadData()
 
     let timer: number | undefined
-    const scheduleRefresh = () => {
+    const scheduleRefresh = (opts?: { toastNewContact?: boolean }) => {
       if (timer !== undefined) window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         timer = undefined
-        void loadDataRef.current()
-      }, 900)
+        const previousCount = contactCountRef.current
+        void loadDataRef.current().then((nextCount) => {
+          if (opts?.toastNewContact && nextCount > previousCount) {
+            showToast('New contact message received.', 'info')
+          }
+        })
+      }, 350)
     }
 
     const channel = supabase
-      .channel('admin-dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'providers' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, scheduleRefresh)
+      .channel(`admin-dashboard-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'providers' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' }, () => {
+        scheduleRefresh()
+        showToast('New enquiry received.', 'info')
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'enquiries' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'enquiries' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, () => {
+        scheduleRefresh({ toastNewContact: true })
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'contact_messages' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'contact_messages' }, () => scheduleRefresh())
       .subscribe()
+
+    // Fallback poll while the admin tab is open (covers missed realtime events).
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void loadDataRef.current()
+      }
+    }, 20_000)
 
     return () => {
       if (timer !== undefined) window.clearTimeout(timer)
+      window.clearInterval(poll)
       void supabase.removeChannel(channel)
     }
-  }, [loadData])
+  }, [loadData, showToast])
 
   useEffect(() => {
     const nextTab = (location.state as { tab?: AdminTab } | null)?.tab
@@ -604,14 +630,24 @@ export function AdminDashboard() {
                       {message.phone ? <> · {message.phone}</> : null}
                     </p>
                     <p className="enquiry-detail__msg">{message.message}</p>
-                    {message.status === 'new' && (
-                      <div className="enquiry-actions">
-                        <Button size="sm" onClick={() => void updateContactStatus(message.id, 'read')}>Mark read</Button>
+                    <div className="enquiry-actions">
+                      <a
+                        className="btn btn--primary btn--sm"
+                        href={`mailto:${message.email}?subject=${encodeURIComponent('Re: your message to Market Sphere Group')}&body=${encodeURIComponent(`Hi ${message.full_name},\n\nThanks for contacting Market Sphere Group.\n\nRegarding your message:\n"${message.message}"\n\n`)}`}
+                      >
+                        Reply to email
+                      </a>
+                      {message.status === 'new' ? (
+                        <Button size="sm" variant="secondary" onClick={() => void updateContactStatus(message.id, 'read')}>
+                          Mark read
+                        </Button>
+                      ) : null}
+                      {message.status !== 'replied' && message.status !== 'closed' ? (
                         <Button size="sm" variant="secondary" onClick={() => void updateContactStatus(message.id, 'replied')}>
                           Mark replied
                         </Button>
-                      </div>
-                    )}
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
