@@ -3,7 +3,8 @@
   width: 100%;
   max-width: 42rem;
   margin-inline: auto;
-  overflow: hidden;
+  /* Keep arrows visible — only the viewport clips slides */
+  overflow: visible;
 }
 
 .showcase-carousel--wide {
@@ -14,6 +15,7 @@
   overflow: hidden;
   min-height: 100%;
   width: 100%;
+  border-radius: inherit;
 }
 
 .showcase-carousel__slide {
@@ -25,6 +27,7 @@
 .showcase-carousel__nav {
   position: absolute;
   top: 50%;
+  z-index: 4;
   transform: translateY(-50%);
   display: grid;
   place-items: center;
@@ -32,7 +35,7 @@
   height: 42px;
   border: 1px solid var(--card-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
   color: var(--text-primary);
   cursor: pointer;
   box-shadow: var(--card-shadow);
@@ -45,11 +48,11 @@
 }
 
 .showcase-carousel__nav--prev {
-  left: -1.25rem;
+  left: 0.65rem;
 }
 
 .showcase-carousel__nav--next {
-  right: -1.25rem;
+  right: 0.65rem;
 }
 
 .showcase-carousel__dots {
