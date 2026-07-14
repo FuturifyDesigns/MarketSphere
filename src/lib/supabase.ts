@@ -7,9 +7,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase credentials missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env')
 }
 
+/**
+ * Single shared browser client.
+ * Tuning keeps us friendly to Supabase Free Tier (limited Realtime + DB connections).
+ */
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
+  supabaseAnonKey || 'placeholder',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    realtime: {
+      params: {
+        // Cap event flood from postgres_changes for free-tier connection budgets.
+        eventsPerSecond: 2,
+      },
+    },
+    global: {
+      headers: {
+        'x-client-info': 'marketsphere-web',
+      },
+    },
+  },
 )
 
 export async function uploadFile(

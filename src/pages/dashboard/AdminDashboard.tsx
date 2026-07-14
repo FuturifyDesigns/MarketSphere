@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import {
   BarChart3,
@@ -111,15 +111,16 @@ export function AdminDashboard() {
 
   const loadData = useCallback(async () => {
     const [usersRes, providersRes, enquiriesRes, catsRes, testRes, contactsRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('providers').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('providers').select('*').order('created_at', { ascending: false }).limit(200),
       supabase
         .from('enquiries')
         .select('*, providers(business_name), profiles(full_name, email)')
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(200),
       supabase.from('categories').select('*').order('sort_order'),
-      supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
-      supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
+      supabase.from('testimonials').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(200),
     ])
 
     setUsers(usersRes.data || [])
@@ -131,21 +132,33 @@ export function AdminDashboard() {
     setLoading(false)
   }, [])
 
+  const loadDataRef = useRef(loadData)
+  loadDataRef.current = loadData
+
   useEffect(() => {
     void loadData()
 
+    let timer: number | undefined
+    const scheduleRefresh = () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        timer = undefined
+        void loadDataRef.current()
+      }, 900)
+    }
+
     const channel = supabase
       .channel('admin-dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'providers' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, () => void loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => void loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'providers' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enquiries' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, scheduleRefresh)
       .subscribe()
 
     return () => {
+      if (timer !== undefined) window.clearTimeout(timer)
       void supabase.removeChannel(channel)
     }
   }, [loadData])

@@ -2,6 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { isCmsEditActive } from '../lib/cmsEditMode'
 import { supabase } from '../lib/supabase'
 import {
+  clearCached,
+  debounceTrailing,
+  getCached,
+  readSessionJson,
+  setCached,
+  withSingleFlight,
+  writeSessionJson,
+} from '../lib/queryCache'
+import {
   cloneDefaults,
   DEFAULT_SITE_CONTENT,
   normalizeStringItems,
@@ -24,6 +33,10 @@ type SiteContentContextValue = {
 }
 
 const SiteContentContext = createContext<SiteContentContextValue | null>(null)
+
+const SITE_CONTENT_CACHE_KEY = 'msg-site-content-v1'
+const SITE_CONTENT_TTL_MS = 5 * 60_000
+const SITE_CONTENT_MEMORY_KEY = 'site_content_rows'
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -147,18 +160,48 @@ function mergeWithDefaults(rows: Array<{ key: string; value: unknown }>) {
 
 export function SiteContentProvider({ children }: { children: ReactNode }) {
   const { profile } = useAuth()
-  const [content, setContent] = useState<SiteContentMap>(() => cloneDefaults())
-  const [loading, setLoading] = useState(true)
   const isAdmin = profile?.role === 'admin'
+  const [content, setContent] = useState<SiteContentMap>(() => {
+    const cached =
+      getCached<SiteContentMap>(SITE_CONTENT_MEMORY_KEY) ??
+      readSessionJson<SiteContentMap>(SITE_CONTENT_CACHE_KEY)
+    return cached ? structuredClone(cached) : cloneDefaults()
+  })
+  const [loading, setLoading] = useState(() => {
+    const cached =
+      getCached<SiteContentMap>(SITE_CONTENT_MEMORY_KEY) ??
+      readSessionJson<SiteContentMap>(SITE_CONTENT_CACHE_KEY)
+    return !cached
+  })
 
-  const loadContent = useCallback(async () => {
-    const { data, error } = await supabase.from('site_content').select('key, value')
-    if (error) {
-      setContent(cloneDefaults())
-      setLoading(false)
-      return
+  const loadContent = useCallback(async (opts?: { force?: boolean }) => {
+    const force = opts?.force === true
+
+    if (!force) {
+      const memoryHit = getCached<SiteContentMap>(SITE_CONTENT_MEMORY_KEY)
+      if (memoryHit) {
+        setContent(structuredClone(memoryHit))
+        setLoading(false)
+        return
+      }
+      const sessionHit = readSessionJson<SiteContentMap>(SITE_CONTENT_CACHE_KEY)
+      if (sessionHit) {
+        setCached(SITE_CONTENT_MEMORY_KEY, sessionHit, SITE_CONTENT_TTL_MS)
+        setContent(structuredClone(sessionHit))
+        setLoading(false)
+        return
+      }
     }
-    setContent(mergeWithDefaults(data || []))
+
+    const merged = await withSingleFlight('site_content_fetch', async () => {
+      const { data, error } = await supabase.from('site_content').select('key, value')
+      if (error) return cloneDefaults()
+      return mergeWithDefaults(data || [])
+    })
+
+    setCached(SITE_CONTENT_MEMORY_KEY, merged, SITE_CONTENT_TTL_MS)
+    writeSessionJson(SITE_CONTENT_CACHE_KEY, merged, SITE_CONTENT_TTL_MS)
+    setContent(structuredClone(merged))
     setLoading(false)
   }, [])
 
@@ -166,28 +209,55 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     void loadContent()
   }, [loadContent])
 
+  // Public visitors: no Realtime (protects Free Tier connection budget under load).
+  // Admins: debounced realtime so live CMS stays fresh without refetch storms.
   useEffect(() => {
+    if (!isAdmin) return
+
+    const refresh = debounceTrailing(() => {
+      if (isCmsEditActive()) return
+      clearCached(SITE_CONTENT_MEMORY_KEY)
+      void loadContent({ force: true })
+    }, 750)
+
     const channel = supabase
-      .channel('site-content-live')
+      .channel('site-content-live-admin')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'site_content' },
-        () => {
-          if (isCmsEditActive()) return
-          void loadContent()
-        },
+        () => refresh(),
       )
       .subscribe()
 
     return () => {
+      refresh.cancel()
       void supabase.removeChannel(channel)
     }
-  }, [loadContent])
+  }, [isAdmin, loadContent])
+
+  // Soft refresh when a visitor returns to the tab after cache TTL.
+  useEffect(() => {
+    if (isAdmin) return
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      if (getCached<SiteContentMap>(SITE_CONTENT_MEMORY_KEY)) return
+      void loadContent({ force: true })
+    }
+
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [isAdmin, loadContent])
 
   const updateBlock = useCallback(
     async (key: SiteContentKey, value: unknown) => {
       const normalized = normalizeBlock(key, value)
-      setContent((current) => ({ ...current, [key]: normalized }))
+      setContent((current) => {
+        const next = { ...current, [key]: normalized }
+        setCached(SITE_CONTENT_MEMORY_KEY, next, SITE_CONTENT_TTL_MS)
+        writeSessionJson(SITE_CONTENT_CACHE_KEY, next, SITE_CONTENT_TTL_MS)
+        return next
+      })
       if (!isAdmin) return
 
       const { error } = await supabase.rpc('admin_upsert_site_content', {
@@ -196,7 +266,8 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
       })
 
       if (error) {
-        await loadContent()
+        clearCached(SITE_CONTENT_MEMORY_KEY)
+        await loadContent({ force: true })
         throw error
       }
     },

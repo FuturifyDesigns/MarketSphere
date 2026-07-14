@@ -33,6 +33,8 @@ export function Browse() {
       .from('providers')
       .select('*, provider_services(*, categories(*))')
       .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(48)
 
     if (search) {
       query = query.or(`business_name.ilike.%${search}%,description.ilike.%${search}%`)
