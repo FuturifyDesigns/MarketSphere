@@ -9,7 +9,7 @@ const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
 
 type ServicesPageConfig = {
-  scrub: number
+  scrub: number | boolean
   scrollUnit: number
   slideSegment: number
 }
@@ -114,6 +114,77 @@ function runServicesPagePin(root: HTMLElement, config: ServicesPageConfig) {
   gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
 }
 
+function runMobileServicesPageStack(root: HTMLElement) {
+  const intro = root.querySelector<HTMLElement>('.svc-page__intro')
+  const slides = gsap.utils.toArray<HTMLElement>('.svc-page__slide', root)
+
+  if (intro) {
+    gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto', clearProps: 'transform' })
+    gsap.fromTo(
+      intro.children,
+      { opacity: 0, y: 22 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.55,
+        stagger: 0.06,
+        ease: REVEAL_EASE,
+        clearProps: 'transform,opacity',
+        scrollTrigger: {
+          trigger: intro,
+          start: 'top 88%',
+          once: true,
+        },
+      },
+    )
+  }
+
+  slides.forEach((slide) => {
+    gsap.set(slide, { opacity: 1, pointerEvents: 'auto', visibility: 'visible', clearProps: 'transform' })
+    const media = slide.querySelector('.svc-page__media')
+    const copy = slide.querySelectorAll('.svc-page__copy > *')
+
+    if (media) {
+      gsap.fromTo(
+        media,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: REVEAL_EASE,
+          clearProps: 'transform,opacity',
+          scrollTrigger: {
+            trigger: slide,
+            start: 'top 90%',
+            once: true,
+          },
+        },
+      )
+    }
+
+    if (copy.length) {
+      gsap.fromTo(
+        copy,
+        { opacity: 0, y: 18 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          stagger: 0.05,
+          ease: REVEAL_EASE,
+          clearProps: 'transform,opacity',
+          scrollTrigger: {
+            trigger: slide,
+            start: 'top 86%',
+            once: true,
+          },
+        },
+      )
+    }
+  })
+}
+
 export function initServicesPageShowcase(root: HTMLElement) {
   if (prefersReducedMotion()) {
     gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__intro'), {
@@ -133,11 +204,11 @@ export function initServicesPageShowcase(root: HTMLElement) {
     const mm = gsap.matchMedia()
 
     mm.add('(min-width: 901px)', () => {
-      runServicesPagePin(root, { scrub: 1, scrollUnit: 0.85, slideSegment: 1.45 })
+      runServicesPagePin(root, { scrub: true, scrollUnit: 0.85, slideSegment: 1.45 })
     })
 
     mm.add('(max-width: 900px)', () => {
-      runServicesPagePin(root, { scrub: 0.65, scrollUnit: 0.72, slideSegment: 1.15 })
+      runMobileServicesPageStack(root)
     })
 
     flushScrollRefresh()

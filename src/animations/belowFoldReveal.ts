@@ -6,7 +6,7 @@ import { flushScrollRefresh } from '../lib/scrollRefresh'
 gsap.registerPlugin(ScrollTrigger)
 
 const REVEAL_EASE = 'power2.out'
-const SCRUB = 1.35
+const SCRUB = true
 
 function initMobileSectionReveal(section: HTMLElement, triggerId: string): (() => void) | undefined {
   const ctx = gsap.context(() => {

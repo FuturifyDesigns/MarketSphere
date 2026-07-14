@@ -273,7 +273,7 @@ export function ServicesShowcase() {
             end: () => `+=${tl.duration() * window.innerHeight * 0.42}`,
             pin: true,
             pinSpacing: true,
-            scrub: 1.35,
+            scrub: true,
             anticipatePin: 0,
             animation: tl,
             invalidateOnRefresh: true,

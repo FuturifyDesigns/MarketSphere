@@ -36,13 +36,14 @@ export function useLenis() {
 
     document.documentElement.classList.add('lenis')
 
+    // Snappier desktop smoothing — less lag after wheel input, same look.
     const lenis = new Lenis({
-      duration: 0.88,
+      duration: 0.58,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       syncTouch: false,
       touchMultiplier: 1,
-      wheelMultiplier: 0.92,
+      wheelMultiplier: 1,
       prevent: (node) => {
         if (!(node instanceof HTMLElement)) return false
         return Boolean(node.closest('[data-lenis-prevent]'))
@@ -76,7 +77,8 @@ export function useLenis() {
 
     const tick = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(tick)
-    gsap.ticker.lagSmoothing(0)
+    // Allow GSAP to drop catch-up work under load (smoother scroll than lagSmoothing(0)).
+    gsap.ticker.lagSmoothing(500)
 
     return () => {
       gsap.ticker.remove(tick)
@@ -84,6 +86,7 @@ export function useLenis() {
       lenis.destroy()
       lenisInstance = null
       document.documentElement.classList.remove('lenis')
+      gsap.ticker.lagSmoothing(500)
     }
   }, [])
 }

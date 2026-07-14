@@ -176,15 +176,25 @@ export function Home() {
         const isDesktop = !isMobileViewport()
 
         if (isDesktop) {
+          let lastSky = -1
+          let lastTheme = ''
           ScrollTrigger.create({
             trigger: root,
             start: 'top top',
             end: 'bottom bottom',
-            scrub: 0.8,
+            scrub: true,
             onUpdate: (self) => {
-              const p = self.progress
-              document.documentElement.style.setProperty('--sky-progress', String(p))
-              document.documentElement.setAttribute('data-theme', p > 0.55 ? 'night' : 'day')
+              // Quantize CSS var updates to cut style recalc storms while scrolling.
+              const quantized = Math.round(self.progress * 40) / 40
+              if (quantized !== lastSky) {
+                lastSky = quantized
+                document.documentElement.style.setProperty('--sky-progress', String(quantized))
+              }
+              const theme = self.progress > 0.55 ? 'night' : 'day'
+              if (theme !== lastTheme) {
+                lastTheme = theme
+                document.documentElement.setAttribute('data-theme', theme)
+              }
             },
           })
         }
@@ -205,7 +215,7 @@ export function Home() {
               trigger: heroRef.current,
               start: 'top top',
               end: 'bottom top',
-              scrub: 1,
+              scrub: true,
             },
           })
           gsap.to('.hero__visual', {
@@ -216,7 +226,7 @@ export function Home() {
               trigger: heroRef.current,
               start: 'top top',
               end: 'bottom top',
-              scrub: 1,
+              scrub: true,
             },
           })
         }

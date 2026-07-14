@@ -11,7 +11,7 @@ const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
 
 type TreeConfig = {
-  scrub: number
+  scrub: number | boolean
   scrollUnit: number
   enterX: number
 }
@@ -368,7 +368,7 @@ export function initAboutTreeAnimation(root: HTMLElement) {
     const mm = gsap.matchMedia()
 
     mm.add('(min-width: 901px)', () => {
-      return runAboutTreePin(root, { scrub: 1.2, scrollUnit: 0.42, enterX: 72 })
+      return runAboutTreePin(root, { scrub: true, scrollUnit: 0.42, enterX: 72 })
     })
 
     mm.add('(max-width: 900px)', () => {

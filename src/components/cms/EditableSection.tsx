@@ -51,28 +51,34 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
     const section = nodeRef.current
     if (!section) return
 
+    let frame = 0
     const update = () => {
-      const rect = section.getBoundingClientRect()
-      if (rect.width === 0 && rect.height === 0) {
-        setEditBtnStyle(HIDDEN_BUTTON_STYLE)
-        return
-      }
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        const rect = section.getBoundingClientRect()
+        if (rect.width === 0 && rect.height === 0) {
+          setEditBtnStyle(HIDDEN_BUTTON_STYLE)
+          return
+        }
 
-      setEditBtnStyle({
-        position: 'fixed',
-        top: rect.top + 12,
-        left: Math.min(Math.max(12, rect.right - 12), window.innerWidth - 12),
-        transform: 'translateX(-100%)',
-        zIndex: 1300,
-        display: 'inline-flex',
+        setEditBtnStyle({
+          position: 'fixed',
+          top: rect.top + 12,
+          left: Math.min(Math.max(12, rect.right - 12), window.innerWidth - 12),
+          transform: 'translateX(-100%)',
+          zIndex: 1300,
+          display: 'inline-flex',
+        })
       })
     }
 
     update()
-    window.addEventListener('scroll', update, true)
-    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, { capture: true, passive: true })
+    window.addEventListener('resize', update, { passive: true })
 
     return () => {
+      if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', update, true)
       window.removeEventListener('resize', update)
     }

@@ -381,7 +381,7 @@ html.cookie-banner-open .app-toast {
 }
 
 .reveal-item {
-  will-change: transform, opacity;
+  opacity: 1;
 }
 
 .loading-screen {

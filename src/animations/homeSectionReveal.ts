@@ -11,7 +11,7 @@ type SectionConfig = {
   gap: number
   scrollMultiplier: number
   perItem: number
-  scrub: number
+  scrub: number | boolean
 }
 
 function setSplitItemInitial(item: HTMLElement, index: number) {
@@ -366,7 +366,7 @@ function setupMarquee(root: HTMLElement, mobile = false) {
       trigger: marquee,
       start: 'top 92%',
       end: 'top 72%',
-      scrub: 1.2,
+      scrub: true,
     },
   })
 }
@@ -391,7 +391,7 @@ export function initHomeSectionReveals(root: HTMLElement): (() => void) | undefi
       gap: 0.18,
       scrollMultiplier: 0.85,
       perItem: 0.7,
-      scrub: 1.35,
+      scrub: true,
     })
   })
 
@@ -434,7 +434,7 @@ export function initBelowFoldHomeSections(root: HTMLElement): (() => void) | und
       gap: 0.18,
       scrollMultiplier: 0.85,
       perItem: 0.7,
-      scrub: 1.35,
+      scrub: true,
     })
   })
 

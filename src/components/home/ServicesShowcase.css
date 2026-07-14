@@ -121,7 +121,7 @@
   object-fit: cover;
   object-position: center;
   transform: scale(1.15);
-  will-change: transform;
+
 }
 
 .services-showcase__scenery-overlay {
@@ -169,7 +169,7 @@
   letter-spacing: -0.05em;
   color: #2e2720;
   transform-origin: center center;
-  will-change: transform, opacity;
+
 }
 
 .services-showcase__intro-tagline {
@@ -336,7 +336,7 @@
   box-shadow:
     0 24px 56px rgba(74, 63, 47, 0.16),
     0 0 0 1px rgba(201, 162, 75, 0.12);
-  will-change: transform, opacity;
+
   transition: box-shadow 0.35s ease;
 }
 
@@ -357,7 +357,7 @@
   height: 100%;
   transform-style: preserve-3d;
   transition: transform 0.2s ease-out;
-  will-change: transform;
+
 }
 
 .services-showcase__visual-poster {
@@ -388,7 +388,7 @@
   background: var(--color-gold);
   opacity: 0.35;
   transform: scale(1);
-  will-change: transform, opacity;
+
 }
 
 /* ??? Mobile ??? */
