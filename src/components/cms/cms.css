@@ -204,10 +204,15 @@
   background: rgba(8, 8, 10, 0.96);
   border: 1px solid rgba(212, 175, 55, 0.45);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  color: #f5f5f5;
 }
 
 .cms-editable-toolbar--editing {
   padding: 12px;
+}
+
+.cms-text-editor-panel {
+  color: #f5f5f5;
 }
 
 .cms-editable__trigger--floating {
@@ -244,14 +249,27 @@
 .cms-editable__input {
   width: 100%;
   min-width: 120px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border: 2px solid var(--gold, #d4af37);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.85);
-  color: inherit;
+  background: #1a1a1f;
+  color: #ffffff;
+  caret-color: var(--gold, #d4af37);
   font: inherit;
-  line-height: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
   resize: vertical;
+  color-scheme: dark;
+}
+
+.cms-editable__input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.cms-editable__input:focus {
+  outline: none;
+  border-color: #e8c96a;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
 }
 
 .cms-editable__actions {
@@ -275,8 +293,8 @@
 }
 
 .cms-editable__cancel {
-  background: rgba(255, 255, 255, 0.12);
-  color: inherit;
+  background: rgba(255, 255, 255, 0.14);
+  color: #f5f5f5;
 }
 
 .cms-image-edit {
