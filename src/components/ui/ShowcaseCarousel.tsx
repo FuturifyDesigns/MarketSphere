@@ -120,36 +120,47 @@ export function ShowcaseCarousel<T>({
 
   return (
     <div className={`showcase-carousel ${className}`.trim()} {...rootProps}>
-      <div
-        className="showcase-carousel__viewport"
-        aria-roledescription="carousel"
-        aria-label={ariaLabel}
-        style={viewportHeight ? { height: viewportHeight } : undefined}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        <AnimatePresence mode="sync" initial={false}>
-          <motion.div
-            ref={slideRef}
-            key={getKey(currentItem)}
-            className="showcase-carousel__slide"
-            initial={slideVariants.initial}
-            animate={slideVariants.animate}
-            exit={slideVariants.exit}
-            transition={{ duration: mobileMotion ? 0.22 : 0.32, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {renderItem(currentItem)}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {items.length > 1 ? (
-        <>
+      <div className="showcase-carousel__row">
+        {items.length > 1 ? (
           <button type="button" className="showcase-carousel__nav showcase-carousel__nav--prev" onClick={goPrev} aria-label="Previous slide">
             <ChevronLeft size={20} />
           </button>
+        ) : null}
+
+        <div
+          className="showcase-carousel__viewport"
+          aria-roledescription="carousel"
+          aria-label={ariaLabel}
+          style={viewportHeight ? { height: viewportHeight } : undefined}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <AnimatePresence mode="sync" initial={false}>
+            <motion.div
+              ref={slideRef}
+              key={getKey(currentItem)}
+              className="showcase-carousel__slide"
+              initial={slideVariants.initial}
+              animate={slideVariants.animate}
+              exit={slideVariants.exit}
+              transition={{ duration: mobileMotion ? 0.22 : 0.32, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {renderItem(currentItem)}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {items.length > 1 ? (
           <button type="button" className="showcase-carousel__nav showcase-carousel__nav--next" onClick={goNext} aria-label="Next slide">
             <ChevronRight size={20} />
+          </button>
+        ) : null}
+      </div>
+
+      {items.length > 1 ? (
+        <div className="showcase-carousel__controls">
+          <button type="button" className="showcase-carousel__nav showcase-carousel__nav--inline showcase-carousel__nav--prev" onClick={goPrev} aria-label="Previous slide">
+            <ChevronLeft size={18} />
           </button>
           <div className="showcase-carousel__dots" role="tablist" aria-label={`${ariaLabel} slides`}>
             {items.map((item, dotIndex) => (
@@ -164,7 +175,10 @@ export function ShowcaseCarousel<T>({
               />
             ))}
           </div>
-        </>
+          <button type="button" className="showcase-carousel__nav showcase-carousel__nav--inline showcase-carousel__nav--next" onClick={goNext} aria-label="Next slide">
+            <ChevronRight size={18} />
+          </button>
+        </div>
       ) : null}
     </div>
   )

@@ -14,6 +14,7 @@ import {
   Trash2,
   Users,
   X,
+  Settings,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -21,6 +22,7 @@ import { banUser, deleteUser, unbanUser } from '../../lib/adminUsers'
 import { isProfileBanned } from '../../lib/accountGuard'
 import { supabase } from '../../lib/supabase'
 import { AccountProfileCard } from '../../components/dashboard/AccountProfileCard'
+import { ChangePasswordCard } from '../../components/dashboard/ChangePasswordCard'
 import { SiteContentPanel } from '../../components/admin/SiteContentPanel'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -47,7 +49,7 @@ import './Dashboard.css'
 
 type CategoryFields = 'name' | 'slug' | 'description'
 type TestimonialFields = 'client_name' | 'service_type' | 'content'
-type AdminTab = 'overview' | 'providers' | 'users' | 'enquiries' | 'contacts' | 'categories' | 'testimonials' | 'site-content'
+type AdminTab = 'overview' | 'providers' | 'users' | 'enquiries' | 'contacts' | 'categories' | 'testimonials' | 'site-content' | 'settings'
 
 type AdminStats = {
   users: number
@@ -81,6 +83,7 @@ const ADMIN_TABS: Array<{ id: AdminTab; label: string; icon: typeof Users }> = [
   { id: 'categories', label: 'Categories', icon: FolderOpen },
   { id: 'testimonials', label: 'Testimonials', icon: Quote },
   { id: 'site-content', label: 'Site Content', icon: Pencil },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
 export function AdminDashboard() {
@@ -782,6 +785,12 @@ export function AdminDashboard() {
         )}
 
         {tab === 'site-content' && <SiteContentPanel />}
+
+        {tab === 'settings' && (
+          <div className="admin-dashboard__settings">
+            <ChangePasswordCard />
+          </div>
+        )}
 
         {tab === 'testimonials' && (
           <div className="admin-dashboard__split">

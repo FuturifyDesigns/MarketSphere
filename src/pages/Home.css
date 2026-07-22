@@ -653,7 +653,7 @@
 .home-providers-carousel.showcase-carousel {
   position: relative;
   z-index: 1;
-  max-width: min(100%, 52rem);
+  max-width: min(100%, 56rem);
 }
 
 .home-providers-carousel .showcase-carousel__viewport {

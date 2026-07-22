@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { LOGO_PATH } from '../lib/constants'
 import { Button } from '../components/ui/Button'
 import { AboutCompanyTree } from '../components/about/AboutCompanyTree'
+import { StaffShowcase } from '../components/about/StaffShowcase'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
@@ -66,6 +67,11 @@ export function About() {
       <EditableSection id="about-company" label="Company profile" as="div">
         <AboutCompanyTree ref={treeRef} />
       </EditableSection>
+
+      <EditableSection id="about-staff" label="Leadership team" as="div">
+        <StaffShowcase />
+      </EditableSection>
+
       <EditableSection id="about-extra" label="Extra sections" as="div">
         <div className="container">
           <CmsExtraSections contentKey="about" />

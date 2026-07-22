@@ -25,7 +25,7 @@ export const COMPANY = {
   companyType: 'A private limited company',
   address:
     '10102 MAFULO House, next to Old Prison Headquarters, Taung Broadhurst, Gaborone, Botswana',
-  email: 'imcalledsammy@gmail.com',
+  email: 'info@marketspheregroup.com',
   phones: ['+267 74013060', '+267 72470917'],
   coreValues: [
     'Botho',

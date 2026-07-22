@@ -3,17 +3,25 @@
   width: 100%;
   max-width: 42rem;
   margin-inline: auto;
-  /* Keep arrows visible — only the viewport clips slides */
   overflow: visible;
 }
 
 .showcase-carousel--wide {
-  max-width: min(100%, 52rem);
+  max-width: min(100%, 56rem);
+}
+
+.showcase-carousel__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .showcase-carousel__viewport {
   position: relative;
   display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   width: 100%;
   border-radius: inherit;
@@ -28,10 +36,9 @@
 }
 
 .showcase-carousel__nav {
-  position: absolute;
-  top: 50%;
+  position: static;
   z-index: 4;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   width: 42px;
@@ -42,27 +49,35 @@
   color: var(--text-primary);
   cursor: pointer;
   box-shadow: var(--card-shadow);
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .showcase-carousel__nav:hover {
   border-color: rgba(201, 162, 75, 0.45);
   color: var(--color-gold);
+  transform: scale(1.05);
 }
 
-.showcase-carousel__nav--prev {
-  left: 0.65rem;
+.showcase-carousel__nav--inline {
+  display: none;
+  width: 2.4rem;
+  height: 2.4rem;
+  box-shadow: none;
 }
 
-.showcase-carousel__nav--next {
-  right: 0.65rem;
+.showcase-carousel__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
 }
 
 .showcase-carousel__dots {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 0.45rem;
-  margin-top: 1.25rem;
 }
 
 .showcase-carousel__dot {
@@ -93,6 +108,19 @@
     max-width: 100%;
   }
 
+  .showcase-carousel__row {
+    gap: 0;
+  }
+
+  /* Side arrows move under the card on small screens so they never cover content */
+  .showcase-carousel__row > .showcase-carousel__nav {
+    display: none;
+  }
+
+  .showcase-carousel__nav--inline {
+    display: grid;
+  }
+
   .showcase-carousel__viewport {
     width: 100%;
     max-width: 100%;
@@ -106,20 +134,7 @@
     margin-inline: auto;
   }
 
-  .showcase-carousel__nav--prev {
-    left: 0.5rem;
-  }
-
-  .showcase-carousel__nav--next {
-    right: 0.5rem;
-  }
-
-  .showcase-carousel__nav {
-    width: 36px;
-    height: 36px;
-  }
-
-  .showcase-carousel__dots {
+  .showcase-carousel__controls {
     margin-top: 0.85rem;
   }
 
@@ -146,6 +161,11 @@
   .showcase-carousel__nav {
     width: 32px;
     height: 32px;
+  }
+
+  .showcase-carousel__nav--inline {
+    width: 2.2rem;
+    height: 2.2rem;
   }
 
   .showcase-carousel__dot {

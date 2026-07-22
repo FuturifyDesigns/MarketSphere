@@ -110,7 +110,7 @@ values
     "businessType": "Service provider and entrepreneurship developments",
     "companyType": "A private limited company",
     "address": "10102 MAFULO House, next to Old Prison Headquarters, Taung Broadhurst, Gaborone, Botswana",
-    "email": "imcalledsammy@gmail.com",
+    "email": "info@marketspheregroup.com",
     "phones": ["+267 74013060", "+267 72470917"],
     "coreValues": ["Botho", "Professionalism", "Customer satisfaction", "Innovation", "Excellence", "Empowerment", "Reliability", "Sustainable growth / Unemployment reduction"],
     "areasOfInterest": ["Entrepreneurship training", "Career development", "Basic IT services", "Real estate consulting", "Youth empowerment projects and mentorship", "Music education", "Academic tuitions", "Platform mass marketing", "Basic farming practices"]

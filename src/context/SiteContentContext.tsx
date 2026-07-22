@@ -107,13 +107,20 @@ function normalizeBlock(key: SiteContentKey, block: unknown) {
   }
 
   if (key === 'about') {
-    const about = merged as { tree?: Record<string, unknown> }
-    const defaultTree = (DEFAULT_SITE_CONTENT.about as { tree: Record<string, unknown> }).tree
+    const about = merged as { tree?: Record<string, unknown>; staff?: { members?: unknown[] } }
+    const defaultAbout = DEFAULT_SITE_CONTENT.about as {
+      tree: Record<string, unknown>
+      staff: { members: unknown[] }
+    }
+    const defaultTree = defaultAbout.tree
     if (!about.tree) {
       about.tree = structuredClone(defaultTree)
     } else {
       about.tree.coreValues = normalizeStringItems(about.tree.coreValues, defaultTree.coreValues as never)
       about.tree.areas = normalizeStringItems(about.tree.areas, defaultTree.areas as never)
+    }
+    if (!about.staff?.members?.length) {
+      about.staff = structuredClone(defaultAbout.staff)
     }
   }
 

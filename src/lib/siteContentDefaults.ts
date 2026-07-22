@@ -213,6 +213,35 @@ export const DEFAULT_SITE_CONTENT: Record<SiteContentKey, unknown> = {
       companyType: COMPANY.companyType,
       businessType: COMPANY.businessType,
     },
+    staff: {
+      eyebrow: 'Our Team',
+      title: 'Leadership &',
+      titleEmphasis: 'management',
+      lead: 'The people guiding Market Sphere Group — connecting communities with trusted professionals across Botswana.',
+      members: [
+        {
+          id: 'staff-samuel',
+          name: 'Mr. Samuel Akinsola',
+          role: 'Chief Executive Officer (CEO)',
+          phone: '+267 74 013 060',
+          image: 'staff/samuel-akinsola.png',
+        },
+        {
+          id: 'staff-pearl',
+          name: 'Ms. Pearl Lindiwe Phatsimo',
+          role: 'Office Manager & Property Agency Personnel',
+          phone: '+267 78 377 990',
+          image: 'staff/pearl-phatsimo.png',
+        },
+        {
+          id: 'staff-tumisang',
+          name: 'Ms. Tumisang Gaobonya',
+          role: 'Financial & Business Partnership Personnel',
+          phone: '+267 77 414 473',
+          image: 'staff/tumisang-gaobonya.png',
+        },
+      ],
+    },
     extraSections: [] as CmsExtraSection[],
   },
   services: {

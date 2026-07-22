@@ -958,6 +958,12 @@
   gap: 1.25rem;
 }
 
+.admin-dashboard__settings {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 36rem;
+}
+
 .admin-dashboard__panel {
   margin-bottom: 0;
 }

@@ -117,4 +117,4 @@ Replace `public/logo.svg` and `public/favicon.svg` with your official logo files
 - **Market Sphere Group (Pty) Ltd**
 - Registration: UIN BW00000887185
 - Location: Gaborone, Botswana
-- Email: imcalledsammy@gmail.com
+- Email: info@marketspheregroup.com
