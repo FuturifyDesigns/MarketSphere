@@ -133,21 +133,18 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
             variants={{
               enter: (dir: number) => ({
                 opacity: 0,
-                x: dir > 0 ? 48 : -48,
-                filter: 'blur(4px)',
+                x: dir > 0 ? 40 : -40,
               }),
               center: {
                 opacity: 1,
                 x: 0,
-                filter: 'blur(0px)',
               },
               exit: (dir: number) => ({
                 opacity: 0,
-                x: dir > 0 ? -36 : 36,
-                filter: 'blur(3px)',
+                x: dir > 0 ? -28 : 28,
               }),
             }}
-            transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="testimonials-showcase__quote-mark" aria-hidden="true">
               <Quote size={48} strokeWidth={1.25} />
@@ -186,7 +183,7 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
           <>
             <button
               type="button"
-              className="testimonials-showcase__nav testimonials-showcase__nav--prev"
+              className="testimonials-showcase__nav testimonials-showcase__nav--prev testimonials-showcase__nav--overlay"
               onClick={goPrev}
               aria-label="Previous testimonial"
             >
@@ -194,7 +191,7 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
             </button>
             <button
               type="button"
-              className="testimonials-showcase__nav testimonials-showcase__nav--next"
+              className="testimonials-showcase__nav testimonials-showcase__nav--next testimonials-showcase__nav--overlay"
               onClick={goNext}
               aria-label="Next testimonial"
             >
@@ -205,22 +202,40 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
       </div>
 
       {items.length > 1 ? (
-        <div className="testimonials-showcase__dots" role="tablist" aria-label="Testimonial slides">
-          {items.map((item, i) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={i === safeIndex}
-              aria-label={`Go to story ${i + 1}`}
-              className={
-                i === safeIndex
-                  ? 'testimonials-showcase__dot testimonials-showcase__dot--active'
-                  : 'testimonials-showcase__dot'
-              }
-              onClick={() => goTo(i, i > safeIndex ? 1 : -1)}
-            />
-          ))}
+        <div className="testimonials-showcase__controls">
+          <button
+            type="button"
+            className="testimonials-showcase__nav testimonials-showcase__nav--prev testimonials-showcase__nav--inline"
+            onClick={goPrev}
+            aria-label="Previous testimonial"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="testimonials-showcase__dots" role="tablist" aria-label="Testimonial slides">
+            {items.map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={i === safeIndex}
+                aria-label={`Go to story ${i + 1}`}
+                className={
+                  i === safeIndex
+                    ? 'testimonials-showcase__dot testimonials-showcase__dot--active'
+                    : 'testimonials-showcase__dot'
+                }
+                onClick={() => goTo(i, i > safeIndex ? 1 : -1)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="testimonials-showcase__nav testimonials-showcase__nav--next testimonials-showcase__nav--inline"
+            onClick={goNext}
+            aria-label="Next testimonial"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       ) : null}
     </div>

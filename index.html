@@ -67,62 +67,50 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Market Sphere Group (Pty) Ltd",
-        "alternateName": "Market Sphere Group",
-        "url": "https://marketspheregroup.com",
-        "logo": "https://marketspheregroup.com/logo-512.png",
-        "image": "https://marketspheregroup.com/logo-512.png",
-        "description": "Privately owned company connecting customers with verified service providers across Botswana — entrepreneurship, real estate, academic tuition, youth empowerment, and more.",
-        "slogan": "Master Your Field for Relevance",
-        "email": "imcalledsammy@gmail.com",
-        "telephone": ["+267 74013060", "+267 72470917"],
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "10102 MAFULO House, Taung Broadhurst",
-          "addressLocality": "Gaborone",
-          "addressRegion": "Gaborone",
-          "addressCountry": "BW"
-        },
-        "areaServed": ["BW", "SADC"],
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "contactType": "customer service",
-          "telephone": "+267 74013060",
-          "areaServed": "BW",
-          "availableLanguage": ["en"]
-        }
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Market Sphere Group",
-        "url": "https://marketspheregroup.com/",
-        "description": "Online marketplace connecting customers with verified service providers across Botswana.",
-        "publisher": {
-          "@type": "Organization",
-          "name": "Market Sphere Group (Pty) Ltd",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "https://marketspheregroup.com/logo-512.png"
+        "@graph": [
+          {
+            "@type": ["Organization", "LocalBusiness"],
+            "@id": "https://marketspheregroup.com/#organization",
+            "name": "Market Sphere Group (Pty) Ltd",
+            "alternateName": "Market Sphere Group",
+            "url": "https://marketspheregroup.com",
+            "logo": "https://marketspheregroup.com/logo-512.png",
+            "image": "https://marketspheregroup.com/logo-512.png",
+            "description": "Privately owned company connecting customers with verified service providers across Botswana — entrepreneurship, real estate, academic tuition, youth empowerment, and more.",
+            "slogan": "Master Your Field for Relevance",
+            "email": "imcalledsammy@gmail.com",
+            "telephone": ["+267 74013060", "+267 72470917"],
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "10102 MAFULO House, Taung Broadhurst",
+              "addressLocality": "Gaborone",
+              "addressRegion": "Gaborone",
+              "addressCountry": "BW"
+            },
+            "areaServed": ["BW", "SADC"],
+            "priceRange": "$$",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer service",
+              "telephone": "+267 74013060",
+              "areaServed": "BW",
+              "availableLanguage": ["en"]
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://marketspheregroup.com/#website",
+            "name": "Market Sphere Group",
+            "url": "https://marketspheregroup.com/",
+            "description": "Online marketplace connecting customers with verified service providers across Botswana.",
+            "publisher": { "@id": "https://marketspheregroup.com/#organization" },
+            "inLanguage": "en-BW"
           }
-        },
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://marketspheregroup.com/#/browse?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
+        ]
       }
     </script>
 
     <link rel="preload" href="/logo.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/auth/sign-in.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/auth/sign-up.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/mascots/welcome.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/mascots/explaining.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/mascots/all-done.webp" as="image" fetchpriority="high" />
   </head>
   <body>
     <div id="root"></div>

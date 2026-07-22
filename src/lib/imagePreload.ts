@@ -17,7 +17,7 @@ function imageHref(path: string) {
 }
 
 /** Warm the browser image cache for a static public asset. */
-export function preloadImage(path: string): Promise<void> {
+export function preloadImage(path: string, priority: 'high' | 'low' = 'low'): Promise<void> {
   const href = imageHref(path)
   if (loaded.has(href)) return Promise.resolve()
 
@@ -26,8 +26,9 @@ export function preloadImage(path: string): Promise<void> {
 
   const promise = new Promise<void>((resolve) => {
     const img = new Image()
-    img.decoding = 'sync'
-    img.fetchPriority = 'high'
+    img.decoding = 'async'
+    if (priority === 'high') img.fetchPriority = 'high'
+    else img.fetchPriority = 'low'
     img.onload = () => {
       loaded.add(href)
       resolve()
@@ -44,21 +45,25 @@ export function isImagePreloaded(path: string) {
   return loaded.has(imageHref(path))
 }
 
-/** Preload all static UI images as early as possible. */
+/**
+ * Warm secondary UI images without competing with first paint.
+ * Logo/mascots/hero video stay on the critical path separately.
+ */
 export function preloadAllImages() {
-  for (const path of STATIC_IMAGES) {
-    const href = imageHref(path)
+  if (typeof window === 'undefined') return
 
-    if (!document.querySelector(`link[rel="preload"][href="${href}"]`)) {
-      const link = document.createElement('link')
-      link.rel = 'preload'
-      link.as = 'image'
-      link.href = href
-      link.setAttribute('fetchpriority', 'high')
-      document.head.appendChild(link)
+  const run = () => {
+    for (const path of STATIC_IMAGES) {
+      // Skip logo — already on the critical path.
+      if (path === 'logo.webp') continue
+      void preloadImage(path, 'low')
     }
+  }
 
-    void preloadImage(path)
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(run, { timeout: 3500 })
+  } else {
+    window.setTimeout(run, 1800)
   }
 }
 

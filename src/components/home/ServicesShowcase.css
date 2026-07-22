@@ -405,9 +405,7 @@
   gap: 0.875rem;
   padding: 1.25rem;
   border-radius: var(--radius-md);
-  background: rgba(250, 248, 244, 0.94);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(250, 248, 244, 0.97);
   box-shadow: 0 10px 36px rgba(74, 63, 47, 0.1);
 }
 

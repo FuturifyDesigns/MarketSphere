@@ -46,6 +46,8 @@
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.5;
+  contain: layout paint;
+  will-change: transform;
 }
 
 .sky-bg__glow--1 {
@@ -64,4 +66,21 @@
   left: -5%;
   background: rgba(74, 63, 47, 0.2);
   transform: translateY(calc(var(--sky-progress, 0) * -20vh));
+}
+
+@media (max-width: 900px) {
+  /* Soft radial wash instead of live 80px blur — same look, far cheaper on phones */
+  .sky-bg__glow {
+    filter: none;
+    will-change: auto;
+    opacity: 0.42;
+  }
+
+  .sky-bg__glow--1 {
+    background: radial-gradient(circle, rgba(201, 162, 75, 0.32) 0%, transparent 68%);
+  }
+
+  .sky-bg__glow--2 {
+    background: radial-gradient(circle, rgba(74, 63, 47, 0.28) 0%, transparent 68%);
+  }
 }

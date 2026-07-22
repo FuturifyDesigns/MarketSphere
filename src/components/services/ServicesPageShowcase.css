@@ -291,9 +291,7 @@
     align-items: flex-start;
     padding: 1rem 1.1rem;
     border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--card-bg) 94%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--card-bg) 97%, transparent);
     box-shadow: 0 8px 28px color-mix(in srgb, var(--color-bronze) 10%, transparent);
     position: relative;
     z-index: 2;

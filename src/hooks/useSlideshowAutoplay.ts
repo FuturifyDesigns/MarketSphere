@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 function canHoverPause() {
   if (typeof window === 'undefined') return false
@@ -16,7 +16,7 @@ type Options = {
  * Reliable slideshow autoplay that:
  * - does not stick paused after touch taps (mouseenter without mouseleave)
  * - only pauses on true desktop hover
- * - respects tab visibility
+ * - pauses when off-screen or tab is hidden
  * - resets the timer after manual navigation
  */
 export function useSlideshowAutoplay(
@@ -27,8 +27,10 @@ export function useSlideshowAutoplay(
   const lengthRef = useRef(length)
   const intervalRef = useRef(intervalMs)
   const hoverPausedRef = useRef(false)
+  const offscreenPausedRef = useRef(false)
   const resumeAtRef = useRef(0)
   const timerRef = useRef<number | null>(null)
+  const [rootEl, setRootEl] = useState<HTMLElement | null>(null)
 
   lengthRef.current = length
   intervalRef.current = intervalMs
@@ -54,7 +56,11 @@ export function useSlideshowAutoplay(
         return
       }
 
-      if (hoverPausedRef.current || Date.now() < resumeAtRef.current) {
+      if (
+        hoverPausedRef.current ||
+        offscreenPausedRef.current ||
+        Date.now() < resumeAtRef.current
+      ) {
         schedule()
         return
       }
@@ -83,6 +89,21 @@ export function useSlideshowAutoplay(
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [schedule, clearTimer])
 
+  useEffect(() => {
+    if (!rootEl || typeof IntersectionObserver === 'undefined') return
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        offscreenPausedRef.current = !(entry?.isIntersecting && (entry.intersectionRatio ?? 0) > 0.15)
+        if (!offscreenPausedRef.current) schedule()
+        else clearTimer()
+      },
+      { threshold: [0, 0.15, 0.35] },
+    )
+    io.observe(rootEl)
+    return () => io.disconnect()
+  }, [rootEl, schedule, clearTimer])
+
   const pauseForHover = useCallback(() => {
     if (!canHoverPause()) return
     hoverPausedRef.current = true
@@ -101,6 +122,7 @@ export function useSlideshowAutoplay(
 
   return {
     rootProps: {
+      ref: setRootEl,
       onMouseEnter: pauseForHover,
       onMouseLeave: resumeFromHover,
     },

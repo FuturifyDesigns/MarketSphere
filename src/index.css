@@ -217,7 +217,9 @@ h1, h2, h3, h4, h5, h6 {
   .showcase-carousel__slide,
   .showcase-carousel__slide > *,
   .home-providers-stage,
-  .home-providers-grid {
+  .home-providers-grid,
+  .testimonials-showcase,
+  .testimonial-submit {
     width: 100%;
     max-width: 100%;
     margin-inline: auto;

@@ -12,6 +12,7 @@ import { preloadServiceVideos } from './lib/serviceVideoCache'
 import { preloadAllImages } from './lib/imagePreload'
 import { preloadCriticalAssets } from './lib/preloadCriticalAssets'
 import { ScrollToTop } from './components/layout/ScrollToTop'
+import { DocumentSeo } from './components/seo/DocumentSeo'
 import { SiteIntro } from './components/intro/SiteIntro'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
@@ -39,8 +40,26 @@ import { CookieBanner } from './components/legal/CookieBanner'
 
 export default function App() {
   useEffect(() => {
-    preloadCriticalAssets()
-    preloadAllImages()
+    let idleId: number | undefined
+    let timeoutId: number | undefined
+    let cancelled = false
+
+    const startWarm = () => {
+      if (cancelled) return
+      preloadAllImages()
+    }
+
+    let removeIntro: (() => void) | undefined
+    if (isIntroComplete()) {
+      startWarm()
+    } else {
+      removeIntro = onIntroComplete(startWarm)
+    }
+
+    return () => {
+      cancelled = true
+      removeIntro?.()
+    }
   }, [])
 
   useEffect(() => {
@@ -85,6 +104,7 @@ export default function App() {
                 <CmsTextEditorProvider>
                 <SiteIntro />
                 <ScrollToTop />
+                <DocumentSeo />
                 <CookieBanner />
                 <NotificationProvider>
                   <Routes>

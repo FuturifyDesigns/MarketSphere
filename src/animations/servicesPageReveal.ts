@@ -139,38 +139,31 @@ function runMobileServicesPageStack(root: HTMLElement) {
     clearProps: 'position,inset,top,left,right,bottom,transform,zIndex,width,height',
   })
 
+  // Start hidden so scroll reveals actually fade in (previous path set opacity:1 first).
+  if (intro) {
+    gsap.set(Array.from(intro.children), { opacity: 0, y: 26 })
+  }
+
   slides.forEach((slide) => {
-    gsap.set(slide.querySelectorAll('.svc-page__copy > *'), {
-      opacity: 1,
-      y: 0,
-      clearProps: 'transform,opacity',
-    })
-    gsap.set(slide.querySelector('.svc-page__media'), {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      clearProps: 'transform,opacity',
-    })
+    gsap.set(slide.querySelectorAll('.svc-page__copy > *'), { opacity: 0, y: 22 })
+    gsap.set(slide.querySelector('.svc-page__media'), { opacity: 0, y: 30, scale: 0.97 })
   })
 
   if (intro) {
-    gsap.fromTo(
-      intro.children,
-      { opacity: 0, y: 22 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.55,
-        stagger: 0.06,
-        ease: REVEAL_EASE,
-        clearProps: 'transform,opacity',
-        scrollTrigger: {
-          trigger: intro,
-          start: 'top 88%',
-          once: true,
-        },
+    gsap.to(intro.children, {
+      opacity: 1,
+      y: 0,
+      duration: 0.65,
+      stagger: 0.08,
+      ease: REVEAL_EASE,
+      clearProps: 'transform,opacity',
+      scrollTrigger: {
+        trigger: intro,
+        start: 'top 92%',
+        once: true,
+        fastScrollEnd: true,
       },
-    )
+    })
   }
 
   slides.forEach((slide) => {
@@ -178,42 +171,37 @@ function runMobileServicesPageStack(root: HTMLElement) {
     const copy = slide.querySelectorAll('.svc-page__copy > *')
 
     if (media) {
-      gsap.fromTo(
-        media,
-        { opacity: 0, y: 24 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: REVEAL_EASE,
-          clearProps: 'transform,opacity',
-          scrollTrigger: {
-            trigger: slide,
-            start: 'top 90%',
-            once: true,
-          },
+      gsap.to(media, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.7,
+        ease: REVEAL_EASE,
+        clearProps: 'transform,opacity',
+        scrollTrigger: {
+          trigger: slide,
+          start: 'top 88%',
+          once: true,
+          fastScrollEnd: true,
         },
-      )
+      })
     }
 
     if (copy.length) {
-      gsap.fromTo(
-        copy,
-        { opacity: 0, y: 18 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          stagger: 0.05,
-          ease: REVEAL_EASE,
-          clearProps: 'transform,opacity',
-          scrollTrigger: {
-            trigger: slide,
-            start: 'top 86%',
-            once: true,
-          },
+      gsap.to(copy, {
+        opacity: 1,
+        y: 0,
+        duration: 0.55,
+        stagger: 0.07,
+        ease: REVEAL_EASE,
+        clearProps: 'transform,opacity',
+        scrollTrigger: {
+          trigger: slide,
+          start: 'top 84%',
+          once: true,
+          fastScrollEnd: true,
         },
-      )
+      })
     }
   })
 }
