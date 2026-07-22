@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import { CheckCircle2, Send, Star } from 'lucide-react'
+import { useId, useState, type FormEvent } from 'react'
+import { CheckCircle2, ChevronDown, Send, Star } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../ui/Button'
@@ -24,8 +24,10 @@ type Fields = 'client_name' | 'service_type' | 'content'
 const RATE_LIMIT_MS = 60_000
 
 export function TestimonialSubmitForm() {
+  const panelId = useId()
   const { showToast } = useToast()
   const { locked, runLocked } = useSubmitLock()
+  const [open, setOpen] = useState(false)
   const [form, setForm] = useState({
     client_name: '',
     service_type: '',
@@ -52,6 +54,7 @@ export function TestimonialSubmitForm() {
 
     if (form.companyWebsite.trim()) {
       setSubmitted(true)
+      setOpen(true)
       return
     }
 
@@ -93,6 +96,7 @@ export function TestimonialSubmitForm() {
 
         markClientRateLimited('testimonial')
         setSubmitted(true)
+        setOpen(true)
         showToast('Thank you — your story was sent for review.', 'info')
       } catch {
         setError('Could not send your story. Please try again.')
@@ -116,86 +120,108 @@ export function TestimonialSubmitForm() {
   }
 
   return (
-    <form className="testimonial-submit" onSubmit={handleSubmit} noValidate>
-      <div className="testimonial-submit__header">
-        <h3>Share your story</h3>
-        <p>Tell us about your experience. Submissions are reviewed before they go live.</p>
+    <div className={`testimonial-submit${open ? ' testimonial-submit--open' : ''}`}>
+      <button
+        type="button"
+        className="testimonial-submit__toggle"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <span className="testimonial-submit__toggle-text">
+          <span className="testimonial-submit__toggle-title">Share your story</span>
+          <span className="testimonial-submit__toggle-sub">
+            {open ? 'Reviewed before it goes live' : 'Tap to leave a testimonial'}
+          </span>
+        </span>
+        <ChevronDown size={20} className="testimonial-submit__chevron" aria-hidden="true" />
+      </button>
+
+      <div
+        id={panelId}
+        className="testimonial-submit__panel"
+        hidden={!open}
+      >
+        <form className="testimonial-submit__form" onSubmit={handleSubmit} noValidate>
+          <p className="testimonial-submit__intro">
+            Tell us about your experience. Submissions are reviewed before they go live.
+          </p>
+
+          <div className="testimonial-submit__rating" role="group" aria-label="Rating">
+            <span className="testimonial-submit__rating-label">Your rating</span>
+            <div className="testimonial-submit__stars">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={
+                    value <= form.rating
+                      ? 'testimonial-submit__star testimonial-submit__star--on'
+                      : 'testimonial-submit__star'
+                  }
+                  onClick={() => update('rating', value)}
+                  aria-label={`${value} star${value === 1 ? '' : 's'}`}
+                  aria-pressed={value <= form.rating}
+                >
+                  <Star size={18} fill={value <= form.rating ? 'currentColor' : 'none'} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="testimonial-submit__fields">
+            <Input
+              label="Your name"
+              value={form.client_name}
+              onChange={(e) => update('client_name', sanitizePersonName(e.target.value))}
+              hint={FIELD_HINTS.clientName}
+              error={fieldErrors.client_name}
+              autoComplete="name"
+            />
+            <Input
+              label="Service (optional)"
+              value={form.service_type}
+              onChange={(e) => update('service_type', e.target.value)}
+              hint={FIELD_HINTS.serviceType}
+              error={fieldErrors.service_type}
+              placeholder="e.g. Real Estate"
+            />
+            <Textarea
+              label="Your experience"
+              rows={4}
+              value={form.content}
+              onChange={(e) => update('content', e.target.value)}
+              hint={FIELD_HINTS.testimonialContent}
+              error={fieldErrors.content}
+            />
+          </div>
+
+          <input
+            type="text"
+            name="companyWebsite"
+            value={form.companyWebsite}
+            onChange={(e) => update('companyWebsite', e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            className="testimonial-submit__honeypot"
+            aria-hidden="true"
+          />
+
+          {error ? (
+            <p className="testimonial-submit__error" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          <Button type="submit" size="lg" disabled={loading || locked}>
+            {loading ? 'Sending…' : (
+              <>
+                Submit for review <Send size={16} />
+              </>
+            )}
+          </Button>
+        </form>
       </div>
-
-      <div className="testimonial-submit__rating" role="group" aria-label="Rating">
-        <span className="testimonial-submit__rating-label">Your rating</span>
-        <div className="testimonial-submit__stars">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={
-                value <= form.rating
-                  ? 'testimonial-submit__star testimonial-submit__star--on'
-                  : 'testimonial-submit__star'
-              }
-              onClick={() => update('rating', value)}
-              aria-label={`${value} star${value === 1 ? '' : 's'}`}
-              aria-pressed={value <= form.rating}
-            >
-              <Star size={18} fill={value <= form.rating ? 'currentColor' : 'none'} />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="testimonial-submit__fields">
-        <Input
-          label="Your name"
-          value={form.client_name}
-          onChange={(e) => update('client_name', sanitizePersonName(e.target.value))}
-          hint={FIELD_HINTS.clientName}
-          error={fieldErrors.client_name}
-          autoComplete="name"
-        />
-        <Input
-          label="Service (optional)"
-          value={form.service_type}
-          onChange={(e) => update('service_type', e.target.value)}
-          hint={FIELD_HINTS.serviceType}
-          error={fieldErrors.service_type}
-          placeholder="e.g. Real Estate"
-        />
-        <Textarea
-          label="Your experience"
-          rows={4}
-          value={form.content}
-          onChange={(e) => update('content', e.target.value)}
-          hint={FIELD_HINTS.testimonialContent}
-          error={fieldErrors.content}
-        />
-      </div>
-
-      {/* Honeypot */}
-      <input
-        type="text"
-        name="companyWebsite"
-        value={form.companyWebsite}
-        onChange={(e) => update('companyWebsite', e.target.value)}
-        tabIndex={-1}
-        autoComplete="off"
-        className="testimonial-submit__honeypot"
-        aria-hidden="true"
-      />
-
-      {error ? (
-        <p className="testimonial-submit__error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      <Button type="submit" size="lg" disabled={loading || locked}>
-        {loading ? 'Sending…' : (
-          <>
-            Submit for review <Send size={16} />
-          </>
-        )}
-      </Button>
-    </form>
+    </div>
   )
 }

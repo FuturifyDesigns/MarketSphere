@@ -1,19 +1,19 @@
 .testimonial-submit {
   width: min(100%, 46rem);
   margin: 1.5rem auto 0;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
   border-radius: 18px;
   border: 1px solid var(--card-border);
   background: color-mix(in srgb, var(--card-bg) 88%, transparent);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  overflow: hidden;
 }
 
 .testimonial-submit--success {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 0.65rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
   color: var(--color-gold);
 }
 
@@ -31,15 +31,70 @@
   line-height: 1.55;
 }
 
-.testimonial-submit__header h3 {
-  margin: 0 0 0.35rem;
+.testimonial-submit__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.15rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.testimonial-submit__toggle:hover {
+  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+}
+
+.testimonial-submit__toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.testimonial-submit__toggle-title {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-.testimonial-submit__header p {
-  margin: 0;
+.testimonial-submit__toggle-sub {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.testimonial-submit__chevron {
+  flex-shrink: 0;
+  color: var(--color-gold);
+  transition: transform 0.25s ease;
+}
+
+.testimonial-submit--open .testimonial-submit__chevron {
+  transform: rotate(180deg);
+}
+
+.testimonial-submit__panel {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.testimonial-submit__panel[hidden] {
+  display: none;
+}
+
+.testimonial-submit__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0 1.15rem 1.25rem;
+}
+
+.testimonial-submit__intro {
+  margin: 0.85rem 0 0;
   color: var(--text-secondary);
   font-size: 0.9375rem;
   line-height: 1.5;
@@ -99,6 +154,13 @@
 @media (max-width: 640px) {
   .testimonial-submit {
     margin-top: 1.15rem;
-    padding: 1.15rem;
+  }
+
+  .testimonial-submit__toggle {
+    padding: 0.95rem 1rem;
+  }
+
+  .testimonial-submit__form {
+    padding: 0 1rem 1.1rem;
   }
 }
