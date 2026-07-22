@@ -10,7 +10,7 @@ import {
   MarketIconVerified,
 } from '../components/icons/MarketIcons'
 import type { Provider, Category } from '../lib/types'
-import { ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
+import { sanitizePostgrestFilter } from '../lib/safe'
 import './Browse.css'
 
 export function Browse() {
@@ -20,15 +20,37 @@ export function Browse() {
   const [category, setCategory] = useState('')
   const [location, setLocation] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [reloadTick, setReloadTick] = useState(0)
 
   useEffect(() => {
-    supabase.from('categories').select('*').order('sort_order').then(({ data }) => {
-      setCategories(data || [])
-    })
+    let cancelled = false
+    void supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order')
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) {
+          console.error('[browse] categories', error)
+          setCategories([])
+          return
+        }
+        setCategories(data || [])
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
+    setLoadError('')
+
+    const safeSearch = sanitizePostgrestFilter(search)
+    const safeLocation = sanitizePostgrestFilter(location)
+
     let query = supabase
       .from('providers')
       .select('*, provider_services(*, categories(*))')
@@ -36,36 +58,49 @@ export function Browse() {
       .order('created_at', { ascending: false })
       .limit(48)
 
-    if (search) {
-      query = query.or(`business_name.ilike.%${search}%,description.ilike.%${search}%`)
+    if (safeSearch) {
+      query = query.or(`business_name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`)
     }
-    if (location) {
-      query = query.ilike('location', `%${location}%`)
+    if (safeLocation) {
+      query = query.ilike('location', `%${safeLocation}%`)
     }
 
-    query.then(async ({ data }) => {
-      let results = data || []
-      if (category) {
-        results = results.filter((p) =>
-          p.provider_services?.some((s: { categories?: { slug: string } }) => s.categories?.slug === category)
-        )
-      }
+    void (async () => {
+      try {
+        const { data, error } = await query
+        if (cancelled) return
+        if (error) {
+          console.error('[browse] providers', error)
+          setProviders([])
+          setLoadError('Could not load providers. Please try again.')
+          setLoading(false)
+          return
+        }
 
-      if (categories.length > 0) {
-        results = await Promise.all(
-          results.map((provider) => ensureProviderCategoryIfNeeded(provider, categories)),
-        )
+        let results = data || []
         if (category) {
           results = results.filter((p) =>
-            p.provider_services?.some((s: { categories?: { slug: string } }) => s.categories?.slug === category),
+            p.provider_services?.some(
+              (s: { categories?: { slug: string } }) => s.categories?.slug === category,
+            ),
           )
         }
-      }
 
-      setProviders(results)
-      setLoading(false)
-    })
-  }, [search, category, location, categories])
+        setProviders(results)
+        setLoading(false)
+      } catch (error) {
+        console.error('[browse] providers threw', error)
+        if (cancelled) return
+        setProviders([])
+        setLoadError('Could not load providers. Please try again.')
+        setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [search, category, location, reloadTick])
 
   const hasFilters = Boolean(search || category || location)
   const categoryLabel = categories.length > 0 ? `${categories.length}+ categories` : '8+ categories'
@@ -189,6 +224,19 @@ export function Browse() {
 
           {loading ? (
             <div className="loading-screen"><div className="loading-spinner" /></div>
+          ) : loadError ? (
+            <div className="browse-empty bento-card page-reveal">
+              <div className="browse-empty__icon" aria-hidden="true">
+                <Search size={32} />
+              </div>
+              <h2>Something went wrong</h2>
+              <p>{loadError}</p>
+              <div className="browse-empty__actions">
+                <Button variant="secondary" onClick={() => setReloadTick((n) => n + 1)}>
+                  Retry
+                </Button>
+              </div>
+            </div>
           ) : providers.length > 0 ? (
             <div className="providers-grid">
               {providers.map((p, i) => (

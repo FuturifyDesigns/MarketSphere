@@ -25,10 +25,10 @@ import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } fr
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Textarea } from '../components/ui/Textarea'
+import { useSubmitLock } from '../hooks/useSubmitLock'
 import './Contact.css'
 
 type ContactFields = 'name' | 'email' | 'phone' | 'message'
-
 const CONTACT_RATE_LIMIT_MS = 60_000
 
 export function Contact() {
@@ -49,6 +49,7 @@ export function Contact() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { locked, runLocked } = useSubmitLock()
 
   const updateField = (key: ContactFields, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -57,6 +58,7 @@ export function Contact() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (loading || locked) return
     setError('')
 
     // Honeypot: bots fill hidden fields — silently accept without sending.
@@ -81,32 +83,38 @@ export function Contact() {
       return
     }
 
-    setLoading(true)
+    await runLocked(async () => {
+      setLoading(true)
+      try {
+        const { error: insertError } = await supabase.rpc('submit_contact_message', {
+          p_full_name: form.name.trim(),
+          p_email: form.email.trim(),
+          p_phone: form.phone.trim() || null,
+          p_message: form.message.trim(),
+          p_honeypot: form.companyWebsite.trim() || null,
+        })
 
-    const { error: insertError } = await supabase.rpc('submit_contact_message', {
-      p_full_name: form.name.trim(),
-      p_email: form.email.trim(),
-      p_phone: form.phone.trim() || null,
-      p_message: form.message.trim(),
-      p_honeypot: form.companyWebsite.trim() || null,
+        if (insertError) {
+          const msg =
+            insertError.message?.includes('Too many') || insertError.message?.includes('busy')
+              ? insertError.message
+              : 'Could not send your message. Please try again or email us directly.'
+          setError(msg)
+          showToast(msg, 'error')
+          return
+        }
+
+        markClientRateLimited('contact')
+        setForm({ name: '', email: '', phone: '', message: '', companyWebsite: '' })
+        setSubmitted(true)
+        showToast('Message sent. Our team has been notified and will get back to you soon.')
+      } catch {
+        setError('Could not send your message. Please try again or email us directly.')
+        showToast('Could not send your message. Please try again or email us directly.', 'error')
+      } finally {
+        setLoading(false)
+      }
     })
-
-    setLoading(false)
-
-    if (insertError) {
-      const msg =
-        insertError.message?.includes('Too many') || insertError.message?.includes('busy')
-          ? insertError.message
-          : 'Could not send your message. Please try again or email us directly.'
-      setError(msg)
-      showToast(msg, 'error')
-      return
-    }
-
-    markClientRateLimited('contact')
-    setForm({ name: '', email: '', phone: '', message: '', companyWebsite: '' })
-    setSubmitted(true)
-    showToast('Message sent. Our team has been notified and will get back to you soon.')
   }
 
   return (
@@ -304,7 +312,7 @@ export function Contact() {
                     error={fieldErrors.message}
                   />
                 </div>
-                <Button type="submit" size="lg" disabled={loading}>
+                <Button type="submit" size="lg" disabled={loading || locked}>
                   {loading ? 'Sending…' : <EditableText contentKey="contact" path="form.submitLabel" as="span" />}{' '}
                   <ArrowRight size={16} />
                 </Button>

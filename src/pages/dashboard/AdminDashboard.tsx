@@ -477,11 +477,11 @@ export function AdminDashboard() {
                         <img src={provider.logo_url} alt="" className="admin-card__thumb" />
                       ) : (
                         <div className="admin-card__thumb admin-card__thumb--placeholder">
-                          {provider.business_name.charAt(0).toUpperCase()}
+                          {(provider.business_name?.trim()?.charAt(0) || '?').toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <strong>{provider.business_name}</strong>
+                        <strong>{provider.business_name?.trim() || 'Unnamed provider'}</strong>
                         <p>{provider.location || 'No location set'}</p>
                         <span className={`status-badge status-badge--${provider.status}`}>
                           {formatStatusLabel(provider.status)}
@@ -526,7 +526,7 @@ export function AdminDashboard() {
                       <img src={account.avatar_url} alt="" className="admin-card__avatar" />
                     ) : (
                       <div className="admin-card__avatar admin-card__avatar--placeholder" aria-hidden="true">
-                        {(account.full_name || account.email).charAt(0).toUpperCase()}
+                        {(account.full_name || account.email || '?').charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>

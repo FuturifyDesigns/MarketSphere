@@ -17,10 +17,13 @@ import {
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import { useSubmitLock } from '../hooks/useSubmitLock'
+import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
 import './authTheme.css'
 import './Auth.css'
 
 type ForgotFields = 'email'
+const AUTH_RATE_LIMIT_MS = 30_000
 
 export function ForgotPassword() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -32,25 +35,43 @@ export function ForgotPassword() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const { locked, runLocked } = useSubmitLock()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (loading || locked) return
     setError('')
 
     const errors = collectErrors<ForgotFields>([['email', validateEmail(email)]])
     setFieldErrors(errors)
     if (hasErrors(errors)) return
 
-    setLoading(true)
-    const { error: err } = await resetPasswordForEmail(email.trim())
-    setLoading(false)
-    if (err) {
-      setError(err.message)
-      showToast(err.message, 'error')
-    } else {
-      showToast('Password reset email sent. Check your inbox.', 'info')
-      setSuccess(true)
+    if (isClientRateLimited('auth-forgot', AUTH_RATE_LIMIT_MS)) {
+      const msg = clientRateLimitMessage(AUTH_RATE_LIMIT_MS)
+      setError(msg)
+      showToast(msg, 'error')
+      return
     }
+
+    await runLocked(async () => {
+      setLoading(true)
+      markClientRateLimited('auth-forgot')
+      try {
+        const { error: err } = await resetPasswordForEmail(email.trim())
+        if (err) {
+          setError(err.message)
+          showToast(err.message, 'error')
+        } else {
+          showToast('Password reset email sent. Check your inbox.', 'info')
+          setSuccess(true)
+        }
+      } catch {
+        setError('Could not send reset email. Please try again.')
+        showToast('Could not send reset email. Please try again.', 'error')
+      } finally {
+        setLoading(false)
+      }
+    })
   }
 
   if (success) {

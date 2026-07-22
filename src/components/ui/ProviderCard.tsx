@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, BriefcaseBusiness, Images, Mail, MapPin, Phone } from 'lucide-react'
 import type { Provider } from '../../lib/types'
 import { getProviderPrimaryCategory } from '../../lib/providerCategory'
+import { displayName, initialLetter } from '../../lib/safe'
 import { ProviderCardGallery } from './ProviderCardGallery'
 import './ProviderCard.css'
 
@@ -32,8 +34,8 @@ function getSlideImages(provider: Provider) {
 
 function getServiceTitles(provider: Provider, limit = 3) {
   return (provider.provider_services || [])
-    .map((service) => service.title.trim())
-    .filter(Boolean)
+    .map((service) => service.title?.trim())
+    .filter((title): title is string => Boolean(title))
     .slice(0, limit)
 }
 
@@ -46,6 +48,10 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
   const serviceTitles = getServiceTitles(provider, variant === 'showcase' ? 3 : 2)
   const descLimit = variant === 'showcase' ? 220 : variant === 'featured' ? 120 : 100
   const useGallery = variant === 'showcase' && slideImages.length > 1
+  const businessLabel = displayName(provider.business_name, 'Provider')
+  const businessInitial = initialLetter(provider.business_name)
+  const [imageFailed, setImageFailed] = useState(false)
+  const showImage = Boolean(cardImage) && !imageFailed && !useGallery
 
   const cardClassName =
     variant === 'showcase'
@@ -59,23 +65,33 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
       <div className="provider-card__image-wrap">
         {useGallery ? (
           <ProviderCardGallery images={slideImages} />
-        ) : cardImage ? (
-          <img src={cardImage} alt="" className="provider-card__image" />
+        ) : showImage ? (
+          <img
+            src={cardImage!}
+            alt=""
+            className="provider-card__image"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
-          <div className="provider-card__placeholder">
-            {provider.business_name.charAt(0)}
-          </div>
+          <div className="provider-card__placeholder">{businessInitial}</div>
         )}
 
         {primaryCategory ? <span className="provider-card__category">{primaryCategory.name}</span> : null}
 
         {variant !== 'showcase' && provider.logo_url && cardImage !== provider.logo_url ? (
-          <img src={provider.logo_url} alt="" className="provider-card__logo-badge" />
+          <img
+            src={provider.logo_url}
+            alt=""
+            className="provider-card__logo-badge"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+            }}
+          />
         ) : null}
 
         {variant === 'showcase' ? (
           <div className="provider-card__image-overlay">
-            <p className="provider-card__image-overlay-name">{provider.business_name}</p>
+            <p className="provider-card__image-overlay-name">{businessLabel}</p>
             {provider.location ? (
               <p className="provider-card__image-overlay-location">
                 <MapPin size={15} aria-hidden="true" />
@@ -99,7 +115,7 @@ export function ProviderCard({ provider, index = 0, disableAnimation = false, va
       </div>
 
       <div className="provider-card__body">
-        <h3>{provider.business_name}</h3>
+        <h3>{businessLabel}</h3>
         {provider.location && (
           <p className="provider-card__location">
             <MapPin size={14} /> {provider.location}

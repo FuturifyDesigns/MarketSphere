@@ -31,12 +31,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const signingOutRef = useRef(false)
+  const profileFetchGen = useRef(0)
 
   const signOutInternal = useCallback(async (notice?: string) => {
     if (signingOutRef.current) return
     signingOutRef.current = true
     if (notice) storeAccountNotice(notice)
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('[auth] signOut failed', error)
+    }
     setProfile(null)
     setUser(null)
     setSession(null)
@@ -62,8 +67,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(
     async (userId: string) => {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
-      await applyProfile((data as Profile | null) ?? null)
+      const gen = ++profileFetchGen.current
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+        if (gen !== profileFetchGen.current) return
+
+        if (error) {
+          // Transient query failures must not look like a deleted account.
+          console.error('[auth] profile fetch failed', error)
+          return
+        }
+
+        await applyProfile((data as Profile | null) ?? null)
+      } catch (error) {
+        if (gen !== profileFetchGen.current) return
+        console.error('[auth] profile fetch threw', error)
+      }
     },
     [applyProfile],
   )
@@ -73,21 +92,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }: { data: { session: Session | null } }) => {
-      setSession(s)
-      setUser(s?.user ?? null)
-      if (s?.user) fetchProfile(s.user.id).finally(() => setLoading(false))
-      else setLoading(false)
-    })
+    let cancelled = false
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, s: Session | null) => {
+    void supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }: { data: { session: Session | null } }) => {
+        if (cancelled) return
+        setSession(s)
+        setUser(s?.user ?? null)
+        if (s?.user) {
+          void fetchProfile(s.user.id).finally(() => {
+            if (!cancelled) setLoading(false)
+          })
+        } else {
+          setLoading(false)
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('[auth] getSession failed', error)
+        if (!cancelled) setLoading(false)
+      })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, s: Session | null) => {
       setSession(s)
       setUser(s?.user ?? null)
       if (s?.user) void fetchProfile(s.user.id)
       else setProfile(null)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [fetchProfile])
 
   useEffect(() => {
@@ -123,60 +161,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    meta: { full_name: string; phone?: string; role: string }
+    meta: { full_name: string; phone?: string; role: string },
   ) => {
-    const role = meta.role === 'provider' ? 'provider' : 'customer'
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: meta.full_name,
-          phone: meta.phone,
-          role,
+    try {
+      const role = meta.role === 'provider' ? 'provider' : 'customer'
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: meta.full_name,
+            phone: meta.phone,
+            role,
+          },
+          emailRedirectTo: getAuthRouteUrl('/auth/verify'),
         },
-        emailRedirectTo: getAuthRouteUrl('/auth/verify'),
-      },
-    })
-    return { error: error as Error | null }
+      })
+      return { error: error as Error | null }
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Sign up failed. Please try again.') }
+    }
   }
 
   const signIn = async (email: string, password: string): Promise<SignInResult> => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error as Error, bannedReason: null }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) return { error: error as Error, bannedReason: null }
 
-    if (data.user) {
-      const { data: nextProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .maybeSingle()
+      if (data.user) {
+        const { data: nextProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle()
 
-      if (!nextProfile) {
-        await signOutInternal('Your account could not be found.')
-        return { error: new Error('Your account could not be found.'), bannedReason: null }
+        if (profileError) {
+          await signOutInternal()
+          return {
+            error: new Error('Could not verify your account. Please try again.'),
+            bannedReason: null,
+          }
+        }
+
+        if (!nextProfile) {
+          await signOutInternal('Your account could not be found.')
+          return { error: new Error('Your account could not be found.'), bannedReason: null }
+        }
+
+        if (isProfileBanned(nextProfile)) {
+          const bannedReason = getBanMessage(nextProfile as Profile)
+          await signOutInternal(bannedReason)
+          return { error: new Error(bannedReason), bannedReason }
+        }
       }
 
-      if (isProfileBanned(nextProfile)) {
-        const bannedReason = getBanMessage(nextProfile as Profile)
-        await signOutInternal(bannedReason)
-        return { error: new Error(bannedReason), bannedReason }
+      return { error: null, bannedReason: null }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error : new Error('Sign in failed. Please try again.'),
+        bannedReason: null,
       }
     }
-
-    return { error: null, bannedReason: null }
   }
 
   const resetPasswordForEmail = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: getAuthRouteUrl('/auth/reset-password'),
-    })
-    return { error: error as Error | null }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getAuthRouteUrl('/auth/reset-password'),
+      })
+      return { error: error as Error | null }
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Could not send reset email.') }
+    }
   }
 
   const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password })
-    return { error: error as Error | null }
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      return { error: error as Error | null }
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Could not update password.') }
+    }
   }
 
   const signOut = async () => {
@@ -184,7 +249,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, resetPasswordForEmail, updatePassword, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        loading,
+        signUp,
+        signIn,
+        resetPasswordForEmail,
+        updatePassword,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

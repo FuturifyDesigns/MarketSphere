@@ -83,25 +83,19 @@ export function ProviderDashboard() {
       .select('*, provider_services(*, categories(*))')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(async ({ data }) => {
+      .then(async ({ data, error }) => {
+        if (error) {
+          console.error('[provider-dashboard] load provider', error)
+          return
+        }
         if (data) {
-          let providerData = data
-          if (data.status === 'pending') {
-            const { data: approved } = await supabase
-              .from('providers')
-              .update({ status: 'approved', updated_at: new Date().toISOString() })
-              .eq('id', data.id)
-              .select('*, provider_services(*, categories(*))')
-              .single()
-            if (approved) providerData = approved
-          }
-          setProvider(providerData)
+          setProvider(data)
           setForm({
-            business_name: providerData.business_name || '',
-            description: providerData.description || '',
-            location: providerData.location || '',
-            contact_email: providerData.contact_email || '',
-            contact_phone: providerData.contact_phone || '',
+            business_name: data.business_name || '',
+            description: data.description || '',
+            location: data.location || '',
+            contact_email: data.contact_email || '',
+            contact_phone: data.contact_phone || '',
           })
         }
       })
@@ -259,7 +253,7 @@ export function ProviderDashboard() {
   }
 
   const saveProfile = async () => {
-    if (!user) return
+    if (!user || saving) return
     setSaveError('')
 
     const errors = collectErrors<ProfileFields>([

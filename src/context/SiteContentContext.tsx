@@ -44,6 +44,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function deepMerge<T>(defaults: T, stored: unknown): T {
   if (stored == null) return defaults
+  // Blank CMS strings should fall back to defaults so editors cannot blank the site.
+  if (typeof defaults === 'string' && typeof stored === 'string') {
+    return (stored.trim() === '' ? defaults : stored) as T
+  }
   if (Array.isArray(stored)) {
     return (stored.length ? stored : defaults) as T
   }

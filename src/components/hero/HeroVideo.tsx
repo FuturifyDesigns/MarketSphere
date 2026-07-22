@@ -109,7 +109,10 @@ export function HeroVideo() {
             if (el && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) setReady(true)
           }}
           onError={() => {
-            if (isRemoteVideo) return
+            if (isRemoteVideo) {
+              setReady(false)
+              return
+            }
             if (!resolvedSrc.includes('media.githubusercontent.com') && !resolvedSrc.startsWith('blob:')) {
               setSrc(`${CDN_BASE}${DEFAULT_VIDEO}`)
             }

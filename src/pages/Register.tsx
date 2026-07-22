@@ -25,10 +25,13 @@ import { PasswordInput } from '../components/ui/PasswordInput'
 import { PhoneInput } from '../components/ui/PhoneInput'
 import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import { useSubmitLock } from '../hooks/useSubmitLock'
+import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
 import './authTheme.css'
 import './Auth.css'
 
 type RegisterFields = 'full_name' | 'email' | 'phone' | 'password'
+const AUTH_RATE_LIMIT_MS = 8_000
 
 export function Register() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -51,6 +54,7 @@ export function Register() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [privacyConsent, setPrivacyConsent] = useState(false)
+  const { locked, runLocked } = useSubmitLock()
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -67,6 +71,7 @@ export function Register() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (loading || locked) return
     setError('')
 
     const errors = collectErrors<RegisterFields>([
@@ -84,22 +89,38 @@ export function Register() {
       return
     }
 
+    if (isClientRateLimited('auth-register', AUTH_RATE_LIMIT_MS)) {
+      const msg = clientRateLimitMessage(AUTH_RATE_LIMIT_MS)
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
+
     const phone = formatPhoneWithCountry(form.phoneCountry, form.phoneLocal)
 
-    setLoading(true)
-    const { error: err } = await signUp(form.email.trim(), form.password, {
-      full_name: form.full_name.trim(),
-      phone: phone || undefined,
-      role: form.role === 'provider' ? 'provider' : 'customer',
+    await runLocked(async () => {
+      setLoading(true)
+      markClientRateLimited('auth-register')
+      try {
+        const { error: err } = await signUp(form.email.trim(), form.password, {
+          full_name: form.full_name.trim(),
+          phone: phone || undefined,
+          role: form.role === 'provider' ? 'provider' : 'customer',
+        })
+        if (err) {
+          setError(err.message)
+          showToast(err.message, 'error')
+        } else {
+          showToast('Account created. Check your email to verify your address.', 'info')
+          setSuccess(true)
+        }
+      } catch {
+        setError('Sign up failed. Please try again.')
+        showToast('Sign up failed. Please try again.', 'error')
+      } finally {
+        setLoading(false)
+      }
     })
-    setLoading(false)
-    if (err) {
-      setError(err.message)
-      showToast(err.message, 'error')
-    } else {
-      showToast('Account created. Check your email to verify your address.', 'info')
-      setSuccess(true)
-    }
   }
 
   if (success) {

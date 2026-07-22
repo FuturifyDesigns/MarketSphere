@@ -30,7 +30,6 @@ import { isServicesShowcaseReady, onServicesShowcaseReady } from '../lib/service
 import { initHomeSectionReveals } from '../animations/homeSectionReveal'
 import { initBelowFoldSections } from '../animations/belowFoldReveal'
 import type { Provider, Testimonial } from '../lib/types'
-import { ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
 import './Home.css'
 import '../components/ui/ShowcaseCarousel.css'
 
@@ -106,26 +105,25 @@ export function Home() {
     let cancelled = false
 
     async function loadFeaturedProviders() {
-      const [{ data: providerRows }, { data: categoryRows }] = await Promise.all([
-        supabase
+      try {
+        const { data: providerRows, error: providerError } = await supabase
           .from('providers')
           .select('*, provider_services(*, categories(*))')
           .eq('status', 'approved')
-          .limit(8),
-        supabase.from('categories').select('*').order('sort_order'),
-      ])
+          .limit(8)
 
-      if (cancelled) return
+        if (cancelled) return
+        if (providerError) {
+          console.error('[home] featured providers', providerError)
+          setProviders([])
+          return
+        }
 
-      const categories = categoryRows || []
-      const providers = providerRows || []
-      const categorized = categories.length
-        ? await Promise.all(
-            providers.map((provider) => ensureProviderCategoryIfNeeded(provider, categories)),
-          )
-        : providers
-
-      if (!cancelled) setProviders(categorized)
+        setProviders(providerRows || [])
+      } catch (error) {
+        console.error('[home] featured providers threw', error)
+        if (!cancelled) setProviders([])
+      }
     }
 
     void loadFeaturedProviders()

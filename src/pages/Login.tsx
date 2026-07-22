@@ -19,10 +19,13 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PasswordInput } from '../components/ui/PasswordInput'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import { useSubmitLock } from '../hooks/useSubmitLock'
+import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
 import './authTheme.css'
 import './Auth.css'
 
 type LoginFields = 'email' | 'password'
+const AUTH_RATE_LIMIT_MS = 5_000
 
 export function Login() {
   const pageRef = useRef<HTMLDivElement>(null)
@@ -35,9 +38,11 @@ export function Login() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<LoginFields>>({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { locked, runLocked } = useSubmitLock()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (loading || locked) return
     setError('')
 
     const errors = collectErrors<LoginFields>([
@@ -47,24 +52,43 @@ export function Login() {
     setFieldErrors(errors)
     if (hasErrors(errors)) return
 
-    setLoading(true)
-    const { error: err, bannedReason } = await signIn(email.trim(), password)
-    setLoading(false)
-    if (err) {
-      setError(bannedReason || err.message)
-      showToast(bannedReason || err.message, 'error')
-    } else {
-      showToast('Signed in successfully. Welcome back!')
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (data?.role === 'admin') navigate('/dashboard/admin')
-        else if (data?.role === 'provider') navigate('/dashboard/provider')
-        else navigate('/dashboard/customer')
-      } else {
-        navigate('/')
-      }
+    if (isClientRateLimited('auth-login', AUTH_RATE_LIMIT_MS)) {
+      const msg = clientRateLimitMessage(AUTH_RATE_LIMIT_MS)
+      setError(msg)
+      showToast(msg, 'error')
+      return
     }
+
+    await runLocked(async () => {
+      setLoading(true)
+      markClientRateLimited('auth-login')
+      try {
+        const { error: err, bannedReason } = await signIn(email.trim(), password)
+        if (err) {
+          setError(bannedReason || err.message)
+          showToast(bannedReason || err.message, 'error')
+          return
+        }
+
+        showToast('Signed in successfully. Welcome back!')
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (user) {
+          const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+          if (data?.role === 'admin') navigate('/dashboard/admin')
+          else if (data?.role === 'provider') navigate('/dashboard/provider')
+          else navigate('/dashboard/customer')
+        } else {
+          navigate('/')
+        }
+      } catch {
+        setError('Sign in failed. Please try again.')
+        showToast('Sign in failed. Please try again.', 'error')
+      } finally {
+        setLoading(false)
+      }
+    })
   }
 
   return (

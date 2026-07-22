@@ -15,6 +15,7 @@ import { ScrollToTop } from './components/layout/ScrollToTop'
 import { SiteIntro } from './components/intro/SiteIntro'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
 import { Services } from './pages/Services'
@@ -88,20 +89,43 @@ export default function App() {
                 <NotificationProvider>
                   <Routes>
                     <Route element={<Layout />}>
-                      <Route index element={<Home />} />
+                      <Route
+                        index
+                        element={
+                          <ErrorBoundary label="home">
+                            <Home />
+                          </ErrorBoundary>
+                        }
+                      />
                       <Route path="about" element={<About />} />
                       <Route path="services" element={<Services />} />
                       <Route path="contact" element={<Contact />} />
                       <Route path="faq" element={<FAQ />} />
                       <Route path="privacy" element={<Privacy />} />
                       <Route path="terms" element={<Terms />} />
-                      <Route path="browse" element={<Browse />} />
-                      <Route path="provider/:id" element={<ProviderProfile />} />
+                      <Route
+                        path="browse"
+                        element={
+                          <ErrorBoundary label="browse">
+                            <Browse />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="provider/:id"
+                        element={
+                          <ErrorBoundary label="provider">
+                            <ProviderProfile />
+                          </ErrorBoundary>
+                        }
+                      />
                       <Route
                         path="dashboard/customer"
                         element={
                           <ProtectedRoute allowedRoles={['customer']}>
-                            <CustomerDashboard />
+                            <ErrorBoundary label="customer-dashboard">
+                              <CustomerDashboard />
+                            </ErrorBoundary>
                           </ProtectedRoute>
                         }
                       />
@@ -109,7 +133,9 @@ export default function App() {
                         path="dashboard/provider"
                         element={
                           <ProtectedRoute allowedRoles={['provider']}>
-                            <ProviderDashboard />
+                            <ErrorBoundary label="provider-dashboard">
+                              <ProviderDashboard />
+                            </ErrorBoundary>
                           </ProtectedRoute>
                         }
                       />
@@ -117,7 +143,9 @@ export default function App() {
                         path="dashboard/admin"
                         element={
                           <ProtectedRoute allowedRoles={['admin']}>
-                            <AdminDashboard />
+                            <ErrorBoundary label="admin-dashboard">
+                              <AdminDashboard />
+                            </ErrorBoundary>
                           </ProtectedRoute>
                         }
                       />

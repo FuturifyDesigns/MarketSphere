@@ -19,6 +19,7 @@ import { Button } from '../components/ui/Button'
 import { PasswordInput } from '../components/ui/PasswordInput'
 import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
+import { useSubmitLock } from '../hooks/useSubmitLock'
 import { supabase } from '../lib/supabase'
 import './authTheme.css'
 import './Auth.css'
@@ -41,6 +42,7 @@ export function ResetPassword() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<ResetFields>>({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { locked, runLocked } = useSubmitLock()
 
   useEffect(() => {
     let cancelled = false
@@ -93,6 +95,7 @@ export function ResetPassword() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (loading || locked) return
     setError('')
 
     const errors = collectErrors<ResetFields>([
@@ -105,18 +108,26 @@ export function ResetPassword() {
     setFieldErrors(errors)
     if (hasErrors(errors)) return
 
-    setLoading(true)
-    const { error: err } = await updatePassword(password)
-    setLoading(false)
-    if (err) {
-      setError(err.message)
-      showToast(err.message, 'error')
-    } else {
-      await supabase.auth.signOut()
-      setStatus('success')
-      showToast('Password updated successfully. Sign in with your new password.')
-      window.setTimeout(() => navigate('/login'), 2500)
-    }
+    await runLocked(async () => {
+      setLoading(true)
+      try {
+        const { error: err } = await updatePassword(password)
+        if (err) {
+          setError(err.message)
+          showToast(err.message, 'error')
+          return
+        }
+        await supabase.auth.signOut()
+        setStatus('success')
+        showToast('Password updated successfully. Sign in with your new password.')
+        window.setTimeout(() => navigate('/login'), 2500)
+      } catch {
+        setError('Could not update password. Please try again.')
+        showToast('Could not update password. Please try again.', 'error')
+      } finally {
+        setLoading(false)
+      }
+    })
   }
 
   if (status === 'loading') {

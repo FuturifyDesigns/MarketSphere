@@ -40,7 +40,9 @@ import {
 } from '../lib/validation'
 import { isProfileBanned } from '../lib/accountGuard'
 import type { Provider } from '../lib/types'
-import { getProviderPrimaryCategory, ensureProviderCategoryIfNeeded } from '../lib/providerCategory'
+import { getProviderPrimaryCategory } from '../lib/providerCategory'
+import { displayName, initialLetter } from '../lib/safe'
+import { useSubmitLock } from '../hooks/useSubmitLock'
 import './ProviderProfile.css'
 import '../components/ui/GallerySlideshow.css'
 
@@ -60,35 +62,42 @@ export function ProviderProfile() {
   const [submittingEnquiry, setSubmittingEnquiry] = useState(false)
   const [loading, setLoading] = useState(true)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const { locked: enquiryLocked, runLocked: runEnquiryLocked } = useSubmitLock()
+  const { locked: favoriteLocked, runLocked: runFavoriteLocked } = useSubmitLock()
 
   const gallery = provider?.gallery_urls || []
   const serviceCount = provider?.provider_services?.length || 0
   const coverImage = provider?.cover_url || gallery[0] || provider?.logo_url || null
   const primaryCategory = provider ? getProviderPrimaryCategory(provider) : null
+  const businessLabel = displayName(provider?.business_name, 'Provider')
 
   useEffect(() => {
     if (!id) return
     let cancelled = false
 
     async function loadProvider() {
-      const [{ data: providerData }, { data: categoryRows }] = await Promise.all([
-        supabase
+      try {
+        const { data: providerData, error } = await supabase
           .from('providers')
           .select('*, provider_services(*, categories(*))')
           .eq('id', id)
-          .single(),
-        supabase.from('categories').select('*').order('sort_order'),
-      ])
+          .maybeSingle()
 
-      if (cancelled) return
-
-      const categories = categoryRows || []
-      const provider = providerData
-        ? await ensureProviderCategoryIfNeeded(providerData, categories)
-        : null
-
-      setProvider(provider)
-      setLoading(false)
+        if (cancelled) return
+        if (error) {
+          console.error('[provider-profile] load', error)
+          setProvider(null)
+        } else {
+          setProvider(providerData)
+        }
+        setLoading(false)
+      } catch (error) {
+        console.error('[provider-profile] load threw', error)
+        if (!cancelled) {
+          setProvider(null)
+          setLoading(false)
+        }
+      }
     }
 
     void loadProvider()
@@ -125,29 +134,41 @@ export function ProviderProfile() {
   }, [lightboxIndex, gallery.length])
 
   const toggleFavorite = async () => {
-    if (!user || !id) return
-    if (isFavorite) {
-      const { error } = await supabase.from('favorites').delete().eq('customer_id', user.id).eq('provider_id', id)
-      if (error) {
-        showToast('Could not remove saved provider.', 'error')
-        return
+    if (!user || !id || favoriteLocked) return
+    await runFavoriteLocked(async () => {
+      try {
+        if (isFavorite) {
+          const { error } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('customer_id', user.id)
+            .eq('provider_id', id)
+          if (error) {
+            showToast('Could not remove saved provider.', 'error')
+            return
+          }
+          setIsFavorite(false)
+          showToast('Removed from saved providers.')
+        } else {
+          const { error } = await supabase
+            .from('favorites')
+            .insert({ customer_id: user.id, provider_id: id })
+          if (error) {
+            showToast('Could not save provider.', 'error')
+            return
+          }
+          setIsFavorite(true)
+          showToast('Provider saved to your favourites.')
+        }
+      } catch {
+        showToast('Could not update favourites. Please try again.', 'error')
       }
-      setIsFavorite(false)
-      showToast('Removed from saved providers.')
-    } else {
-      const { error } = await supabase.from('favorites').insert({ customer_id: user.id, provider_id: id })
-      if (error) {
-        showToast('Could not save provider.', 'error')
-        return
-      }
-      setIsFavorite(true)
-      showToast('Provider saved to your favourites.')
-    }
+    })
   }
 
   const submitEnquiry = async (e: FormEvent) => {
     e.preventDefault()
-    if (!user || !id) return
+    if (!user || !id || submittingEnquiry || enquiryLocked) return
     if (isProfileBanned(profile)) {
       setEnquiryError('Your account is suspended and cannot send enquiries.')
       return
@@ -161,26 +182,34 @@ export function ProviderProfile() {
     setEnquiryErrors(errors)
     if (hasErrors(errors)) return
 
-    setSubmittingEnquiry(true)
-    const { error } = await supabase.from('enquiries').insert({
-      customer_id: user.id,
-      provider_id: id,
-      subject: enquiry.subject.trim(),
-      message: enquiry.message.trim(),
+    await runEnquiryLocked(async () => {
+      setSubmittingEnquiry(true)
+      try {
+        const { error } = await supabase.from('enquiries').insert({
+          customer_id: user.id,
+          provider_id: id,
+          subject: enquiry.subject.trim(),
+          message: enquiry.message.trim(),
+        })
+
+        if (error) {
+          setEnquiryError('Could not send enquiry. Please try again.')
+          showToast('Could not send enquiry. Please try again.', 'error')
+          return
+        }
+
+        setEnquiry({ subject: '', message: '' })
+        setEnquiryErrors({})
+        setShowEnquiry(false)
+        showToast('Enquiry sent successfully. The provider has been notified.')
+        navigate('/dashboard/customer', { state: { enquirySent: true } })
+      } catch {
+        setEnquiryError('Could not send enquiry. Please try again.')
+        showToast('Could not send enquiry. Please try again.', 'error')
+      } finally {
+        setSubmittingEnquiry(false)
+      }
     })
-    setSubmittingEnquiry(false)
-
-    if (error) {
-      setEnquiryError('Could not send enquiry. Please try again.')
-      showToast('Could not send enquiry. Please try again.', 'error')
-      return
-    }
-
-    setEnquiry({ subject: '', message: '' })
-    setEnquiryErrors({})
-    setShowEnquiry(false)
-    showToast('Enquiry sent successfully. The provider has been notified.')
-    navigate('/dashboard/customer', { state: { enquirySent: true } })
   }
 
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>
@@ -198,6 +227,9 @@ export function ProviderProfile() {
             className="provider-showcase-hero__cover"
             decoding="async"
             fetchPriority="high"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+            }}
           />
         ) : (
           <div className="provider-showcase-hero__cover provider-showcase-hero__cover--fallback" aria-hidden="true" />
@@ -216,7 +248,7 @@ export function ProviderProfile() {
                   <img src={provider.logo_url} alt="" decoding="async" />
                 ) : (
                   <div className="provider-showcase-hero__logo-placeholder">
-                    {provider.business_name.charAt(0)}
+                    {initialLetter(provider.business_name)}
                   </div>
                 )}
               </div>
@@ -228,7 +260,7 @@ export function ProviderProfile() {
                 {primaryCategory ? (
                   <span className="provider-showcase-hero__category">{primaryCategory.name}</span>
                 ) : null}
-                <h1>{provider.business_name}</h1>
+                <h1>{businessLabel}</h1>
                 {provider.location ? (
                   <p className="provider-showcase-hero__location">
                     <MapPin size={16} aria-hidden="true" />
@@ -426,7 +458,7 @@ export function ProviderProfile() {
                     {provider.logo_url ? (
                       <img src={provider.logo_url} alt="" decoding="async" />
                     ) : (
-                      <span>{provider.business_name.charAt(0)}</span>
+                      <span>{initialLetter(provider.business_name)}</span>
                     )}
                   </div>
                   <div className="provider-enquiry-modal__intro">
@@ -434,7 +466,7 @@ export function ProviderProfile() {
                       <MessageSquare size={14} aria-hidden="true" />
                       Send enquiry
                     </span>
-                    <h2 id="enquiry-modal-title">{provider.business_name}</h2>
+                    <h2 id="enquiry-modal-title">{businessLabel}</h2>
                     {provider.location ? (
                       <p className="provider-enquiry-modal__location">
                         <MapPin size={14} aria-hidden="true" />
@@ -444,7 +476,7 @@ export function ProviderProfile() {
                   </div>
                 </div>
                 <p className="provider-enquiry-modal__lead">
-                  Share what you&apos;re looking for — {provider.business_name} will be notified
+                  Share what you&apos;re looking for — {businessLabel} will be notified
                   instantly and you can track the reply in your dashboard.
                 </p>
               </div>
@@ -480,7 +512,7 @@ export function ProviderProfile() {
                   <Button type="button" variant="ghost" onClick={() => setShowEnquiry(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" size="lg" disabled={submittingEnquiry} className="provider-enquiry-modal__submit">
+                  <Button type="submit" size="lg" disabled={submittingEnquiry || enquiryLocked} className="provider-enquiry-modal__submit">
                     {submittingEnquiry ? (
                       'Sending…'
                     ) : (

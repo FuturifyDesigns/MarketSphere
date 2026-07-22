@@ -67,31 +67,52 @@ export async function syncProviderPrimaryCategory(
   description: string,
   categories: Category[],
 ) {
-  const matched = inferProviderCategory(businessName, description, categories)
-  if (!matched) return null
+  try {
+    const matched = inferProviderCategory(businessName, description, categories)
+    if (!matched) return null
 
-  const { data: services } = await supabase
-    .from('provider_services')
-    .select('id, category_id, title')
-    .eq('provider_id', providerId)
+    const { data: services, error: servicesError } = await supabase
+      .from('provider_services')
+      .select('id, category_id, title')
+      .eq('provider_id', providerId)
 
-  const uncategorized = services?.find((service) => !service.category_id)
-  const primary = uncategorized || services?.[0]
+    if (servicesError) {
+      console.error('[provider-category] list services', servicesError)
+      return null
+    }
 
-  if (primary) {
-    if (primary.category_id === matched.id) return matched
-    await supabase.from('provider_services').update({ category_id: matched.id }).eq('id', primary.id)
+    const uncategorized = services?.find((service) => !service.category_id)
+    const primary = uncategorized || services?.[0]
+
+    if (primary) {
+      if (primary.category_id === matched.id) return matched
+      const { error } = await supabase
+        .from('provider_services')
+        .update({ category_id: matched.id })
+        .eq('id', primary.id)
+      if (error) {
+        console.error('[provider-category] update', error)
+        return null
+      }
+      return matched
+    }
+
+    const { error } = await supabase.from('provider_services').insert({
+      provider_id: providerId,
+      title: businessName.trim() || 'General services',
+      description: description.trim() || null,
+      category_id: matched.id,
+    })
+    if (error) {
+      console.error('[provider-category] insert', error)
+      return null
+    }
+
     return matched
+  } catch (error) {
+    console.error('[provider-category] sync threw', error)
+    return null
   }
-
-  await supabase.from('provider_services').insert({
-    provider_id: providerId,
-    title: businessName.trim() || 'General services',
-    description: description.trim() || null,
-    category_id: matched.id,
-  })
-
-  return matched
 }
 
 export function getProviderPrimaryCategory(provider: Provider) {
@@ -103,27 +124,13 @@ export function providerNeedsCategory(provider: Provider) {
   return !provider.provider_services?.some((service) => service.category_id)
 }
 
+/**
+ * Public pages must stay read-only. Category sync runs only from provider save / admin flows
+ * via syncProviderPrimaryCategory — never from browse/home traffic under load.
+ */
 export async function ensureProviderCategoryIfNeeded(
   provider: Provider,
-  categories: Category[],
+  _categories?: Category[],
 ): Promise<Provider> {
-  if (!providerNeedsCategory(provider)) return provider
-  if (!provider.business_name?.trim() || (provider.description?.trim().length ?? 0) < 10) {
-    return provider
-  }
-
-  await syncProviderPrimaryCategory(
-    provider.id,
-    provider.business_name,
-    provider.description || '',
-    categories,
-  )
-
-  const { data } = await supabase
-    .from('providers')
-    .select('*, provider_services(*, categories(*))')
-    .eq('id', provider.id)
-    .single()
-
-  return data || provider
+  return provider
 }
