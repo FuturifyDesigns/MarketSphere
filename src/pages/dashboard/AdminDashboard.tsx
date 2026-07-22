@@ -110,6 +110,22 @@ export function AdminDashboard() {
     [users, providers, enquiries, contactMessages],
   )
 
+  /** Actionable counts shown as live badges on tabs. */
+  const tabBadges = useMemo(() => {
+    const pendingProviders = providers.filter((provider) => provider.status === 'pending').length
+    const newEnquiries = enquiries.filter((enquiry) => enquiry.status === 'new').length
+    const newContacts = contactMessages.filter((message) => message.status === 'new').length
+    const pendingTestimonials = testimonials.filter((item) => !item.approved).length
+
+    return {
+      overview: pendingProviders + newEnquiries + newContacts + pendingTestimonials,
+      providers: pendingProviders,
+      enquiries: newEnquiries,
+      contacts: newContacts,
+      testimonials: pendingTestimonials,
+    } satisfies Partial<Record<AdminTab, number>>
+  }, [providers, enquiries, contactMessages, testimonials])
+
   const loadData = useCallback(async () => {
     const [usersRes, providersRes, enquiriesRes, catsRes, testRes, contactsRes] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(200),
@@ -160,7 +176,12 @@ export function AdminDashboard() {
     const channel = supabase
       .channel(`admin-dashboard-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => scheduleRefresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'providers' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'providers' }, () => {
+        scheduleRefresh()
+        showToast('New provider application received.', 'info')
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'providers' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'providers' }, () => scheduleRefresh())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enquiries' }, () => {
         scheduleRefresh()
         showToast('New enquiry received.', 'info')
@@ -168,7 +189,12 @@ export function AdminDashboard() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'enquiries' }, () => scheduleRefresh())
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'enquiries' }, () => scheduleRefresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => scheduleRefresh())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'testimonials' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'testimonials' }, () => {
+        scheduleRefresh()
+        showToast('New testimonial waiting for review.', 'info')
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'testimonials' }, () => scheduleRefresh())
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'testimonials' }, () => scheduleRefresh())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contact_messages' }, () => {
         scheduleRefresh({ toastNewContact: true })
       })
@@ -424,20 +450,33 @@ export function AdminDashboard() {
         </header>
 
         <div className="admin-dashboard__tabs" role="tablist" aria-label="Admin sections">
-          {ADMIN_TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              className={tab === id ? 'admin-dashboard__tab--active' : ''}
-              onClick={() => setTab(id)}
-            >
-              <Icon size={16} />
-              {label}
-              {id === 'contacts' && stats.contacts > 0 ? ` (${stats.contacts})` : ''}
-            </button>
-          ))}
+          {ADMIN_TABS.map(({ id, label, icon: Icon }) => {
+            const badge = tabBadges[id] ?? 0
+            const badgeLabel =
+              badge > 0
+                ? `${badge > 99 ? '99+' : badge} awaiting attention`
+                : undefined
+
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={tab === id}
+                aria-label={badgeLabel ? `${label}, ${badgeLabel}` : label}
+                className={tab === id ? 'admin-dashboard__tab--active' : ''}
+                onClick={() => setTab(id)}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+                {badge > 0 ? (
+                  <span className="admin-dashboard__tab-badge" aria-hidden="true">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                ) : null}
+              </button>
+            )
+          })}
         </div>
 
         {loading && tab === 'overview' ? (
