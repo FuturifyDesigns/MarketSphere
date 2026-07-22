@@ -798,7 +798,16 @@ export function AdminDashboard() {
                   .map((testimonial) => (
                   <article key={testimonial.id} className="admin-card admin-card--stacked">
                     <div>
-                      <strong>{testimonial.client_name}</strong>
+                      <div className="admin-card__identity">
+                        {testimonial.avatar_url ? (
+                          <img src={testimonial.avatar_url} alt="" className="admin-card__avatar" />
+                        ) : (
+                          <div className="admin-card__avatar admin-card__avatar--placeholder" aria-hidden="true">
+                            {(testimonial.client_name || '?').slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                        <strong>{testimonial.client_name}</strong>
+                      </div>
                       {testimonial.service_type ? <p className="admin-card__meta">{testimonial.service_type}</p> : null}
                       <p>{testimonial.content}</p>
                       <span className={`status-badge${testimonial.approved ? ' status-badge--approved' : ' status-badge--pending'}`}>

@@ -91,6 +91,8 @@ export interface Testimonial {
   service_type: string | null
   rating: number | null
   approved: boolean
+  user_id?: string | null
+  avatar_url?: string | null
 }
 
 export interface Favorite {

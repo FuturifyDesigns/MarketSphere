@@ -1061,6 +1061,18 @@
   border: 1px solid var(--card-border);
 }
 
+.admin-card__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.admin-card__identity .admin-card__avatar {
+  width: 36px;
+  height: 36px;
+}
+
 .admin-card__avatar {
   border-radius: 50%;
 }

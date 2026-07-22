@@ -170,16 +170,26 @@ export function TestimonialsShowcase({ items, autoplayMs = 3500 }: TestimonialsS
               </blockquote>
 
               <footer className="testimonials-showcase__author">
+              {current.avatar_url ? (
+                <img
+                  src={current.avatar_url}
+                  alt=""
+                  className="testimonials-showcase__avatar testimonials-showcase__avatar--photo"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
                 <span className="testimonials-showcase__avatar" aria-hidden="true">
                   {initial}
                 </span>
-                <div className="testimonials-showcase__author-text">
-                  <strong>{name}</strong>
-                  {current.service_type ? (
-                    <span className="testimonials-showcase__service">{current.service_type}</span>
-                  ) : null}
-                </div>
-              </footer>
+              )}
+              <div className="testimonials-showcase__author-text">
+                <strong>{name}</strong>
+                {current.service_type ? (
+                  <span className="testimonials-showcase__service">{current.service_type}</span>
+                ) : null}
+              </div>
+            </footer>
 
               {items.length > 1 ? (
                 <div

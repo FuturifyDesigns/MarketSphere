@@ -185,6 +185,8 @@ create table if not exists public.testimonials (
   service_type text,
   rating int check (rating >= 1 and rating <= 5),
   approved boolean default false,
+  user_id uuid references public.profiles (id) on delete set null,
+  avatar_url text,
   created_at timestamptz default now()
 );
 

@@ -125,6 +125,14 @@
   box-shadow: 0 8px 20px color-mix(in srgb, var(--color-gold) 35%, transparent);
 }
 
+.testimonials-showcase__avatar--photo {
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  background: var(--color-sand);
+  color: transparent;
+}
+
 .testimonials-showcase__author-text {
   display: flex;
   flex-direction: column;

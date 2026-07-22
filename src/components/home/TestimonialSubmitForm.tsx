@@ -1,6 +1,7 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { CheckCircle2, ChevronDown, Send, Star } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -25,6 +26,7 @@ const RATE_LIMIT_MS = 60_000
 
 export function TestimonialSubmitForm() {
   const panelId = useId()
+  const { profile } = useAuth()
   const { showToast } = useToast()
   const { locked, runLocked } = useSubmitLock()
   const [open, setOpen] = useState(false)
@@ -39,6 +41,11 @@ export function TestimonialSubmitForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (!profile?.full_name) return
+    setForm((prev) => (prev.client_name.trim() ? prev : { ...prev, client_name: profile.full_name || '' }))
+  }, [profile?.full_name])
 
   const update = (key: keyof typeof form, value: string | number) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -145,8 +152,17 @@ export function TestimonialSubmitForm() {
         <form className="testimonial-submit__form" onSubmit={handleSubmit} noValidate>
           <p className="testimonial-submit__intro">
             Tell us about your experience. Submissions are reviewed before they go live.
+            {profile?.avatar_url
+              ? ' Your profile photo will appear with your story once it is approved.'
+              : ''}
           </p>
 
+          {profile?.avatar_url ? (
+            <div className="testimonial-submit__profile-photo">
+              <img src={profile.avatar_url} alt="" />
+              <span>Using your account photo</span>
+            </div>
+          ) : null}
           <div className="testimonial-submit__rating" role="group" aria-label="Rating">
             <span className="testimonial-submit__rating-label">Your rating</span>
             <div className="testimonial-submit__stars">
