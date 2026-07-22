@@ -12,13 +12,16 @@
 }
 
 .showcase-carousel__viewport {
+  position: relative;
+  display: grid;
   overflow: hidden;
-  min-height: 100%;
   width: 100%;
   border-radius: inherit;
 }
 
 .showcase-carousel__slide {
+  grid-area: 1 / 1;
+  align-self: start;
   width: 100%;
   max-width: 100%;
   margin-inline: auto;

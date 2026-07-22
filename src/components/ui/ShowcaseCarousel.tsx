@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useSlideshowAutoplay } from '../../hooks/useSlideshowAutoplay'
@@ -38,6 +38,9 @@ export function ShowcaseCarousel<T>({
   className = '',
 }: ShowcaseCarouselProps<T>) {
   const [index, setIndex] = useState(0)
+  const [viewportHeight, setViewportHeight] = useState<number | undefined>()
+  const maxHeightRef = useRef(0)
+  const slideRef = useRef<HTMLDivElement>(null)
   const mobileMotion = useMobileCarouselMotion()
   const { rootProps, bump } = useSlideshowAutoplay(items.length, setIndex, {
     intervalMs: autoplayMs,
@@ -46,7 +49,31 @@ export function ShowcaseCarousel<T>({
 
   useEffect(() => {
     setIndex(0)
+    maxHeightRef.current = 0
+    setViewportHeight(undefined)
   }, [items.length])
+
+  const safeIndex = items.length ? Math.min(index, items.length - 1) : 0
+  const currentItem = items[safeIndex]
+
+  useLayoutEffect(() => {
+    const slide = slideRef.current
+    if (!slide) return
+
+    const measure = () => {
+      const h = Math.ceil(slide.getBoundingClientRect().height)
+      if (h <= 0) return
+      if (h > maxHeightRef.current) {
+        maxHeightRef.current = h
+        setViewportHeight(h)
+      }
+    }
+
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    ro?.observe(slide)
+    return () => ro?.disconnect()
+  }, [safeIndex, currentItem, items.length])
 
   if (items.length === 0) return null
 
@@ -63,8 +90,6 @@ export function ShowcaseCarousel<T>({
     bump()
   }
 
-  const currentItem = items[Math.min(index, items.length - 1)]
-
   const slideVariants = mobileMotion
     ? {
         initial: { opacity: 0 },
@@ -79,9 +104,15 @@ export function ShowcaseCarousel<T>({
 
   return (
     <div className={`showcase-carousel ${className}`.trim()} {...rootProps}>
-      <div className="showcase-carousel__viewport" aria-roledescription="carousel" aria-label={ariaLabel}>
+      <div
+        className="showcase-carousel__viewport"
+        aria-roledescription="carousel"
+        aria-label={ariaLabel}
+        style={viewportHeight ? { height: viewportHeight } : undefined}
+      >
         <AnimatePresence mode="sync" initial={false}>
           <motion.div
+            ref={slideRef}
             key={getKey(currentItem)}
             className="showcase-carousel__slide"
             initial={slideVariants.initial}
@@ -108,9 +139,9 @@ export function ShowcaseCarousel<T>({
                 key={getKey(item)}
                 type="button"
                 role="tab"
-                aria-selected={dotIndex === index}
+                aria-selected={dotIndex === safeIndex}
                 aria-label={`Go to slide ${dotIndex + 1}`}
-                className={dotIndex === index ? 'showcase-carousel__dot showcase-carousel__dot--active' : 'showcase-carousel__dot'}
+                className={dotIndex === safeIndex ? 'showcase-carousel__dot showcase-carousel__dot--active' : 'showcase-carousel__dot'}
                 onClick={() => goTo(dotIndex)}
               />
             ))}

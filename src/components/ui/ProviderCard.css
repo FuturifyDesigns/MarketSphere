@@ -32,9 +32,12 @@
 .provider-card__gallery {
   position: absolute;
   inset: 0;
+  display: grid;
+  overflow: hidden;
 }
 
 .provider-card__gallery-image {
+  grid-area: 1 / 1;
   width: 100%;
   height: 100%;
   object-fit: cover;

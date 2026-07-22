@@ -657,7 +657,6 @@
 }
 
 .home-providers-carousel .showcase-carousel__viewport {
-  min-height: auto;
   border-radius: 16px;
 }
 
@@ -666,7 +665,9 @@
 }
 
 .home-testimonials-carousel .testimonial-card {
-  min-height: 13rem;
+  min-height: 14rem;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .providers-grid {

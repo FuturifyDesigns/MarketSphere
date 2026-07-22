@@ -6,12 +6,15 @@
 
 .gallery-slideshow__stage {
   position: relative;
+  display: grid;
   border-radius: 16px;
   overflow: hidden;
   background: rgba(26, 21, 16, 0.06);
 }
 
 .gallery-slideshow__image-btn {
+  grid-area: 1 / 1;
+  align-self: start;
   display: block;
   width: 100%;
   padding: 0;
