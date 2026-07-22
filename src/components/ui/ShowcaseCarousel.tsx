@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useSlideshowAutoplay } from '../../hooks/useSlideshowAutoplay'
 import './ShowcaseCarousel.css'
 
 interface ShowcaseCarouselProps<T> {
@@ -33,30 +34,36 @@ export function ShowcaseCarousel<T>({
   renderItem,
   getKey,
   ariaLabel,
-  autoplayMs = 5200,
+  autoplayMs = 3200,
   className = '',
 }: ShowcaseCarouselProps<T>) {
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
   const mobileMotion = useMobileCarouselMotion()
+  const { rootProps, bump } = useSlideshowAutoplay(items.length, setIndex, {
+    intervalMs: autoplayMs,
+    resumeAfterMs: 4000,
+  })
 
   useEffect(() => {
     setIndex(0)
   }, [items.length])
 
-  useEffect(() => {
-    if (items.length <= 1 || paused) return
-    const timer = window.setInterval(() => {
-      setIndex((current) => (current + 1) % items.length)
-    }, autoplayMs)
-    return () => window.clearInterval(timer)
-  }, [items.length, paused, autoplayMs])
-
   if (items.length === 0) return null
 
-  const goPrev = () => setIndex((current) => (current - 1 + items.length) % items.length)
-  const goNext = () => setIndex((current) => (current + 1) % items.length)
-  const currentItem = items[index]
+  const goPrev = () => {
+    setIndex((current) => (current - 1 + items.length) % items.length)
+    bump()
+  }
+  const goNext = () => {
+    setIndex((current) => (current + 1) % items.length)
+    bump()
+  }
+  const goTo = (dotIndex: number) => {
+    setIndex(dotIndex)
+    bump()
+  }
+
+  const currentItem = items[Math.min(index, items.length - 1)]
 
   const slideVariants = mobileMotion
     ? {
@@ -65,28 +72,22 @@ export function ShowcaseCarousel<T>({
         exit: { opacity: 0 },
       }
     : {
-        initial: { opacity: 0, x: 36 },
+        initial: { opacity: 0, x: 28 },
         animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -36 },
+        exit: { opacity: 0, x: -28 },
       }
 
   return (
-    <div
-      className={`showcase-carousel ${className}`.trim()}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-    >
+    <div className={`showcase-carousel ${className}`.trim()} {...rootProps}>
       <div className="showcase-carousel__viewport" aria-roledescription="carousel" aria-label={ariaLabel}>
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={getKey(currentItem)}
             className="showcase-carousel__slide"
             initial={slideVariants.initial}
             animate={slideVariants.animate}
             exit={slideVariants.exit}
-            transition={{ duration: mobileMotion ? 0.28 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: mobileMotion ? 0.22 : 0.32, ease: [0.22, 1, 0.36, 1] }}
           >
             {renderItem(currentItem)}
           </motion.div>
@@ -110,7 +111,7 @@ export function ShowcaseCarousel<T>({
                 aria-selected={dotIndex === index}
                 aria-label={`Go to slide ${dotIndex + 1}`}
                 className={dotIndex === index ? 'showcase-carousel__dot showcase-carousel__dot--active' : 'showcase-carousel__dot'}
-                onClick={() => setIndex(dotIndex)}
+                onClick={() => goTo(dotIndex)}
               />
             ))}
           </div>
