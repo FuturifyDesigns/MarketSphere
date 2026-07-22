@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type TouchEvent } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Phone } from 'lucide-react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
+import { motion } from 'framer-motion'
+import { Phone } from 'lucide-react'
 import { EditableText } from '../cms/EditableText'
 import { useSiteContent } from '../../context/SiteContentContext'
-import { useSlideshowAutoplay } from '../../hooks/useSlideshowAutoplay'
 import './StaffShowcase.css'
 
 export type StaffMember = {
@@ -37,63 +36,92 @@ function telHref(phone: string) {
   return `tel:${phone.replace(/[^\d+]/g, '')}`
 }
 
+function StaffNode({
+  member,
+  index,
+  active,
+  onSelect,
+  variant,
+}: {
+  member: StaffMember
+  index: number
+  active: boolean
+  onSelect: () => void
+  variant: 'root' | 'branch'
+}) {
+  return (
+    <motion.button
+      type="button"
+      className={[
+        'staff-tree__node',
+        `staff-tree__node--${variant}`,
+        active ? 'staff-tree__node--active' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onClick={onSelect}
+      aria-pressed={active}
+      aria-label={`${member.name}, ${member.role}`}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 0.45, delay: variant === 'root' ? 0.05 : 0.12 + index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="staff-tree__photo-wrap">
+        <img
+          src={assetUrl(member.image)}
+          alt=""
+          className="staff-tree__photo"
+          decoding="async"
+          loading="lazy"
+        />
+      </div>
+
+      <div className="staff-tree__copy">
+        <span className="staff-tree__label">{variant === 'root' ? 'Leadership' : 'Team'}</span>
+        <h3>
+          <EditableText contentKey="about" path={`staff.members.${index}.name`} as="span" />
+        </h3>
+        <p className="staff-tree__role">
+          <EditableText contentKey="about" path={`staff.members.${index}.role`} as="span" />
+        </p>
+        {member.phone ? (
+          <a
+            className="staff-tree__phone"
+            href={telHref(member.phone)}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Phone size={15} aria-hidden="true" />
+            <EditableText contentKey="about" path={`staff.members.${index}.phone`} as="span" />
+          </a>
+        ) : null}
+      </div>
+    </motion.button>
+  )
+}
+
 export function StaffShowcase() {
   const { getBlock } = useSiteContent()
   const staff = getBlock<AboutBlock>('about').staff
   const members: StaffMember[] = staff?.members?.length ? staff.members : []
-
-  const [index, setIndex] = useState(0)
-  const [direction, setDirection] = useState(1)
-  const touchStartX = useRef<number | null>(null)
-
-  const setIndexFromAutoplay = useCallback((updater: (current: number) => number) => {
-    setDirection(1)
-    setIndex(updater)
-  }, [])
-
-  const { rootProps, bump } = useSlideshowAutoplay(members.length, setIndexFromAutoplay, {
-    intervalMs: 4500,
-    resumeAfterMs: 2800,
-    pauseOnHover: false,
-  })
+  const [activeId, setActiveId] = useState(members[0]?.id ?? '')
+  const treeId = useId()
 
   useEffect(() => {
-    setIndex(0)
-  }, [members.length])
+    if (!members.some((member) => member.id === activeId)) {
+      setActiveId(members[0]?.id ?? '')
+    }
+  }, [members, activeId])
 
   if (!members.length) return null
 
-  const safeIndex = Math.min(index, members.length - 1)
-  const current = members[safeIndex]
-
-  const goTo = (next: number, dir: number) => {
-    setDirection(dir)
-    setIndex(((next % members.length) + members.length) % members.length)
-    bump()
-  }
-
-  const goPrev = () => goTo(safeIndex - 1, -1)
-  const goNext = () => goTo(safeIndex + 1, 1)
-
-  const onTouchStart = (event: TouchEvent) => {
-    touchStartX.current = event.changedTouches[0]?.clientX ?? null
-  }
-
-  const onTouchEnd = (event: TouchEvent) => {
-    const start = touchStartX.current
-    touchStartX.current = null
-    if (start == null || members.length <= 1) return
-    const end = event.changedTouches[0]?.clientX ?? start
-    const delta = end - start
-    if (Math.abs(delta) < 48) return
-    if (delta < 0) goNext()
-    else goPrev()
-  }
+  const root = members[0]
+  const branches = members.slice(1)
 
   return (
-    <section className="staff-showcase" aria-labelledby="staff-showcase-title" {...rootProps}>
-      <div className="container staff-showcase__inner">
-        <header className="staff-showcase__header">
+    <section className="staff-tree" aria-labelledby="staff-showcase-title">
+      <div className="container staff-tree__inner">
+        <header className="staff-tree__header">
           <EditableText contentKey="about" path="staff.eyebrow" as="span" className="section-label" />
           <h2 id="staff-showcase-title" className="display-lg">
             <EditableText contentKey="about" path="staff.title" as="span" />{' '}
@@ -101,124 +129,82 @@ export function StaffShowcase() {
               <EditableText contentKey="about" path="staff.titleEmphasis" as="span" />
             </em>
           </h2>
-          <EditableText contentKey="about" path="staff.lead" as="p" className="staff-showcase__lead" multiline />
+          <EditableText contentKey="about" path="staff.lead" as="p" className="staff-tree__lead" multiline />
         </header>
 
-        <div className="staff-showcase__stage-wrap">
-          {members.length > 1 ? (
-            <button
-              type="button"
-              className="staff-showcase__nav staff-showcase__nav--prev"
-              onClick={goPrev}
-              aria-label="Previous team member"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          ) : null}
-
-          <div
-            className="staff-showcase__stage"
-            aria-roledescription="carousel"
-            aria-label="Leadership team"
-            onTouchStart={onTouchStart}
-            onTouchEnd={onTouchEnd}
-          >
-            <div className="staff-showcase__glow" aria-hidden="true" />
-            <AnimatePresence mode="sync" custom={direction} initial={false}>
-              <motion.article
-                key={current.id}
-                className="staff-showcase__card"
-                custom={direction}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                variants={{
-                  enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 48 : -48, scale: 0.97 }),
-                  center: { opacity: 1, x: 0, scale: 1 },
-                  exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -36 : 36, scale: 0.97 }),
-                }}
-                transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="staff-showcase__photo-wrap">
-                  <img
-                    src={assetUrl(current.image)}
-                    alt=""
-                    className="staff-showcase__photo"
-                    decoding="async"
-                  />
-                  <span className="staff-showcase__photo-ring" aria-hidden="true" />
-                </div>
-
-                <div className="staff-showcase__body">
-                  <span className="staff-showcase__index" aria-hidden="true">
-                    {String(safeIndex + 1).padStart(2, '0')} / {String(members.length).padStart(2, '0')}
-                  </span>
-                  <h3>
-                    <EditableText
-                      contentKey="about"
-                      path={`staff.members.${safeIndex}.name`}
-                      as="span"
+        <div className="staff-tree__canvas" role="group" aria-label="Leadership tree">
+          <svg className="staff-tree__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id={`${treeId}-line`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-gold)" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="var(--color-gold)" stopOpacity="0.25" />
+              </linearGradient>
+            </defs>
+            {branches.length > 0 ? (
+              <>
+                <path
+                  className="staff-tree__path staff-tree__path--trunk"
+                  d="M50 18 V48"
+                  fill="none"
+                  stroke={`url(#${treeId}-line)`}
+                  strokeWidth="0.55"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <path
+                  className="staff-tree__path staff-tree__path--arm"
+                  d="M18 48 H82"
+                  fill="none"
+                  stroke={`url(#${treeId}-line)`}
+                  strokeWidth="0.55"
+                  vectorEffect="non-scaling-stroke"
+                />
+                {branches.map((_, branchIndex) => {
+                  const x = branches.length === 1 ? 50 : 18 + (branchIndex * 64) / Math.max(branches.length - 1, 1)
+                  return (
+                    <path
+                      key={branchIndex}
+                      className="staff-tree__path staff-tree__path--drop"
+                      d={`M${x} 48 V72`}
+                      fill="none"
+                      stroke={`url(#${treeId}-line)`}
+                      strokeWidth="0.55"
+                      vectorEffect="non-scaling-stroke"
                     />
-                  </h3>
-                  <p className="staff-showcase__role">
-                    <EditableText
-                      contentKey="about"
-                      path={`staff.members.${safeIndex}.role`}
-                      as="span"
-                    />
-                  </p>
-                  {current.phone ? (
-                    <a className="staff-showcase__phone" href={telHref(current.phone)}>
-                      <Phone size={16} aria-hidden="true" />
-                      <EditableText
-                        contentKey="about"
-                        path={`staff.members.${safeIndex}.phone`}
-                        as="span"
-                      />
-                    </a>
-                  ) : null}
-                </div>
-              </motion.article>
-            </AnimatePresence>
+                  )
+                })}
+              </>
+            ) : null}
+            <circle className="staff-tree__hub" cx="50" cy="48" r="1.4" />
+          </svg>
+
+          <div className="staff-tree__root">
+            <StaffNode
+              member={root}
+              index={0}
+              variant="root"
+              active={activeId === root.id}
+              onSelect={() => setActiveId(root.id)}
+            />
           </div>
 
-          {members.length > 1 ? (
-            <button
-              type="button"
-              className="staff-showcase__nav staff-showcase__nav--next"
-              onClick={goNext}
-              aria-label="Next team member"
+          {branches.length > 0 ? (
+            <div
+              className="staff-tree__branches"
+              style={{ '--staff-branch-count': branches.length } as CSSProperties}
             >
-              <ChevronRight size={20} />
-            </button>
+              {branches.map((member, branchIndex) => (
+                <StaffNode
+                  key={member.id}
+                  member={member}
+                  index={branchIndex + 1}
+                  variant="branch"
+                  active={activeId === member.id}
+                  onSelect={() => setActiveId(member.id)}
+                />
+              ))}
+            </div>
           ) : null}
         </div>
-
-        {members.length > 1 ? (
-          <div className="staff-showcase__roster" role="tablist" aria-label="Team members">
-            {members.map((member, memberIndex) => {
-              const active = memberIndex === safeIndex
-              return (
-                <button
-                  key={member.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={`Show ${member.name}`}
-                  className={
-                    active
-                      ? 'staff-showcase__thumb staff-showcase__thumb--active'
-                      : 'staff-showcase__thumb'
-                  }
-                  onClick={() => goTo(memberIndex, memberIndex > safeIndex ? 1 : -1)}
-                >
-                  <img src={assetUrl(member.image)} alt="" decoding="async" />
-                  <span className="staff-showcase__thumb-name">{member.name.replace(/^Mr\.\s+|^Ms\.\s+/i, '').split(' ')[0]}</span>
-                </button>
-              )
-            })}
-          </div>
-        ) : null}
       </div>
     </section>
   )
