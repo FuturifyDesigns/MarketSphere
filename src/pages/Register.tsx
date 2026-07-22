@@ -54,6 +54,7 @@ export function Register() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [privacyConsent, setPrivacyConsent] = useState(false)
+  const [consentError, setConsentError] = useState('')
   const { locked, runLocked } = useSubmitLock()
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
@@ -73,6 +74,7 @@ export function Register() {
     e.preventDefault()
     if (loading || locked) return
     setError('')
+    setConsentError('')
 
     const errors = collectErrors<RegisterFields>([
       ['full_name', validateName(form.full_name, 'Full name')],
@@ -84,8 +86,10 @@ export function Register() {
     if (hasErrors(errors)) return
 
     if (!privacyConsent) {
-      setError('Please accept the Privacy Policy and Terms of Service to continue.')
-      showToast('Please accept the Privacy Policy and Terms of Service to continue.', 'error')
+      const msg = 'Please accept the Terms of Service and Privacy Policy to continue.'
+      setConsentError(msg)
+      setError(msg)
+      showToast(msg, 'error')
       return
     }
 
@@ -106,6 +110,8 @@ export function Register() {
           full_name: form.full_name.trim(),
           phone: phone || undefined,
           role: form.role === 'provider' ? 'provider' : 'customer',
+          privacy_consent: true,
+          privacy_consent_at: new Date().toISOString(),
         })
         if (err) {
           setError(err.message)
@@ -246,19 +252,40 @@ export function Register() {
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
-              <label className="auth-consent">
+              <div className={`auth-consent${consentError ? ' auth-consent--error' : ''}`}>
                 <input
+                  id="register-privacy-consent"
                   type="checkbox"
                   checked={privacyConsent}
-                  onChange={(e) => setPrivacyConsent(e.target.checked)}
+                  aria-invalid={Boolean(consentError)}
+                  aria-describedby={consentError ? 'register-privacy-consent-error' : undefined}
+                  onChange={(e) => {
+                    setPrivacyConsent(e.target.checked)
+                    if (e.target.checked) {
+                      setConsentError('')
+                      setError('')
+                    }
+                  }}
                 />
-                <span>
-                  I agree to the <Link to="/terms">Terms of Service</Link> and{' '}
-                  <Link to="/privacy">Privacy Policy</Link>, and consent to the processing of my
-                  personal data in accordance with Botswana&apos;s Data Protection Act, 2024.
-                </span>
-              </label>
-              <Button type="submit" size="lg" disabled={loading}>
+                <label htmlFor="register-privacy-consent">
+                  I agree to the{' '}
+                  <Link to="/terms" onClick={(e) => e.stopPropagation()}>
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" onClick={(e) => e.stopPropagation()}>
+                    Privacy Policy
+                  </Link>
+                  , and consent to the processing of my personal data in accordance with Botswana&apos;s
+                  Data Protection Act, 2024.
+                </label>
+              </div>
+              {consentError ? (
+                <p id="register-privacy-consent-error" className="auth-consent__error" role="alert">
+                  {consentError}
+                </p>
+              ) : null}
+              <Button type="submit" size="lg" disabled={loading || locked || !privacyConsent}>
                 {loading
                   ? 'Submitting application...'
                   : isProvider

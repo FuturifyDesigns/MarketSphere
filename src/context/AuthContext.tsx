@@ -15,7 +15,17 @@ interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
-  signUp: (email: string, password: string, meta: { full_name: string; phone?: string; role: string }) => Promise<{ error: Error | null }>
+  signUp: (
+    email: string,
+    password: string,
+    meta: {
+      full_name: string
+      phone?: string
+      role: string
+      privacy_consent?: boolean
+      privacy_consent_at?: string
+    },
+  ) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<SignInResult>
   resetPasswordForEmail: (email: string) => Promise<{ error: Error | null }>
   updatePassword: (password: string) => Promise<{ error: Error | null }>
@@ -161,10 +171,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    meta: { full_name: string; phone?: string; role: string },
+    meta: {
+      full_name: string
+      phone?: string
+      role: string
+      privacy_consent?: boolean
+      privacy_consent_at?: string
+    },
   ) => {
     try {
       const role = meta.role === 'provider' ? 'provider' : 'customer'
+      if (!meta.privacy_consent) {
+        return { error: new Error('Please accept the Terms of Service and Privacy Policy to continue.') }
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -173,6 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             full_name: meta.full_name,
             phone: meta.phone,
             role,
+            privacy_consent: true,
+            privacy_consent_at: meta.privacy_consent_at || new Date().toISOString(),
           },
           emailRedirectTo: getAuthRouteUrl('/auth/verify'),
         },

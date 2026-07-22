@@ -4,6 +4,11 @@ import { ArrowRight, LayoutDashboard, Lock, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { supabase } from '../lib/supabase'
+import {
+  applyRememberMePreference,
+  getRememberedEmail,
+  getRememberMe,
+} from '../lib/authPersistence'
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
@@ -33,8 +38,9 @@ export function Login() {
   const { signIn } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => getRememberedEmail())
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(() => getRememberMe())
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<LoginFields>>({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -63,6 +69,9 @@ export function Login() {
       setLoading(true)
       markClientRateLimited('auth-login')
       try {
+        // Must run before signIn so the session is written to the correct storage.
+        applyRememberMePreference(rememberMe, email.trim())
+
         const { error: err, bannedReason } = await signIn(email.trim(), password)
         if (err) {
           setError(bannedReason || err.message)
@@ -70,7 +79,11 @@ export function Login() {
           return
         }
 
-        showToast('Signed in successfully. Welcome back!')
+        showToast(
+          rememberMe
+            ? 'Signed in successfully. We’ll keep you signed in on this device.'
+            : 'Signed in successfully. You’ll stay signed in until you close this browser.',
+        )
         const {
           data: { user },
         } = await supabase.auth.getUser()
@@ -144,13 +157,28 @@ export function Login() {
                 hint={FIELD_HINTS.password}
                 error={fieldErrors.password}
               />
-              <p className="auth-form__forgot">
-                <Link to="/forgot-password">Forgot password?</Link>
+              <div className="auth-form__row">
+                <label className="auth-remember">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span>Remember me</span>
+                </label>
+                <p className="auth-form__forgot">
+                  <Link to="/forgot-password">Forgot password?</Link>
+                </p>
+              </div>
+              <p className="auth-remember__hint">
+                {rememberMe
+                  ? 'Stay signed in on this device after you close the browser.'
+                  : 'You’ll be signed out when this browser session ends.'}
               </p>
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
-              <Button type="submit" size="lg" disabled={loading}>
+              <Button type="submit" size="lg" disabled={loading || locked}>
                 {loading ? 'Signing in...' : 'Sign In'} <ArrowRight size={16} />
               </Button>
             </form>

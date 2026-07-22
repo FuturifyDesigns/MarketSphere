@@ -335,12 +335,27 @@
   font-size: 0.8125rem;
   line-height: 1.55;
   color: var(--text-secondary);
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.auth-consent--error {
+  border-color: color-mix(in srgb, #c45c4a 55%, transparent);
+  background: color-mix(in srgb, #c45c4a 8%, transparent);
 }
 
 .auth-consent input {
   margin-top: 0.2rem;
   flex-shrink: 0;
+  width: 1.05rem;
+  height: 1.05rem;
   accent-color: var(--color-gold);
+  cursor: pointer;
+}
+
+.auth-consent label {
+  cursor: pointer;
 }
 
 .auth-consent a {
@@ -351,6 +366,44 @@
 
 .auth-consent a:hover {
   text-decoration: underline;
+}
+
+.auth-consent__error {
+  margin: -0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: #c45c4a;
+}
+
+.auth-form__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.auth-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-remember input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--color-gold);
+  cursor: pointer;
+}
+
+.auth-remember__hint {
+  margin: -0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .role-toggle {
