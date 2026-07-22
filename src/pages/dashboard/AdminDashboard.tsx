@@ -111,7 +111,7 @@ export function AdminDashboard() {
   )
 
   /** Actionable counts shown as live badges on tabs. */
-  const tabBadges = useMemo(() => {
+  const tabBadges = useMemo((): Partial<Record<AdminTab, number>> => {
     const pendingProviders = providers.filter((provider) => provider.status === 'pending').length
     const newEnquiries = enquiries.filter((enquiry) => enquiry.status === 'new').length
     const newContacts = contactMessages.filter((message) => message.status === 'new').length
@@ -123,7 +123,7 @@ export function AdminDashboard() {
       enquiries: newEnquiries,
       contacts: newContacts,
       testimonials: pendingTestimonials,
-    } satisfies Partial<Record<AdminTab, number>>
+    }
   }, [providers, enquiries, contactMessages, testimonials])
 
   const loadData = useCallback(async () => {
