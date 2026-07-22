@@ -11,6 +11,7 @@ import {
   Pencil,
   Quote,
   Shield,
+  Trash2,
   Users,
   X,
 } from 'lucide-react'
@@ -347,7 +348,18 @@ export function AdminDashboard() {
       showToast('Could not update testimonial.', 'error')
       return
     }
-    showToast(approved ? 'Testimonial is now visible.' : 'Testimonial hidden.')
+    showToast(approved ? 'Testimonial approved and now live.' : 'Testimonial removed from the site.')
+  }
+
+  const deleteTestimonial = async (id: string) => {
+    setTestimonials((current) => current.filter((testimonial) => testimonial.id !== id))
+    const { error } = await supabase.from('testimonials').delete().eq('id', id)
+    if (error) {
+      void loadData()
+      showToast('Could not delete testimonial.', 'error')
+      return
+    }
+    showToast('Testimonial deleted.')
   }
 
   const updateContactStatus = async (id: string, status: ContactMessage['status']) => {
@@ -737,30 +749,46 @@ export function AdminDashboard() {
             <section className="dashboard-panel admin-dashboard__panel">
               <div className="dashboard-panel__header">
                 <h2><Quote size={20} /> Testimonials</h2>
-                <span className="admin-dashboard__count">{testimonials.length} total</span>
+                <span className="admin-dashboard__count">
+                  {testimonials.filter((t) => !t.approved).length} pending · {testimonials.length} total
+                </span>
               </div>
               <div className="admin-card-list">
-                {testimonials.map((testimonial) => (
+                {[...testimonials]
+                  .sort((a, b) => Number(a.approved) - Number(b.approved))
+                  .map((testimonial) => (
                   <article key={testimonial.id} className="admin-card admin-card--stacked">
                     <div>
                       <strong>{testimonial.client_name}</strong>
+                      {testimonial.service_type ? <p className="admin-card__meta">{testimonial.service_type}</p> : null}
                       <p>{testimonial.content}</p>
-                      <span className={`status-badge${testimonial.approved ? ' status-badge--approved' : ''}`}>
-                        {testimonial.approved ? 'Visible' : 'Hidden'}
+                      <span className={`status-badge${testimonial.approved ? ' status-badge--approved' : ' status-badge--pending'}`}>
+                        {testimonial.approved ? 'Live on site' : 'Pending review'}
                       </span>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => void toggleTestimonial(testimonial.id, !testimonial.approved)}>
-                      {testimonial.approved ? 'Hide' : 'Show'}
-                    </Button>
+                    <div className="admin-card__actions">
+                      <Button size="sm" variant={testimonial.approved ? 'ghost' : 'primary'} onClick={() => void toggleTestimonial(testimonial.id, !testimonial.approved)}>
+                        {testimonial.approved ? 'Unpublish' : 'Approve'}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => void deleteTestimonial(testimonial.id)}>
+                        <Trash2 size={14} /> Delete
+                      </Button>
+                    </div>
                   </article>
                 ))}
+                {testimonials.length === 0 ? (
+                  <p className="admin-dashboard__empty">No testimonials yet. Public submissions will appear here for review.</p>
+                ) : null}
               </div>
             </section>
 
             <section className="dashboard-panel admin-dashboard__panel">
               <div className="dashboard-panel__header">
-                <h2>Add testimonial</h2>
+                <h2>Publish directly</h2>
               </div>
+              <p className="admin-dashboard__hint">
+                Add a testimonial as an admin — it goes live immediately. Public submissions still require Approve.
+              </p>
               <div className="dashboard-form dashboard-form--flush">
                 <Input
                   label="Client Name"
@@ -794,7 +822,7 @@ export function AdminDashboard() {
                   error={testimonialErrors.content}
                 />
                 {formError && tab === 'testimonials' ? <p className="upload-error" role="alert">{formError}</p> : null}
-                <Button onClick={() => void addTestimonial()}>Add testimonial</Button>
+                <Button onClick={() => void addTestimonial()}>Publish testimonial</Button>
               </div>
             </section>
           </div>

@@ -52,6 +52,12 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
     setStageHeight(undefined)
   }, [items.length])
 
+  useEffect(() => {
+    if (index >= items.length && items.length > 0) {
+      setIndex(items.length - 1)
+    }
+  }, [index, items.length])
+
   const safeIndex = items.length ? Math.min(index, items.length - 1) : 0
   const current = items[safeIndex]
 
@@ -199,42 +205,22 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
       </div>
 
       {items.length > 1 ? (
-        <div className="testimonials-showcase__rail" role="tablist" aria-label="Choose a client story">
-          {items.map((item, i) => {
-            const active = i === safeIndex
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                className={
-                  active
-                    ? 'testimonials-showcase__chip testimonials-showcase__chip--active'
-                    : 'testimonials-showcase__chip'
-                }
-                onClick={() => goTo(i, i > safeIndex ? 1 : -1)}
-              >
-                <span className="testimonials-showcase__chip-avatar" aria-hidden="true">
-                  {initialLetter(item.client_name)}
-                </span>
-                <span className="testimonials-showcase__chip-meta">
-                  <span className="testimonials-showcase__chip-name">{displayName(item.client_name, 'Client')}</span>
-                  {item.service_type ? (
-                    <span className="testimonials-showcase__chip-service">{item.service_type}</span>
-                  ) : null}
-                </span>
-                {active ? (
-                  <span
-                    key={`chip-progress-${item.id}-${safeIndex}`}
-                    className="testimonials-showcase__chip-progress"
-                    style={{ animationDuration: `${autoplayMs}ms` }}
-                    aria-hidden="true"
-                  />
-                ) : null}
-              </button>
-            )
-          })}
+        <div className="testimonials-showcase__dots" role="tablist" aria-label="Testimonial slides">
+          {items.map((item, i) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={i === safeIndex}
+              aria-label={`Go to story ${i + 1}`}
+              className={
+                i === safeIndex
+                  ? 'testimonials-showcase__dot testimonials-showcase__dot--active'
+                  : 'testimonials-showcase__dot'
+              }
+              onClick={() => goTo(i, i > safeIndex ? 1 : -1)}
+            />
+          ))}
         </div>
       ) : null}
     </div>

@@ -10,6 +10,7 @@ import { HeroVideo } from '../components/hero/HeroVideo'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
 import { TestimonialsShowcase } from '../components/home/TestimonialsShowcase'
+import { TestimonialSubmitForm } from '../components/home/TestimonialSubmitForm'
 import { Button } from '../components/ui/Button'
 import { WelcomeModal } from '../components/onboarding/WelcomeModal'
 import { EditableSection } from '../components/cms/EditableSection'
@@ -127,13 +128,45 @@ export function Home() {
       }
     }
 
-    void loadFeaturedProviders()
+    async function loadTestimonials() {
+      try {
+        const { data, error } = await supabase
+          .from('testimonials')
+          .select('*')
+          .eq('approved', true)
+          .order('created_at', { ascending: false })
+          .limit(12)
 
-    supabase.from('testimonials').select('*').eq('approved', true).limit(4)
-      .then(({ data }) => setTestimonials(data || []))
+        if (cancelled) return
+        if (error) {
+          console.error('[home] testimonials', error)
+          setTestimonials([])
+          return
+        }
+        setTestimonials(data || [])
+      } catch (error) {
+        console.error('[home] testimonials threw', error)
+        if (!cancelled) setTestimonials([])
+      }
+    }
+
+    void loadFeaturedProviders()
+    void loadTestimonials()
+
+    const channel = supabase
+      .channel('home-testimonials-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'testimonials' },
+        () => {
+          if (!cancelled) void loadTestimonials()
+        },
+      )
+      .subscribe()
 
     return () => {
       cancelled = true
+      void supabase.removeChannel(channel)
     }
   }, [])
 
@@ -536,6 +569,7 @@ export function Home() {
             </h2>
           </header>
           <TestimonialsShowcase items={testimonials.length > 0 ? testimonials : fallbackTestimonials} />
+          <TestimonialSubmitForm />
         </div>
       </EditableSection>
 
