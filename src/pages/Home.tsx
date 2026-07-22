@@ -9,6 +9,7 @@ import { ServicesShowcase } from '../components/home/ServicesShowcase'
 import { HeroVideo } from '../components/hero/HeroVideo'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
+import { TestimonialsShowcase } from '../components/home/TestimonialsShowcase'
 import { Button } from '../components/ui/Button'
 import { WelcomeModal } from '../components/onboarding/WelcomeModal'
 import { EditableSection } from '../components/cms/EditableSection'
@@ -273,8 +274,42 @@ export function Home() {
   }, [])
 
   const fallbackTestimonials: Testimonial[] = [
-    { id: '1', client_name: 'Thabo M.', content: 'Market Sphere Group helped me find a reliable tutor for my children. Professional and responsive throughout.', service_type: 'Academic Tuition', rating: 5, approved: true },
-    { id: '2', client_name: 'Keabetswe R.', content: 'Their real estate consultancy made buying our first home in Gaborone straightforward and stress-free.', service_type: 'Real Estate', rating: 5, approved: true },
+    {
+      id: '1',
+      client_name: 'Thabo M.',
+      content:
+        'Market Sphere Group helped me find a reliable tutor for my children. Professional and responsive throughout.',
+      service_type: 'Academic Tuition',
+      rating: 5,
+      approved: true,
+    },
+    {
+      id: '2',
+      client_name: 'Keabetswe R.',
+      content:
+        'Their real estate consultancy made buying our first home in Gaborone straightforward and stress-free.',
+      service_type: 'Real Estate',
+      rating: 5,
+      approved: true,
+    },
+    {
+      id: '3',
+      client_name: 'Naledi K.',
+      content:
+        'The youth mentorship programme gave our learners confidence and clear next steps. We saw the difference within weeks.',
+      service_type: 'Youth Empowerment',
+      rating: 5,
+      approved: true,
+    },
+    {
+      id: '4',
+      client_name: 'Moagi P.',
+      content:
+        'From first enquiry to matched provider, the process felt personal and trustworthy. Exactly what we needed.',
+      service_type: 'Platform Marketing',
+      rating: 5,
+      approved: true,
+    },
   ]
 
   return (
@@ -500,22 +535,7 @@ export function Home() {
               </span>
             </h2>
           </header>
-          <ShowcaseCarousel
-            className="home-testimonials-carousel"
-            items={testimonials.length > 0 ? testimonials : fallbackTestimonials}
-            getKey={(testimonial) => testimonial.id}
-            ariaLabel="Client testimonials"
-            renderItem={(testimonial) => (
-              <blockquote className="testimonial-card bento-card home-section__item">
-                <div className="testimonial-card__stars">★★★★★</div>
-                <p>"{testimonial.content}"</p>
-                <footer>
-                  <strong>{testimonial.client_name}</strong>
-                  {testimonial.service_type ? <span>{testimonial.service_type}</span> : null}
-                </footer>
-              </blockquote>
-            )}
-          />
+          <TestimonialsShowcase items={testimonials.length > 0 ? testimonials : fallbackTestimonials} />
         </div>
       </EditableSection>
 

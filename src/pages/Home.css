@@ -660,14 +660,8 @@
   border-radius: 16px;
 }
 
-.home-testimonials-carousel.showcase-carousel {
-  max-width: min(100%, 34rem);
-}
-
-.home-testimonials-carousel .testimonial-card {
-  min-height: 14rem;
-  height: 100%;
-  box-sizing: border-box;
+.section--testimonials .testimonials-showcase {
+  margin-top: 0.5rem;
 }
 
 .providers-grid {
