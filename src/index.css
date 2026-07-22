@@ -28,6 +28,11 @@
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-pill: 100px;
+
+  --scrollbar-size: 10px;
+  --scrollbar-track: color-mix(in srgb, var(--color-night) 10%, transparent);
+  --scrollbar-thumb: color-mix(in srgb, var(--color-gold) 55%, var(--color-bronze));
+  --scrollbar-thumb-hover: var(--color-gold);
 }
 
 html[data-theme='day'],
@@ -51,6 +56,9 @@ html[data-theme='night'] {
   --card-border: color-mix(in srgb, rgba(74, 63, 47, 0.14) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.22));
   --card-shadow: 0 4px 24px color-mix(in srgb, rgba(74, 63, 47, 0.1) calc((1 - var(--sky-progress)) * 100%), rgba(0, 0, 0, 0.4));
   --border-subtle: color-mix(in srgb, rgba(74, 63, 47, 0.14) calc((1 - var(--sky-progress)) * 100%), rgba(201, 162, 75, 0.16));
+  --scrollbar-track: color-mix(in srgb, #000 40%, transparent);
+  --scrollbar-thumb: color-mix(in srgb, var(--color-gold) 72%, #2a2418);
+  --scrollbar-thumb-hover: var(--color-gold-light);
 }
 
 *,
@@ -114,6 +122,74 @@ body {
   width: 100%;
   overscroll-behavior-x: none;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Brand side scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    var(--color-gold-light) 0%,
+    var(--scrollbar-thumb) 45%,
+    var(--color-bronze) 100%
+  );
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    var(--color-gold-light) 0%,
+    var(--scrollbar-thumb-hover) 50%,
+    var(--color-gold) 100%
+  );
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Nested panels use a thinner matching rail */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-gold) 45%, var(--color-bronze));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+  background-clip: padding-box;
 }
 
 body.body-scroll-locked {
