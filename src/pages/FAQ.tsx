@@ -6,7 +6,7 @@ import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
 import { EditableButton } from '../components/cms/EditableButton'
 import { useSiteContent } from '../context/SiteContentContext'
-import { useSectionFieldEdit } from '../context/SectionEditContext'
+import { useSiteEdit } from '../context/SiteEditContext'
 import type { FaqItem } from '../lib/siteContentDefaults'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useToast } from '../context/ToastContext'
@@ -36,7 +36,8 @@ const CATEGORY_META: Record<string, { icon: typeof HelpCircle; label: string }> 
 
 export function FAQ() {
   const { getBlock, updateField } = useSiteContent()
-  const canEditFaqList = useSectionFieldEdit()
+  const { editMode, isSectionActive } = useSiteEdit()
+  const canEditFaqList = editMode && isSectionActive('faq-list')
   const { showToast } = useToast()
   const faq = getBlock<FaqBlock>('faq')
   const items = faq.items || []

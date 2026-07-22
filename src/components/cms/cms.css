@@ -570,3 +570,37 @@ a:has(.cms-editable--active) .cms-editable--editing,
   z-index: 5;
   width: min(92%, 280px);
 }
+
+/* Live edit: parents often set pointer-events:none for scroll polish — re-enable hits */
+html.cms-editing .cms-editable--clickable,
+html.cms-editing .cms-editable--active,
+html.cms-editing .cms-editable--editing,
+html.cms-editing .cms-image-edit--active,
+html.cms-editing .cms-image-edit__overlay,
+html.cms-editing .cms-asset-edit,
+html.cms-editing .cms-section__edit {
+  pointer-events: auto !important;
+}
+
+html.cms-editing .services-showcase__intro,
+html.cms-editing .services-showcase__slide,
+html.cms-editing .services-showcase__copy,
+html.cms-editing .services-showcase__visual,
+html.cms-editing .home-showcase__intro,
+html.cms-editing .home-showcase__stage,
+html.cms-editing .svc-page__intro,
+html.cms-editing .svc-page__slide,
+html.cms-editing .svc-page__copy,
+html.cms-editing .svc-page__media,
+html.cms-editing .about-tree__step,
+html.cms-editing .about-tree__card,
+html.cms-editing .about-tree__card-scroll,
+html.cms-editing .about-tree__reveal-item {
+  pointer-events: auto !important;
+}
+
+html.cms-editing .services-showcase__intro,
+html.cms-editing .svc-page__intro {
+  visibility: visible !important;
+  opacity: 1 !important;
+}

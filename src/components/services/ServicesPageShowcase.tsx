@@ -13,6 +13,7 @@ import { EditableImage } from '../cms/EditableImage'
 import { EditableAsset } from '../cms/EditableAsset'
 import { Button } from '../ui/Button'
 import { ServiceSlideMedia } from './ServiceSlideMedia'
+import gsap from 'gsap'
 import './ServicesPageShowcase.css'
 
 type ServicesBlock = {
@@ -55,6 +56,17 @@ export function ServicesPageShowcase() {
       cleanupShowcase?.()
     }
   }, [items.length])
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || !canEditField) return
+    gsap.set(root.querySelectorAll('.svc-page__intro, .svc-page__slide, .svc-page__copy, .svc-page__media'), {
+      pointerEvents: 'auto',
+      visibility: 'visible',
+    })
+    const intro = root.querySelector<HTMLElement>('.svc-page__intro')
+    if (intro) gsap.set(intro, { autoAlpha: 1 })
+  }, [canEditField, items.length])
 
   return (
     <section className="svc-page" ref={rootRef} aria-label="Our services showcase">

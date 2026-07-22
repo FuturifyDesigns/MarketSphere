@@ -19,7 +19,7 @@ import { EditableButton } from '../components/cms/EditableButton'
 import { CmsStringList, cmsStringTexts } from '../components/cms/CmsStringList'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useSiteContent } from '../context/SiteContentContext'
-import { useSectionFieldEdit } from '../context/SectionEditContext'
+import { useSiteEdit } from '../context/SiteEditContext'
 import type { HomeStat } from '../lib/siteContentDefaults'
 import type { CmsStringItem } from '../lib/cmsTypes'
 import { createHomeStat } from '../lib/cmsTypes'
@@ -91,7 +91,8 @@ type HomeBlock = {
 
 export function Home() {
   const { getBlock, updateField } = useSiteContent()
-  const canEditVision = useSectionFieldEdit()
+  const { editMode, isSectionActive } = useSiteEdit()
+  const canEditVision = editMode && isSectionActive('home-vision')
   const home = getBlock<HomeBlock>('home')
   const company = getBlock<{ shortName: string }>('company')
   const marqueeItems = cmsStringTexts(home.marquee?.length ? home.marquee : MARQUEE_ITEMS_FALLBACK.map((text, index) => ({ id: `m-${index}`, text })))

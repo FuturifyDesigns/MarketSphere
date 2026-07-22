@@ -8,13 +8,15 @@ import { flushScrollRefresh } from '../../lib/scrollRefresh'
 import { markServicesShowcaseReady } from '../../lib/servicesShowcaseReady'
 import { initBelowFoldSections } from '../../animations/belowFoldReveal'
 import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
+import { isCmsEditActive } from '../../lib/cmsEditMode'
 import { useSiteContent } from '../../context/SiteContentContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableSection } from '../cms/EditableSection'
 import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
 import { EditableImage } from '../cms/EditableImage'
-import { useSectionFieldEdit } from '../../context/SectionEditContext'
+import { EditableAsset } from '../cms/EditableAsset'
+import { useSiteEdit } from '../../context/SiteEditContext'
 import './ServicesShowcase.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -23,13 +25,10 @@ const FADE_EASE = 'power2.inOut'
 const REVEAL_EASE = 'power2.out'
 const CROSSFADE = 0.48
 
-function splitTitle(title: string) {
-  const words = title.split(' ')
-  if (words.length <= 1) return { first: title, second: '' }
-  const second = words.pop()!
-  return { first: words.join(' '), second }
+function cmsPointer(locked: boolean) {
+  if (isCmsEditActive()) return 'auto'
+  return locked ? 'none' : 'auto'
 }
-
 function PosterTilt({ children, className = '' }: { children: ReactNode; className?: string }) {
   const tiltRef = useRef<HTMLDivElement>(null)
 
@@ -88,9 +87,23 @@ function setSlideHidden(slide: HTMLElement, isRight: boolean) {
 export function ServicesShowcase() {
   const rootRef = useRef<HTMLElement>(null)
   const { getBlock } = useSiteContent()
-  const canEditField = useSectionFieldEdit()
+  const { editMode, isSectionActive } = useSiteEdit()
+  const canEditField = editMode && isSectionActive('home-services-showcase')
   const servicesBlock = getBlock<{ items: MarketingService[] }>('services')
   const items = servicesBlock.items || []
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || !canEditField) return
+
+    // Keep intros/slides hittable while this section is unlocked for CMS edit.
+    gsap.set(root.querySelectorAll('.services-showcase__intro, .services-showcase__slide, .services-showcase__copy, .services-showcase__visual'), {
+      pointerEvents: 'auto',
+      visibility: 'visible',
+    })
+    const intro = root.querySelector<HTMLElement>('.services-showcase__intro')
+    if (intro) gsap.set(intro, { autoAlpha: 1, y: 0 })
+  }, [canEditField, items.length])
 
   useEffect(() => {
     const root = rootRef.current
@@ -122,7 +135,7 @@ export function ServicesShowcase() {
         mm.add('(min-width: 901px)', () => {
           if (!pin || !intro || slides.length === 0) return
 
-          gsap.set(slides, { autoAlpha: 0, zIndex: 0, pointerEvents: 'none' })
+          gsap.set(slides, { autoAlpha: 0, zIndex: 0, pointerEvents: cmsPointer(true) })
           gsap.set(bgLayers, { autoAlpha: 0 })
           gsap.set(intro, { autoAlpha: 1, y: 0, zIndex: 3 })
           gsap.set('.services-showcase__intro .section-label', { opacity: 0, y: 16 })
@@ -160,7 +173,7 @@ export function ServicesShowcase() {
             )
           .to({}, { duration: 0.35 })
           .to(intro, { autoAlpha: 0, y: -36, duration: 0.55, ease: FADE_EASE }, '+=0.15')
-          .set(intro, { visibility: 'hidden', pointerEvents: 'none' })
+          .set(intro, { visibility: isCmsEditActive() ? 'visible' : 'hidden', pointerEvents: cmsPointer(true) })
 
           slides.forEach((slide, i) => {
             const visual = slide.querySelector('.services-showcase__visual')
@@ -180,7 +193,7 @@ export function ServicesShowcase() {
               const prev = slides[i - 1]
               tl.to(bgLayers[i - 1], { autoAlpha: 0, duration: CROSSFADE, ease: FADE_EASE }, label)
               tl.to(prev, { autoAlpha: 0, duration: CROSSFADE, ease: FADE_EASE }, label)
-              tl.set(prev, { zIndex: 0, pointerEvents: 'none' }, `${label}+=${CROSSFADE}`)
+              tl.set(prev, { zIndex: 0, pointerEvents: cmsPointer(true) }, `${label}+=${CROSSFADE}`)
               if (dots[i - 1]) {
                 tl.to(dots[i - 1], { scale: 1, opacity: 0.35, duration: CROSSFADE, ease: FADE_EASE }, label)
               }
@@ -194,7 +207,7 @@ export function ServicesShowcase() {
               )
             }
 
-            tl.set(slide, { autoAlpha: 1, zIndex: 2, pointerEvents: 'auto' }, `${label}+=${CROSSFADE * 0.4}`)
+            tl.set(slide, { autoAlpha: 1, zIndex: 2, pointerEvents: cmsPointer(false) }, `${label}+=${CROSSFADE * 0.4}`)
 
             if (dots[i]) {
               tl.to(dots[i], { scale: 1.35, opacity: 1, duration: CROSSFADE, ease: FADE_EASE }, `${label}+=${CROSSFADE * 0.15}`)
@@ -279,7 +292,7 @@ export function ServicesShowcase() {
             invalidateOnRefresh: true,
             id: 'services-showcase',
             onLeave: (self) => {
-              if (self.direction === 1) {
+              if (self.direction === 1 && !isCmsEditActive()) {
                 gsap.set(intro, { visibility: 'hidden', pointerEvents: 'none' })
               }
             },
@@ -367,7 +380,6 @@ export function ServicesShowcase() {
 
         <div className="services-showcase__stage">
           {items.map((service, i) => {
-            const { first, second } = splitTitle(service.title)
             return (
               <article
                 key={service.id}
@@ -377,14 +389,7 @@ export function ServicesShowcase() {
                   <div className="services-showcase__copy">
                     <span className="services-showcase__index">0{i + 1}</span>
                     <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="services-showcase__tagline" />
-                    {canEditField ? (
-                      <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="services-showcase__title" />
-                    ) : (
-                      <h3 className="services-showcase__title">
-                        {first && <span>{first}</span>}
-                        {second && <span className="text-gold"> {second}</span>}
-                      </h3>
-                    )}
+                    <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="services-showcase__title" />
                     <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="services-showcase__desc" multiline />
                     <EditableLink
                       contentKey="home"
@@ -397,27 +402,26 @@ export function ServicesShowcase() {
                   </div>
                   <div className="services-showcase__visual">
                     <PosterTilt>
-                      {canEditField ? (
-                        <EditableImage
-                          contentKey="services"
-                          path={`items.${i}.image`}
-                          src={cmsAssetUrl(service.image)}
-                          alt={service.title}
-                          uploadFolder="services"
-                          className="services-showcase__visual-poster"
-                          loading="eager"
-                          decoding="async"
-                        />
-                      ) : (
-                        <img
-                          src={cmsAssetUrl(service.image)}
-                          alt={service.title}
-                          className="services-showcase__visual-poster"
-                          loading="eager"
-                          decoding="async"
-                        />
-                      )}
+                      <EditableImage
+                        contentKey="services"
+                        path={`items.${i}.image`}
+                        src={cmsAssetUrl(service.image)}
+                        alt={service.title}
+                        uploadFolder="services"
+                        className="services-showcase__visual-poster"
+                        loading="eager"
+                        decoding="async"
+                      />
                     </PosterTilt>
+                    {canEditField ? (
+                      <EditableAsset
+                        contentKey="services"
+                        path={`items.${i}.video`}
+                        value={service.video || ''}
+                        uploadFolder="services"
+                        label="Upload service video"
+                      />
+                    ) : null}
                   </div>
                 </div>
               </article>
@@ -446,7 +450,6 @@ export function ServicesShowcase() {
             </h2>
           </div>
           {items.map((service, i) => {
-            const { first, second } = splitTitle(service.title)
             return (
               <article key={service.id} className="services-showcase__mobile-card bento-card">
                 <div className="services-showcase__slide-backdrop" aria-hidden="true">
@@ -462,19 +465,28 @@ export function ServicesShowcase() {
                   <span className="services-showcase__index">0{i + 1}</span>
                   <div className="services-showcase__mobile-visual">
                     <PosterTilt>
-                      <img
+                      <EditableImage
+                        contentKey="services"
+                        path={`items.${i}.image`}
                         src={cmsAssetUrl(service.image)}
                         alt={service.title}
+                        uploadFolder="services"
                         className="services-showcase__visual-poster"
                         loading="lazy"
                       />
                     </PosterTilt>
+                    {canEditField ? (
+                      <EditableAsset
+                        contentKey="services"
+                        path={`items.${i}.video`}
+                        value={service.video || ''}
+                        uploadFolder="services"
+                        label="Upload service video"
+                      />
+                    ) : null}
                   </div>
                   <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="services-showcase__tagline" />
-                  <h3 className="services-showcase__title">
-                    {first && <span>{first}</span>}
-                    {second && <span className="text-gold"> {second}</span>}
-                  </h3>
+                  <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="services-showcase__title" />
                   <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="services-showcase__desc" multiline />
                 </div>
               </article>

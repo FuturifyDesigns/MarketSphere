@@ -1,12 +1,18 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
+import { isCmsEditActive } from '../lib/cmsEditMode'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
+
+function cmsPointer(locked: boolean) {
+  if (isCmsEditActive()) return 'auto'
+  return locked ? 'none' : 'auto'
+}
 
 type ServicesPageConfig = {
   scrub: number | boolean
@@ -32,8 +38,8 @@ function runServicesPagePin(root: HTMLElement, config: ServicesPageConfig) {
 
   if (!pin || !intro || slides.length === 0) return
 
-  gsap.set(slides, { opacity: 0, pointerEvents: 'none', visibility: 'visible', zIndex: 1 })
-  gsap.set(intro, { autoAlpha: 1, pointerEvents: 'auto' })
+  gsap.set(slides, { opacity: 0, pointerEvents: cmsPointer(true), visibility: 'visible', zIndex: 1 })
+  gsap.set(intro, { autoAlpha: 1, pointerEvents: cmsPointer(false) })
   gsap.set(dots, { scale: 1, opacity: 0.35 })
   if (dots[0]) gsap.set(dots[0], { scale: 1.2, opacity: 1 })
   if (progress) gsap.set(progress, { scaleY: 1 / slides.length })
@@ -60,15 +66,15 @@ function runServicesPagePin(root: HTMLElement, config: ServicesPageConfig) {
 
     if (index === 0) {
       tl.to(intro, { autoAlpha: 0, duration: 0.28, ease: FADE_EASE })
-      tl.set(intro, { pointerEvents: 'none' })
+      tl.set(intro, { pointerEvents: cmsPointer(true) })
     } else {
       const prev = slides[index - 1]
       tl.to(prev, { opacity: 0, duration: 0.24, ease: FADE_EASE })
-      tl.set(prev, { pointerEvents: 'none', zIndex: 1 })
+      tl.set(prev, { pointerEvents: cmsPointer(true), zIndex: 1 })
     }
 
     tl.addLabel(label)
-    tl.set(slide, { opacity: 1, pointerEvents: 'auto', zIndex: 2 }, label)
+    tl.set(slide, { opacity: 1, pointerEvents: cmsPointer(false), zIndex: 2 }, label)
     tl.to(dots, { scale: 1, opacity: 0.35, duration: 0.15 }, label)
     if (dots[index]) {
       tl.to(dots[index], { scale: 1.25, opacity: 1, duration: 0.2 }, label)

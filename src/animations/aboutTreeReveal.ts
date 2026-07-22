@@ -1,6 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '../lib/intro'
+import { isCmsEditActive } from '../lib/cmsEditMode'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -9,6 +10,11 @@ const PATH_CLASS = 'about-tree__path'
 const TRUNK_CLASS = 'about-tree__trunk'
 const REVEAL_EASE = 'power2.out'
 const FADE_EASE = 'power2.inOut'
+
+function cmsPointer(locked: boolean) {
+  if (isCmsEditActive()) return 'auto'
+  return locked ? 'none' : 'auto'
+}
 
 type TreeConfig = {
   scrub: number | boolean
@@ -214,7 +220,7 @@ function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
   const trunk = () => root.querySelector<SVGPathElement>(`.${TRUNK_CLASS}`)
   let trunkScheduled = false
 
-  gsap.set(steps, { autoAlpha: 0, pointerEvents: 'none' })
+  gsap.set(steps, { autoAlpha: 0, pointerEvents: cmsPointer(true) })
   gsap.set(root.querySelectorAll('.about-tree__reveal-item'), { opacity: 0, y: 18 })
   gsap.set(root.querySelectorAll('.about-tree__card-scroll'), { opacity: 0, scrollTop: 0 })
 
@@ -240,7 +246,7 @@ function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
       const prevBranch = getBranchPath(root, prevStepIndex)
       const prevScrollBody = prev.querySelector<HTMLElement>('.about-tree__card-scroll')
       tl.to(prev, { autoAlpha: 0, duration: 0.22, ease: FADE_EASE })
-      tl.set(prev, { pointerEvents: 'none' })
+      tl.set(prev, { pointerEvents: cmsPointer(true) })
       if (prevBranch) {
         tl.to(prevBranch, { opacity: 0.18, duration: 0.18, ease: FADE_EASE }, '<')
       }
@@ -250,7 +256,7 @@ function runAboutTreePin(root: HTMLElement, config: TreeConfig) {
     }
 
     tl.addLabel(label)
-    tl.set(step, { autoAlpha: 1, pointerEvents: 'auto' }, label)
+    tl.set(step, { autoAlpha: 1, pointerEvents: cmsPointer(false) }, label)
     if (scrollBody) {
       tl.set(scrollBody, { scrollTop: 0 }, label)
     }
