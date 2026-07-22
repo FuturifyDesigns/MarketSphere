@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useSlideshowAutoplay } from '../../hooks/useSlideshowAutoplay'
@@ -41,6 +41,7 @@ export function ShowcaseCarousel<T>({
   const [viewportHeight, setViewportHeight] = useState<number | undefined>()
   const maxHeightRef = useRef(0)
   const slideRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef<number | null>(null)
   const mobileMotion = useMobileCarouselMotion()
   const { rootProps, bump } = useSlideshowAutoplay(items.length, setIndex, {
     intervalMs: autoplayMs,
@@ -90,6 +91,21 @@ export function ShowcaseCarousel<T>({
     bump()
   }
 
+  const onTouchStart = (event: TouchEvent) => {
+    touchStartX.current = event.changedTouches[0]?.clientX ?? null
+  }
+
+  const onTouchEnd = (event: TouchEvent) => {
+    const start = touchStartX.current
+    touchStartX.current = null
+    if (start == null || items.length <= 1) return
+    const end = event.changedTouches[0]?.clientX ?? start
+    const delta = end - start
+    if (Math.abs(delta) < 48) return
+    if (delta < 0) goNext()
+    else goPrev()
+  }
+
   const slideVariants = mobileMotion
     ? {
         initial: { opacity: 0 },
@@ -109,6 +125,8 @@ export function ShowcaseCarousel<T>({
         aria-roledescription="carousel"
         aria-label={ariaLabel}
         style={viewportHeight ? { height: viewportHeight } : undefined}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         <AnimatePresence mode="sync" initial={false}>
           <motion.div

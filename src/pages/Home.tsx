@@ -509,29 +509,15 @@ export function Home() {
           <div className="home-providers-stage">
             <div className="home-providers-stage__glow" aria-hidden="true" />
             {providers.length > 0 ? (
-              providers.length <= 3 ? (
-                <div className={`home-providers-grid home-providers-grid--count-${providers.length}`}>
-                  {providers.map((provider, index) => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      index={index}
-                      disableAnimation
-                      variant="showcase"
-                    />
-                  ))}
-                </div>
-              ) : (
-                <ShowcaseCarousel
-                  className="home-providers-carousel showcase-carousel--wide"
-                  items={providers}
-                  getKey={(provider) => provider.id}
-                  ariaLabel="Featured providers"
-                  renderItem={(provider) => (
-                    <ProviderCard provider={provider} disableAnimation variant="showcase" />
-                  )}
-                />
-              )
+              <ShowcaseCarousel
+                className="home-providers-carousel showcase-carousel--wide"
+                items={providers}
+                getKey={(provider) => provider.id}
+                ariaLabel="Featured providers"
+                renderItem={(provider) => (
+                  <ProviderCard provider={provider} disableAnimation variant="showcase" />
+                )}
+              />
             ) : (
               <div className="empty-state bento-card home-section__item home-providers-empty">
                 <p>Provider listings coming soon. Be the first to <Link to="/register?role=provider">join our network</Link>.</p>

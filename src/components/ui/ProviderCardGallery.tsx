@@ -44,7 +44,12 @@ export function ProviderCardGallery({ images, autoplayMs = 2800 }: ProviderCardG
   }
 
   return (
-    <div className="provider-card__gallery" {...rootProps}>
+    <div
+      className="provider-card__gallery"
+      {...rootProps}
+      onTouchStart={(event) => event.stopPropagation()}
+      onTouchEnd={(event) => event.stopPropagation()}
+    >
       <AnimatePresence mode="sync" initial={false}>
         <motion.img
           key={images[safeIndex]}
