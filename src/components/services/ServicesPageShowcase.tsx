@@ -2,14 +2,12 @@ import { useEffect, useRef, type CSSProperties } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { onIntroComplete } from '../../lib/intro'
 import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
-import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
 import { createMarketingService } from '../../lib/cmsTypes'
 import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
-import { EditableImage } from '../cms/EditableImage'
 import { EditableAsset } from '../cms/EditableAsset'
 import { Button } from '../ui/Button'
 import { ServiceSlideMedia } from './ServiceSlideMedia'
@@ -60,12 +58,9 @@ export function ServicesPageShowcase() {
   useEffect(() => {
     const root = rootRef.current
     if (!root || !canEditField) return
-    gsap.set(root.querySelectorAll('.svc-page__intro, .svc-page__slide, .svc-page__copy, .svc-page__media'), {
+    gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__copy, .svc-page__media'), {
       pointerEvents: 'auto',
-      visibility: 'visible',
     })
-    const intro = root.querySelector<HTMLElement>('.svc-page__intro')
-    if (intro) gsap.set(intro, { autoAlpha: 1 })
   }, [canEditField, items.length])
 
   return (
@@ -113,32 +108,32 @@ export function ServicesPageShowcase() {
                   <div className="svc-page__media-wrap">
                     <div className="svc-page__media-glow" aria-hidden="true" />
                     <div className="svc-page__media">
+                      <ServiceSlideMedia
+                        video={service.video}
+                        image={service.image}
+                        title={service.title}
+                        index={i}
+                      />
                       {canEditField ? (
-                        <>
-                          <EditableImage
+                        <div className="svc-page__media-tools">
+                          <EditableAsset
                             contentKey="services"
                             path={`items.${i}.image`}
-                            src={cmsAssetUrl(service.image)}
-                            alt={service.title}
+                            value={service.image || ''}
                             uploadFolder="services"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            label="Change photo"
                           />
                           <EditableAsset
                             contentKey="services"
                             path={`items.${i}.video`}
-                            value={service.video}
+                            value={service.video || ''}
                             uploadFolder="services"
-                            label="Upload service video"
+                            accept="video/mp4,video/webm"
+                            label="Upload video"
                           />
-                        </>
-                      ) : (
-                        <ServiceSlideMedia
-                          video={service.video}
-                          image={service.image}
-                          title={service.title}
-                          index={i}
-                        />
-                      )}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <div className="svc-page__copy">

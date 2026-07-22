@@ -437,7 +437,7 @@
   max-height: none;
   height: auto;
   border-radius: var(--radius-lg);
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
   box-shadow:
     0 16px 40px rgba(74, 63, 47, 0.14),

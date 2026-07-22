@@ -599,8 +599,39 @@ html.cms-editing .about-tree__reveal-item {
   pointer-events: auto !important;
 }
 
-html.cms-editing .services-showcase__intro,
-html.cms-editing .svc-page__intro {
-  visibility: visible !important;
-  opacity: 1 !important;
+/* Do NOT force intro mega-titles visible — that stacks "Services" over active slides */
+html.cms-editing .services-showcase__media-tools,
+html.cms-editing .svc-page__media-tools {
+  pointer-events: auto !important;
+}
+
+.services-showcase__media-tools,
+.svc-page__media-tools {
+  position: absolute;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: 0.65rem;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.services-showcase__media-tools .cms-asset-edit,
+.svc-page__media-tools .cms-asset-edit {
+  margin-top: 0;
+}
+
+.services-showcase__media-tools .cms-asset-edit__btn,
+.svc-page__media-tools .cms-asset-edit__btn {
+  width: 100%;
+  justify-content: center;
+  background: rgba(15, 17, 22, 0.92);
+  border-color: rgba(212, 175, 55, 0.55);
+  font-size: 0.75rem;
+}
+
+.services-showcase__media-tools .cms-asset-edit__path,
+.svc-page__media-tools .cms-asset-edit__path {
+  display: none;
 }

@@ -14,7 +14,6 @@ import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableSection } from '../cms/EditableSection'
 import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
-import { EditableImage } from '../cms/EditableImage'
 import { EditableAsset } from '../cms/EditableAsset'
 import { useSiteEdit } from '../../context/SiteEditContext'
 import './ServicesShowcase.css'
@@ -96,13 +95,10 @@ export function ServicesShowcase() {
     const root = rootRef.current
     if (!root || !canEditField) return
 
-    // Keep intros/slides hittable while this section is unlocked for CMS edit.
-    gsap.set(root.querySelectorAll('.services-showcase__intro, .services-showcase__slide, .services-showcase__copy, .services-showcase__visual'), {
+    // Keep slides/copy hittable — do not revive the intro mega title over active slides.
+    gsap.set(root.querySelectorAll('.services-showcase__slide, .services-showcase__copy, .services-showcase__visual'), {
       pointerEvents: 'auto',
-      visibility: 'visible',
     })
-    const intro = root.querySelector<HTMLElement>('.services-showcase__intro')
-    if (intro) gsap.set(intro, { autoAlpha: 1, y: 0 })
   }, [canEditField, items.length])
 
   useEffect(() => {
@@ -402,25 +398,33 @@ export function ServicesShowcase() {
                   </div>
                   <div className="services-showcase__visual">
                     <PosterTilt>
-                      <EditableImage
-                        contentKey="services"
-                        path={`items.${i}.image`}
+                      <img
                         src={cmsAssetUrl(service.image)}
                         alt={service.title}
-                        uploadFolder="services"
                         className="services-showcase__visual-poster"
                         loading="eager"
                         decoding="async"
                       />
                     </PosterTilt>
                     {canEditField ? (
-                      <EditableAsset
-                        contentKey="services"
-                        path={`items.${i}.video`}
-                        value={service.video || ''}
-                        uploadFolder="services"
-                        label="Upload service video"
-                      />
+                      <div className="services-showcase__media-tools">
+                        <EditableAsset
+                          contentKey="services"
+                          path={`items.${i}.image`}
+                          value={service.image || ''}
+                          uploadFolder="services"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          label="Change photo"
+                        />
+                        <EditableAsset
+                          contentKey="services"
+                          path={`items.${i}.video`}
+                          value={service.video || ''}
+                          uploadFolder="services"
+                          accept="video/mp4,video/webm"
+                          label="Upload video"
+                        />
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -465,24 +469,32 @@ export function ServicesShowcase() {
                   <span className="services-showcase__index">0{i + 1}</span>
                   <div className="services-showcase__mobile-visual">
                     <PosterTilt>
-                      <EditableImage
-                        contentKey="services"
-                        path={`items.${i}.image`}
+                      <img
                         src={cmsAssetUrl(service.image)}
                         alt={service.title}
-                        uploadFolder="services"
                         className="services-showcase__visual-poster"
                         loading="lazy"
                       />
                     </PosterTilt>
                     {canEditField ? (
-                      <EditableAsset
-                        contentKey="services"
-                        path={`items.${i}.video`}
-                        value={service.video || ''}
-                        uploadFolder="services"
-                        label="Upload service video"
-                      />
+                      <div className="services-showcase__media-tools">
+                        <EditableAsset
+                          contentKey="services"
+                          path={`items.${i}.image`}
+                          value={service.image || ''}
+                          uploadFolder="services"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          label="Change photo"
+                        />
+                        <EditableAsset
+                          contentKey="services"
+                          path={`items.${i}.video`}
+                          value={service.video || ''}
+                          uploadFolder="services"
+                          accept="video/mp4,video/webm"
+                          label="Upload video"
+                        />
+                      </div>
                     ) : null}
                   </div>
                   <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="services-showcase__tagline" />
