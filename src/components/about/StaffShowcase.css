@@ -1,7 +1,7 @@
 .staff-tree {
   position: relative;
   padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(4rem, 8vw, 6rem);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .staff-tree__inner {
@@ -41,6 +41,7 @@
   grid-template-rows: auto auto auto;
   gap: clamp(1.35rem, 3.5vw, 2.25rem);
   justify-items: center;
+  overflow: visible;
 }
 
 .staff-tree__svg {
@@ -50,16 +51,19 @@
   height: 100%;
   overflow: visible;
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
 }
 
 .staff-tree__path {
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-gold) 35%, transparent));
+  stroke: var(--color-gold);
+  stroke-width: 2.5px;
+  fill: none;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-gold) 40%, transparent));
 }
 
 .staff-tree__hub {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   width: 14px;
   height: 14px;
   border-radius: 50%;
