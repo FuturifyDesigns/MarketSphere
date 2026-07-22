@@ -2,7 +2,8 @@
 
 Online service marketplace platform for **Market Sphere Group (Pty) Ltd** — connecting customers with verified service providers across Botswana.
 
-Live site: [futurifydesigns.github.io/MarketSphere](https://futurifydesigns.github.io/MarketSphere/)
+Live site: [marketspheregroup.com](https://marketspheregroup.com/)  
+Legacy GitHub Pages URL: [futurifydesigns.github.io/MarketSphere](https://futurifydesigns.github.io/MarketSphere/)
 
 ## Tech Stack
 
@@ -76,12 +77,36 @@ UPDATE profiles SET role = 'admin' WHERE email = 'your-admin@email.com';
 npm run dev
 ```
 
-### 6. Deploy to GitHub Pages
+### 6. Deploy to GitHub Pages + custom domain
 
-1. Push to GitHub repo `futurifydesigns/MarketSphere`
+1. Push to GitHub repo `FuturifyDesigns/MarketSphere`
 2. Enable GitHub Pages (source: GitHub Actions)
-3. Add secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-4. Push to `main` — auto-deploys
+3. In the repo: **Settings → Pages → Custom domain** → `marketspheregroup.com` (Enforce HTTPS once DNS propagates)
+4. At your domain registrar, add DNS (see below)
+5. In Supabase: **Authentication → URL Configuration**
+   - Site URL: `https://marketspheregroup.com/`
+   - Redirect URLs include: `https://marketspheregroup.com/**`, `https://www.marketspheregroup.com/**`, `http://localhost:5173/**`
+6. Update Auth email templates from `supabase/email-templates/` (links use the custom domain)
+7. Push to `main` — auto-deploys (`public/CNAME` ships with the site)
+
+#### DNS for `marketspheregroup.com` (GitHub Pages)
+
+**Apex (`marketspheregroup.com`) — A records:**
+
+| Type | Name | Value |
+|------|------|--------|
+| A | `@` | `185.199.108.153` |
+| A | `@` | `185.199.109.153` |
+| A | `@` | `185.199.110.153` |
+| A | `@` | `185.199.111.153` |
+
+**Optional www — CNAME:**
+
+| Type | Name | Value |
+|------|------|--------|
+| CNAME | `www` | `futurifydesigns.github.io` |
+
+After DNS propagates (minutes to 48h), turn on **Enforce HTTPS** in GitHub Pages settings.
 
 ## Logo Assets
 

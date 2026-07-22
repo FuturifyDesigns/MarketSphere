@@ -1,5 +1,5 @@
-/** Production app URL (GitHub Pages). Use this as Supabase Auth → Site URL. */
-export const APP_URL = 'https://futurifydesigns.github.io/MarketSphere/'
+/** Production app URL (custom domain). Use this as Supabase Auth → Site URL. */
+export const APP_URL = 'https://marketspheregroup.com/'
 
 /** Optimized logo (WebP). */
 export const LOGO_PATH = 'logo.webp'

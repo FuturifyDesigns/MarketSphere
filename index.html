@@ -2,31 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/MarketSphere/favicon.png" />
-    <link rel="preload" href="/MarketSphere/logo.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/MarketSphere/auth/sign-in.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/MarketSphere/auth/sign-up.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/MarketSphere/mascots/welcome.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/MarketSphere/mascots/explaining.webp" as="image" fetchpriority="high" />
-    <link rel="preload" href="/MarketSphere/mascots/all-done.webp" as="image" fetchpriority="high" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preload" href="/logo.webp" as="image" fetchpriority="high" />
+    <link rel="preload" href="/auth/sign-in.webp" as="image" fetchpriority="high" />
+    <link rel="preload" href="/auth/sign-up.webp" as="image" fetchpriority="high" />
+    <link rel="preload" href="/mascots/welcome.webp" as="image" fetchpriority="high" />
+    <link rel="preload" href="/mascots/explaining.webp" as="image" fetchpriority="high" />
+    <link rel="preload" href="/mascots/all-done.webp" as="image" fetchpriority="high" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Market Sphere Group — Connect with verified service providers across Botswana. By Market Sphere Group (Pty) Ltd." />
+    <link rel="canonical" href="https://marketspheregroup.com/" />
+    <meta property="og:url" content="https://marketspheregroup.com/" />
+    <meta property="og:title" content="Market Sphere Group | Botswana" />
+    <meta property="og:description" content="Connect with verified service providers across Botswana." />
     <title>Market Sphere Group | Botswana</title>
   </head>
   <body>
     <div id="root"></div>
     <script>
       ;(function () {
-        var base = '/MarketSphere/'
         var path = window.location.pathname
-        if (!path.startsWith(base)) return
-        var rest = path.slice(base.length).replace(/^(index\.html|404\.html)\/?$/, '')
-        if (!rest) return
+        if (path === '/' || /\/(index|404)\.html\/?$/.test(path)) return
         if (window.location.hash && window.location.hash.length > 1) return
         window.location.replace(
-          base +
-            '#/' +
-            rest.replace(/^\/+/, '') +
+          '/#/' +
+            path.replace(/^\/+/, '').replace(/\/$/, '') +
             window.location.search +
             window.location.hash
         )

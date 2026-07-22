@@ -16,5 +16,6 @@ function githubPages404() {
 
 export default defineConfig({
   plugins: [react(), githubPages404()],
-  base: '/MarketSphere/',
+  // Custom domain (marketspheregroup.com) serves from site root.
+  base: '/',
 })
