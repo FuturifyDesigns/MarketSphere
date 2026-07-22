@@ -28,7 +28,7 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsShowcaseProps) {
+export function TestimonialsShowcase({ items, autoplayMs = 3500 }: TestimonialsShowcaseProps) {
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
   const [stageHeight, setStageHeight] = useState<number | undefined>()
@@ -43,7 +43,8 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
 
   const { rootProps, bump } = useSlideshowAutoplay(items.length, setIndexFromAutoplay, {
     intervalMs: autoplayMs,
-    resumeAfterMs: 5000,
+    resumeAfterMs: 2200,
+    pauseOnHover: false,
   })
 
   useEffect(() => {
@@ -113,91 +114,94 @@ export function TestimonialsShowcase({ items, autoplayMs = 5500 }: TestimonialsS
     <div className="testimonials-showcase" {...rootProps}>
       <div className="testimonials-showcase__glow" aria-hidden="true" />
 
-      <div
-        className="testimonials-showcase__stage"
-        style={stageHeight ? { minHeight: stageHeight } : undefined}
-        aria-roledescription="carousel"
-        aria-label="Client testimonials"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        <AnimatePresence mode="sync" custom={direction} initial={false}>
-          <motion.article
-            key={current.id}
-            ref={panelRef}
-            className="testimonials-showcase__panel"
-            custom={direction}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            variants={{
-              enter: (dir: number) => ({
-                opacity: 0,
-                x: dir > 0 ? 40 : -40,
-              }),
-              center: {
-                opacity: 1,
-                x: 0,
-              },
-              exit: (dir: number) => ({
-                opacity: 0,
-                x: dir > 0 ? -28 : 28,
-              }),
-            }}
-            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+      <div className="testimonials-showcase__frame">
+        {items.length > 1 ? (
+          <button
+            type="button"
+            className="testimonials-showcase__nav testimonials-showcase__nav--prev testimonials-showcase__nav--overlay"
+            onClick={goPrev}
+            aria-label="Previous testimonial"
           >
-            <div className="testimonials-showcase__quote-mark" aria-hidden="true">
-              <Quote size={48} strokeWidth={1.25} />
-            </div>
+            <ChevronLeft size={20} />
+          </button>
+        ) : null}
 
-            <Stars rating={current.rating ?? 5} />
-
-            <blockquote className="testimonials-showcase__quote">
-              <p>“{current.content}”</p>
-            </blockquote>
-
-            <footer className="testimonials-showcase__author">
-              <span className="testimonials-showcase__avatar" aria-hidden="true">
-                {initial}
-              </span>
-              <div className="testimonials-showcase__author-text">
-                <strong>{name}</strong>
-                {current.service_type ? (
-                  <span className="testimonials-showcase__service">{current.service_type}</span>
-                ) : null}
+        <div
+          className="testimonials-showcase__stage"
+          style={stageHeight ? { minHeight: stageHeight } : undefined}
+          aria-roledescription="carousel"
+          aria-label="Client testimonials"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <AnimatePresence mode="sync" custom={direction} initial={false}>
+            <motion.article
+              key={current.id}
+              ref={panelRef}
+              className="testimonials-showcase__panel"
+              custom={direction}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              variants={{
+                enter: (dir: number) => ({
+                  opacity: 0,
+                  x: dir > 0 ? 40 : -40,
+                }),
+                center: {
+                  opacity: 1,
+                  x: 0,
+                },
+                exit: (dir: number) => ({
+                  opacity: 0,
+                  x: dir > 0 ? -28 : 28,
+                }),
+              }}
+              transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="testimonials-showcase__quote-mark" aria-hidden="true">
+                <Quote size={48} strokeWidth={1.25} />
               </div>
-            </footer>
 
-            {items.length > 1 ? (
-              <div
-                key={`progress-${current.id}-${safeIndex}`}
-                className="testimonials-showcase__progress"
-                style={{ animationDuration: `${autoplayMs}ms` }}
-                aria-hidden="true"
-              />
-            ) : null}
-          </motion.article>
-        </AnimatePresence>
+              <Stars rating={current.rating ?? 5} />
+
+              <blockquote className="testimonials-showcase__quote">
+                <p>“{current.content}”</p>
+              </blockquote>
+
+              <footer className="testimonials-showcase__author">
+                <span className="testimonials-showcase__avatar" aria-hidden="true">
+                  {initial}
+                </span>
+                <div className="testimonials-showcase__author-text">
+                  <strong>{name}</strong>
+                  {current.service_type ? (
+                    <span className="testimonials-showcase__service">{current.service_type}</span>
+                  ) : null}
+                </div>
+              </footer>
+
+              {items.length > 1 ? (
+                <div
+                  key={`progress-${current.id}-${safeIndex}`}
+                  className="testimonials-showcase__progress"
+                  style={{ animationDuration: `${autoplayMs}ms` }}
+                  aria-hidden="true"
+                />
+              ) : null}
+            </motion.article>
+          </AnimatePresence>
+        </div>
 
         {items.length > 1 ? (
-          <>
-            <button
-              type="button"
-              className="testimonials-showcase__nav testimonials-showcase__nav--prev testimonials-showcase__nav--overlay"
-              onClick={goPrev}
-              aria-label="Previous testimonial"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              type="button"
-              className="testimonials-showcase__nav testimonials-showcase__nav--next testimonials-showcase__nav--overlay"
-              onClick={goNext}
-              aria-label="Next testimonial"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </>
+          <button
+            type="button"
+            className="testimonials-showcase__nav testimonials-showcase__nav--next testimonials-showcase__nav--overlay"
+            onClick={goNext}
+            aria-label="Next testimonial"
+          >
+            <ChevronRight size={20} />
+          </button>
         ) : null}
       </div>
 

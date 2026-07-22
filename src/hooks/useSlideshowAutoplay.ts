@@ -10,19 +10,21 @@ type Options = {
   intervalMs?: number
   /** After manual prev/next/dot, wait this long before the next auto advance. */
   resumeAfterMs?: number
+  /** Pause while the pointer hovers the root (desktop fine-pointer only). */
+  pauseOnHover?: boolean
 }
 
 /**
  * Reliable slideshow autoplay that:
  * - does not stick paused after touch taps (mouseenter without mouseleave)
- * - only pauses on true desktop hover
+ * - only pauses on true desktop hover when enabled
  * - pauses when off-screen or tab is hidden
  * - resets the timer after manual navigation
  */
 export function useSlideshowAutoplay(
   length: number,
   setIndex: (updater: (current: number) => number) => void,
-  { intervalMs = 3200, resumeAfterMs = 4000 }: Options = {},
+  { intervalMs = 3200, resumeAfterMs = 4000, pauseOnHover = true }: Options = {},
 ) {
   const lengthRef = useRef(length)
   const intervalRef = useRef(intervalMs)
@@ -94,25 +96,27 @@ export function useSlideshowAutoplay(
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        offscreenPausedRef.current = !(entry?.isIntersecting && (entry.intersectionRatio ?? 0) > 0.15)
+        // Any visible intersection is enough — a 15% threshold felt like a stuck slideshow.
+        offscreenPausedRef.current = !entry?.isIntersecting
         if (!offscreenPausedRef.current) schedule()
         else clearTimer()
       },
-      { threshold: [0, 0.15, 0.35] },
+      { threshold: 0, rootMargin: '40px 0px' },
     )
     io.observe(rootEl)
     return () => io.disconnect()
   }, [rootEl, schedule, clearTimer])
 
   const pauseForHover = useCallback(() => {
-    if (!canHoverPause()) return
+    if (!pauseOnHover || !canHoverPause()) return
     hoverPausedRef.current = true
-  }, [])
+  }, [pauseOnHover])
 
   const resumeFromHover = useCallback(() => {
+    if (!pauseOnHover) return
     hoverPausedRef.current = false
     schedule()
-  }, [schedule])
+  }, [pauseOnHover, schedule])
 
   /** Call after manual prev/next/dot so autoplay restarts cleanly. */
   const bump = useCallback(() => {
