@@ -32,6 +32,51 @@
   box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.15);
 }
 
+/* Chrome/Safari paint a blue/yellow autofill wash — keep brand field colors */
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:hover,
+.input-group input:-webkit-autofill:focus,
+.input-group input:-webkit-autofill:active,
+.input-group textarea:-webkit-autofill,
+.input-group textarea:-webkit-autofill:hover,
+.input-group textarea:-webkit-autofill:focus,
+.input-group textarea:-webkit-autofill:active,
+.input-group select:-webkit-autofill,
+.input-group select:-webkit-autofill:hover,
+.input-group select:-webkit-autofill:focus,
+.input-group select:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: 0 0 0 1000px var(--color-day) inset;
+  transition: background-color 99999s ease-out 0s, color 99999s ease-out 0s, border-color 0.2s;
+}
+
+.input-group input:-webkit-autofill:focus,
+.input-group textarea:-webkit-autofill:focus,
+.input-group select:-webkit-autofill:focus {
+  border-color: var(--color-gold);
+  box-shadow:
+    0 0 0 1000px var(--color-day) inset,
+    0 0 0 3px rgba(201, 162, 75, 0.15);
+}
+
+.input-group--error input:-webkit-autofill,
+.input-group--error input:-webkit-autofill:hover,
+.input-group--error input:-webkit-autofill:focus,
+.input-group--error textarea:-webkit-autofill,
+.input-group--error select:-webkit-autofill {
+  border-color: #c44;
+}
+
+.input-group--error input:-webkit-autofill:focus,
+.input-group--error textarea:-webkit-autofill:focus,
+.input-group--error select:-webkit-autofill:focus {
+  box-shadow:
+    0 0 0 1000px var(--color-day) inset,
+    0 0 0 3px rgba(204, 68, 68, 0.15);
+}
+
 .input-group--error input,
 .input-group--error textarea,
 .input-group--error select {
