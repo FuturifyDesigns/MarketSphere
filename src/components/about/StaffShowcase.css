@@ -1,13 +1,13 @@
 .staff-tree {
   position: relative;
-  padding: clamp(3rem, 7vw, 5.5rem) 0;
+  padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(4rem, 8vw, 6rem);
   overflow: hidden;
 }
 
 .staff-tree__inner {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.75rem, 4vw, 2.75rem);
+  gap: clamp(2rem, 5vw, 3.25rem);
 }
 
 .staff-tree__header {
@@ -38,31 +38,36 @@
   margin-inline: auto;
   padding: 0.5rem 0 1rem;
   display: grid;
-  grid-template-rows: auto auto;
-  gap: clamp(2.5rem, 5vw, 3.75rem);
+  grid-template-rows: auto auto auto;
+  gap: clamp(1.35rem, 3.5vw, 2.25rem);
   justify-items: center;
 }
 
 .staff-tree__svg {
   position: absolute;
-  inset: 8% 6% 18%;
-  width: auto;
-  height: auto;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
   z-index: 0;
-  overflow: visible;
 }
 
 .staff-tree__path {
-  stroke-linecap: round;
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-gold) 35%, transparent));
 }
 
 .staff-tree__hub {
-  fill: var(--bg-primary);
-  stroke: var(--color-gold);
-  stroke-width: 0.45;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-gold) 45%, transparent));
+  position: relative;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 2px solid var(--color-gold);
+  box-shadow:
+    0 0 0 7px color-mix(in srgb, var(--color-gold) 14%, transparent),
+    0 0 22px color-mix(in srgb, var(--color-gold) 28%, transparent);
 }
 
 .staff-tree__root,
@@ -111,8 +116,7 @@
   transition:
     border-color 0.25s ease,
     transform 0.25s ease,
-    box-shadow 0.25s ease,
-    opacity 0.25s ease;
+    box-shadow 0.25s ease;
 }
 
 .staff-tree__node:hover {
@@ -221,13 +225,17 @@
   color: var(--color-gold);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .staff-tree__header,
+  .staff-tree__node,
+  .staff-tree__hub {
+    opacity: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .staff-tree__canvas {
-    gap: 1.75rem;
-  }
-
-  .staff-tree__svg {
-    display: none;
+    gap: 1.25rem;
   }
 
   .staff-tree__branches {
@@ -243,6 +251,11 @@
   .staff-tree__node--root .staff-tree__photo-wrap {
     width: 9rem;
     height: 9rem;
+  }
+
+  /* Keep a simple vertical connector feel on small screens */
+  .staff-tree__svg {
+    opacity: 0.85;
   }
 }
 
