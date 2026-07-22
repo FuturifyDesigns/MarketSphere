@@ -10,7 +10,6 @@ import { ToastProvider } from './context/ToastContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
 import { preloadAllImages } from './lib/imagePreload'
-import { preloadCriticalAssets } from './lib/preloadCriticalAssets'
 import { ScrollToTop } from './components/layout/ScrollToTop'
 import { DocumentSeo } from './components/seo/DocumentSeo'
 import { SiteIntro } from './components/intro/SiteIntro'
@@ -40,8 +39,6 @@ import { CookieBanner } from './components/legal/CookieBanner'
 
 export default function App() {
   useEffect(() => {
-    let idleId: number | undefined
-    let timeoutId: number | undefined
     let cancelled = false
 
     const startWarm = () => {
