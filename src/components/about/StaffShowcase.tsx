@@ -14,12 +14,16 @@ export type StaffMember = {
   image: string
 }
 
-type AboutStaffBlock = {
+type StaffSection = {
   eyebrow: string
   title: string
   titleEmphasis: string
   lead: string
   members: StaffMember[]
+}
+
+type AboutBlock = {
+  staff?: StaffSection
 }
 
 function assetUrl(path: string) {
@@ -35,8 +39,8 @@ function telHref(phone: string) {
 
 export function StaffShowcase() {
   const { getBlock } = useSiteContent()
-  const staff = getBlock<AboutStaffBlock>('about').staff
-  const members = staff?.members?.length ? staff.members : []
+  const staff = getBlock<AboutBlock>('about').staff
+  const members: StaffMember[] = staff?.members?.length ? staff.members : []
 
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
