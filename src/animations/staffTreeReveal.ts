@@ -8,6 +8,13 @@ gsap.registerPlugin(ScrollTrigger)
 
 type Point = { x: number; y: number }
 
+type StaffPaths = {
+  trunk: SVGPathElement
+  arm: SVGPathElement | null
+  drops: SVGPathElement[]
+  stacked: boolean
+}
+
 function relativePoint(el: HTMLElement, svg: SVGSVGElement, edge: 'center' | 'top' | 'bottom' = 'center'): Point {
   const rect = el.getBoundingClientRect()
   const svgRect = svg.getBoundingClientRect()
@@ -17,6 +24,13 @@ function relativePoint(el: HTMLElement, svg: SVGSVGElement, edge: 'center' | 'to
     x: rect.left + rect.width / 2 - svgRect.left,
     y: y - svgRect.top,
   }
+}
+
+function isStackedBranches(branchTops: Point[]) {
+  if (branchTops.length <= 1) return true
+  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) return true
+  const xs = branchTops.map((point) => point.x)
+  return Math.max(...xs) - Math.min(...xs) < 28
 }
 
 function createPath(d: string, role: string) {
@@ -32,7 +46,7 @@ function createPath(d: string, role: string) {
   return path
 }
 
-function rebuildStaffPaths(root: HTMLElement) {
+function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
   const svg = root.querySelector<SVGSVGElement>('.staff-tree__svg')
   const pathsGroup = root.querySelector<SVGGElement>('.staff-tree__paths')
   const hub = root.querySelector<HTMLElement>('.staff-tree__hub')
@@ -49,29 +63,51 @@ function rebuildStaffPaths(root: HTMLElement) {
   const from = relativePoint(rootNode, svg, 'bottom')
   const hubPoint = relativePoint(hub, svg, 'center')
   const branchTops = branchNodes.map((node) => relativePoint(node, svg, 'top'))
-  const leftX = Math.min(...branchTops.map((point) => point.x))
-  const rightX = Math.max(...branchTops.map((point) => point.x))
+  const branchBottoms = branchNodes.map((node) => relativePoint(node, svg, 'bottom'))
+  const stacked = isStackedBranches(branchTops)
 
-  // Slight inset so the trunk meets the card edge cleanly.
-  const trunkStartY = from.y + 2
-  const trunk = createPath(`M ${from.x} ${trunkStartY} L ${hubPoint.x} ${hubPoint.y}`, 'trunk')
-  const arm = createPath(`M ${leftX} ${hubPoint.y} L ${rightX} ${hubPoint.y}`, 'arm')
-  const drops = branchTops.map((point, index) =>
-    createPath(`M ${point.x} ${hubPoint.y} L ${point.x} ${point.y - 2}`, `drop-${index}`),
-  )
+  root.dataset.staffTreeLayout = stacked ? 'stacked' : 'forked'
 
   const fragment = document.createDocumentFragment()
+  const trunk = createPath(`M ${from.x} ${from.y + 2} L ${hubPoint.x} ${hubPoint.y}`, 'trunk')
   fragment.appendChild(trunk)
-  fragment.appendChild(arm)
+
+  let arm: SVGPathElement | null = null
+  const drops: SVGPathElement[] = []
+
+  if (stacked) {
+    // Vertical spine: CEO → hub → member 1 → member 2 …
+    drops.push(createPath(`M ${hubPoint.x} ${hubPoint.y} L ${branchTops[0].x} ${branchTops[0].y - 2}`, 'drop-0'))
+    for (let index = 1; index < branchNodes.length; index += 1) {
+      const prevBottom = branchBottoms[index - 1]
+      const nextTop = branchTops[index]
+      const midX = (prevBottom.x + nextTop.x) / 2
+      drops.push(
+        createPath(
+          `M ${prevBottom.x} ${prevBottom.y + 2} L ${midX} ${prevBottom.y + 2} L ${midX} ${nextTop.y - 2} L ${nextTop.x} ${nextTop.y - 2}`,
+          `drop-${index}`,
+        ),
+      )
+    }
+  } else {
+    const leftX = Math.min(...branchTops.map((point) => point.x))
+    const rightX = Math.max(...branchTops.map((point) => point.x))
+    arm = createPath(`M ${leftX} ${hubPoint.y} L ${rightX} ${hubPoint.y}`, 'arm')
+    fragment.appendChild(arm)
+    branchTops.forEach((point, index) => {
+      drops.push(createPath(`M ${point.x} ${hubPoint.y} L ${point.x} ${point.y - 2}`, `drop-${index}`))
+    })
+  }
+
   drops.forEach((drop) => fragment.appendChild(drop))
   pathsGroup.appendChild(fragment)
 
-  return { trunk, arm, drops }
+  return { trunk, arm, drops, stacked }
 }
 
-function revealPaths(paths: { trunk: SVGPathElement; arm: SVGPathElement; drops: SVGPathElement[] }) {
-  ;[paths.trunk, paths.arm, ...paths.drops].forEach((path) => {
-    gsap.set(path, { strokeDashoffset: 0, autoAlpha: 1 })
+function revealPaths(paths: StaffPaths) {
+  ;[paths.trunk, paths.arm, ...paths.drops].filter(Boolean).forEach((path) => {
+    gsap.set(path as SVGPathElement, { strokeDashoffset: 0, autoAlpha: 1 })
   })
 }
 
@@ -113,7 +149,7 @@ export function initStaffTreeReveal(root: HTMLElement) {
         scrollTrigger: {
           trigger: root,
           start: 'top 78%',
-          end: '+=90%',
+          end: paths.stacked ? '+=140%' : '+=90%',
           scrub: 0.85,
           invalidateOnRefresh: true,
         },
@@ -127,18 +163,29 @@ export function initStaffTreeReveal(root: HTMLElement) {
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.35 }, 1.45)
       }
 
-      tl.to(paths.arm, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.65 }, 1.55)
-
-      if (paths.drops.length) {
-        tl.to(paths.drops, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.5, stagger: 0.08 }, 1.9)
+      if (paths.arm) {
+        tl.to(paths.arm, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.65 }, 1.55)
       }
 
-      if (branchNodes.length) {
-        tl.to(branchNodes, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.12 }, 2.15)
+      if (paths.stacked) {
+        // Reveal each connector, then its person, down the spine.
+        paths.drops.forEach((drop, index) => {
+          const at = 1.65 + index * 0.55
+          tl?.to(drop, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.45 }, at)
+          if (branchNodes[index]) {
+            tl?.to(branchNodes[index], { autoAlpha: 1, y: 0, scale: 1, duration: 0.55 }, at + 0.2)
+          }
+        })
+      } else {
+        if (paths.drops.length) {
+          tl.to(paths.drops, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.5, stagger: 0.08 }, 1.9)
+        }
+        if (branchNodes.length) {
+          tl.to(branchNodes, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.12 }, 2.15)
+        }
       }
     }
 
-    // Wait a tick so layout (and fonts) settle before measuring connectors.
     const boot = window.requestAnimationFrame(() => {
       buildTimeline()
       scheduleScrollRefresh()
@@ -156,11 +203,15 @@ export function initStaffTreeReveal(root: HTMLElement) {
     }
 
     window.addEventListener('resize', onResize)
+    const mq = window.matchMedia('(max-width: 768px)')
+    const onMq = () => onResize()
+    mq.addEventListener('change', onMq)
 
     return () => {
       window.cancelAnimationFrame(boot)
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
+      mq.removeEventListener('change', onMq)
       tl?.scrollTrigger?.kill()
       tl?.kill()
     }

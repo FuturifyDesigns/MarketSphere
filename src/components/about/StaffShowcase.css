@@ -239,12 +239,21 @@
 
 @media (max-width: 768px) {
   .staff-tree__canvas {
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 
   .staff-tree__branches {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 1.5rem;
+  }
+
+  .staff-tree__hub {
+    width: 12px;
+    height: 12px;
+  }
+
+  .staff-tree__path {
+    stroke-width: 2.25px;
   }
 
   .staff-tree__photo-wrap {
@@ -257,9 +266,12 @@
     height: 9rem;
   }
 
-  /* Keep a simple vertical connector feel on small screens */
+  .staff-tree__node {
+    width: min(100%, 20rem);
+  }
+
   .staff-tree__svg {
-    opacity: 0.85;
+    opacity: 1;
   }
 }
 
