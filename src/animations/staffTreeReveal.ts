@@ -54,7 +54,6 @@ function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
   const branchNodes = gsap.utils.toArray<HTMLElement>('.staff-tree__node--branch', root)
   if (!svg || !pathsGroup || !hub || !rootNode || !branchNodes.length) return null
 
-  // Match AboutCompanyTree: no viewBox — path units = CSS pixels inside the SVG box.
   svg.removeAttribute('viewBox')
   svg.removeAttribute('width')
   svg.removeAttribute('height')
@@ -76,7 +75,6 @@ function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
   const drops: SVGPathElement[] = []
 
   if (stacked) {
-    // Vertical spine: CEO → hub → member 1 → member 2 …
     drops.push(createPath(`M ${hubPoint.x} ${hubPoint.y} L ${branchTops[0].x} ${branchTops[0].y - 2}`, 'drop-0'))
     for (let index = 1; index < branchNodes.length; index += 1) {
       const prevBottom = branchBottoms[index - 1]
@@ -105,14 +103,29 @@ function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
   return { trunk, arm, drops, stacked }
 }
 
-function revealPaths(paths: StaffPaths) {
-  ;[paths.trunk, paths.arm, ...paths.drops].filter(Boolean).forEach((path) => {
-    gsap.set(path as SVGPathElement, { strokeDashoffset: 0, autoAlpha: 1 })
+function showAllContent(
+  header: HTMLElement,
+  rootNode: HTMLElement,
+  hub: HTMLElement | null,
+  branchNodes: HTMLElement[],
+  paths: StaffPaths | null,
+) {
+  gsap.set([header, rootNode, hub, ...branchNodes].filter(Boolean), {
+    autoAlpha: 1,
+    y: 0,
+    scale: 1,
+    clearProps: 'visibility',
   })
+  if (paths) {
+    ;[paths.trunk, paths.arm, ...paths.drops].filter(Boolean).forEach((path) => {
+      gsap.set(path as SVGPathElement, { strokeDashoffset: 0, autoAlpha: 1 })
+    })
+  }
 }
 
 /**
  * Scroll-driven staff tree: title fades in first, then connectors draw and people appear.
+ * Uses play-once (not scrub) so content can never stay stuck invisible.
  */
 export function initStaffTreeReveal(root: HTMLElement) {
   const header = root.querySelector<HTMLElement>('.staff-tree__header')
@@ -122,10 +135,11 @@ export function initStaffTreeReveal(root: HTMLElement) {
 
   if (!header || !rootNode) return () => undefined
 
+  root.classList.add('staff-tree--ready')
+
   if (prefersReducedMotion() || isCmsEditActive()) {
-    gsap.set([header, rootNode, hub, ...branchNodes].filter(Boolean), { clearProps: 'all' })
     const paths = rebuildStaffPaths(root)
-    if (paths) revealPaths(paths)
+    showAllContent(header, rootNode, hub, branchNodes, paths)
     return () => undefined
   }
 
@@ -137,7 +151,11 @@ export function initStaffTreeReveal(root: HTMLElement) {
       tl?.kill()
 
       const paths = rebuildStaffPaths(root)
-      if (!paths) return
+      if (!paths) {
+        // Never leave the section blank if connectors fail to measure.
+        showAllContent(header, rootNode, hub, branchNodes, null)
+        return
+      }
 
       gsap.set(header, { autoAlpha: 0, y: 28 })
       gsap.set(rootNode, { autoAlpha: 0, y: 24, scale: 0.96 })
@@ -148,40 +166,47 @@ export function initStaffTreeReveal(root: HTMLElement) {
         defaults: { ease: 'power2.out' },
         scrollTrigger: {
           trigger: root,
-          start: 'top 78%',
-          end: paths.stacked ? '+=140%' : '+=90%',
-          scrub: 0.85,
+          start: 'top 82%',
+          once: true,
+          toggleActions: 'play none none none',
           invalidateOnRefresh: true,
+          // If the section is already on screen when created, play immediately.
+          onRefresh(self) {
+            if (self.progress > 0 || self.isActive) return
+            const rect = root.getBoundingClientRect()
+            if (rect.top < window.innerHeight * 0.85 && rect.bottom > 0) {
+              self.animation?.progress(1)
+            }
+          },
         },
       })
 
-      tl.to(header, { autoAlpha: 1, y: 0, duration: 1 }, 0)
-        .to(rootNode, { autoAlpha: 1, y: 0, scale: 1, duration: 0.85 }, 0.55)
-        .to(paths.trunk, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.7 }, 1.15)
+      tl.to(header, { autoAlpha: 1, y: 0, duration: 0.7 }, 0)
+        .to(rootNode, { autoAlpha: 1, y: 0, scale: 1, duration: 0.6 }, 0.35)
+        .to(paths.trunk, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.55 }, 0.75)
 
       if (hub) {
-        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.35 }, 1.45)
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.3 }, 1.0)
       }
 
       if (paths.arm) {
-        tl.to(paths.arm, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.65 }, 1.55)
+        tl.to(paths.arm, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.5 }, 1.05)
       }
 
       if (paths.stacked) {
-        // Reveal each connector, then its person, down the spine.
         paths.drops.forEach((drop, index) => {
-          const at = 1.65 + index * 0.55
-          tl?.to(drop, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.45 }, at)
+          const at = 1.15 + index * 0.45
+          tl?.to(drop, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.4 }, at)
           if (branchNodes[index]) {
-            tl?.to(branchNodes[index], { autoAlpha: 1, y: 0, scale: 1, duration: 0.55 }, at + 0.2)
+            tl?.to(branchNodes[index], { autoAlpha: 1, y: 0, scale: 1, duration: 0.45 }, at + 0.15)
           }
         })
       } else {
         if (paths.drops.length) {
-          tl.to(paths.drops, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.5, stagger: 0.08 }, 1.9)
+          tl.to(paths.drops, { strokeDashoffset: 0, autoAlpha: 1, duration: 0.45, stagger: 0.08 }, 1.25)
         }
         if (branchNodes.length) {
-          tl.to(branchNodes, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.12 }, 2.15)
+          tl.to(branchNodes, { autoAlpha: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.1 }, 1.4)
         }
       }
     }
@@ -189,29 +214,37 @@ export function initStaffTreeReveal(root: HTMLElement) {
     const boot = window.requestAnimationFrame(() => {
       buildTimeline()
       scheduleScrollRefresh()
+      // Safety net: if still hidden shortly after boot, force the finished state.
+      window.setTimeout(() => {
+        const hidden = Number(gsap.getProperty(header, 'opacity')) < 0.05
+        if (hidden) {
+          const paths = rebuildStaffPaths(root)
+          showAllContent(header, rootNode, hub, branchNodes, paths)
+          tl?.progress(1)
+        }
+      }, 1200)
     })
 
     let resizeTimer = 0
     const onResize = () => {
       window.clearTimeout(resizeTimer)
       resizeTimer = window.setTimeout(() => {
-        const progress = tl?.scrollTrigger?.progress ?? 0
+        const done = (tl?.progress() ?? 0) >= 0.99
         buildTimeline()
-        tl?.progress(progress)
+        if (done) tl?.progress(1)
         ScrollTrigger.refresh()
       }, 160)
     }
 
     window.addEventListener('resize', onResize)
     const mq = window.matchMedia('(max-width: 768px)')
-    const onMq = () => onResize()
-    mq.addEventListener('change', onMq)
+    mq.addEventListener('change', onResize)
 
     return () => {
       window.cancelAnimationFrame(boot)
       window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
-      mq.removeEventListener('change', onMq)
+      mq.removeEventListener('change', onResize)
       tl?.scrollTrigger?.kill()
       tl?.kill()
     }

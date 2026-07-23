@@ -230,9 +230,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .staff-tree__header,
-  .staff-tree__node,
-  .staff-tree__hub {
+  /* Only hide before the animation boots — never leave the section blank. */
+  .staff-tree:not(.staff-tree--ready) .staff-tree__header,
+  .staff-tree:not(.staff-tree--ready) .staff-tree__node,
+  .staff-tree:not(.staff-tree--ready) .staff-tree__hub {
     opacity: 0;
   }
 }

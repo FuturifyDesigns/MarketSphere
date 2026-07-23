@@ -70,7 +70,7 @@ function StaffNode({
           alt=""
           className="staff-tree__photo"
           decoding="async"
-          loading="lazy"
+          loading="eager"
         />
       </div>
 
@@ -117,27 +117,10 @@ export function StaffShowcase() {
     let cleanup: (() => void) | undefined
     let cancelled = false
 
-    const waitForImages = () => {
-      const images = Array.from(section.querySelectorAll('img'))
-      return Promise.all(
-        images.map(
-          (image) =>
-            image.complete
-              ? Promise.resolve()
-              : new Promise<void>((resolve) => {
-                  image.addEventListener('load', () => resolve(), { once: true })
-                  image.addEventListener('error', () => resolve(), { once: true })
-                }),
-        ),
-      )
-    }
-
     const init = () => {
-      void waitForImages().then(() => {
-        if (cancelled) return
-        cleanup?.()
-        cleanup = initStaffTreeReveal(section)
-      })
+      if (cancelled) return
+      cleanup?.()
+      cleanup = initStaffTreeReveal(section)
     }
 
     if (isIntroComplete()) {
