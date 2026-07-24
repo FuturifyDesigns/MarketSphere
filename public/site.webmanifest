@@ -15,8 +15,8 @@
       "type": "image/png"
     },
     {
-      "src": "/favicon-48.png",
-      "sizes": "48x48",
+      "src": "/favicon-96.png",
+      "sizes": "96x96",
       "type": "image/png"
     },
     {
@@ -32,9 +32,10 @@
       "purpose": "any"
     },
     {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
