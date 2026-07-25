@@ -758,8 +758,114 @@
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  padding: 1.1rem 1.15rem 1.25rem;
+  padding: 1.1rem 1.15rem 0.35rem;
   flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.showcase-card__body-link:hover h3 {
+  color: var(--color-gold);
+}
+
+.showcase-card__more {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.showcase-card__featured-badge {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-gold) 92%, #1a1510);
+  color: #1a1510;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.showcase-card__featured-badge--inline,
+.showcase-listing-detail__meta .showcase-card__featured-badge {
+  position: static;
+}
+
+.showcase-listing-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.showcase-listings-heading-wrap {
+  margin-bottom: 1rem;
+}
+
+.showcase-listings-heading-wrap .section-label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+}
+
+.showcase-listing-detail__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.showcase-listing-detail__gallery .showcase-gallery,
+.showcase-listing-detail__gallery .showcase-card__media-empty {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  background: color-mix(in srgb, var(--bg-primary) 70%, #1a1510);
+}
+
+.showcase-listing-detail__gallery .showcase-back {
+  display: inline-flex;
+  margin-bottom: 1rem;
+}
+
+.showcase-listing-detail__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.showcase-listing-detail__column {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.showcase-listing-detail__deal {
+  position: static;
+  align-self: flex-start;
+}
+
+.showcase-listing-detail__description {
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.showcase-listing-detail__copy .showcase-card__actions {
+  margin-top: 1rem;
+  padding: 0;
+}
+
+@media (max-width: 900px) {
+  .showcase-listing-detail__layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .showcase-card__body h3 {
@@ -808,7 +914,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: auto;
-  padding-top: 0.5rem;
+  padding: 0.35rem 1.15rem 1.25rem;
 }
 
 .showcase-card__actions .btn {

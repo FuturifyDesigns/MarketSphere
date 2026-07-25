@@ -8,6 +8,7 @@ export const SITE_CONTENT_KEYS = {
   contact: 'contact',
   about: 'about',
   services: 'services',
+  showcase: 'showcase',
 } as const
 
 export type SiteContentKey = (typeof SITE_CONTENT_KEYS)[keyof typeof SITE_CONTENT_KEYS]
@@ -279,6 +280,41 @@ export const DEFAULT_SITE_CONTENT: Record<SiteContentKey, unknown> = {
       accent: service.accent,
       gradient: service.gradient,
     })) satisfies MarketingService[],
+    extraSections: [] as CmsExtraSection[],
+  },
+  showcase: {
+    hero: {
+      eyebrow: 'Market Sphere Showcase',
+      titleLine1: 'Find what moves',
+      titleEmphasis: 'you forward.',
+      lead:
+        'Explore properties, programmes, projects and opportunities across Botswana — curated by Market Sphere Group.',
+      mosaicLabel: 'Across Botswana',
+    },
+    fields: {
+      eyebrow: 'Choose your field',
+      title: 'Explore the Showcase',
+      lead: 'Scroll to reveal each field, one by one. Open a card to see its live listings.',
+    },
+    column: {
+      eyebrow: 'Market Sphere Showcase',
+      listingsEyebrow: 'Live opportunities',
+      listingsTitle: 'Listings',
+      listingsTitleSingular: 'Live listing',
+      emptyTitle: 'No live listings yet',
+      emptyBody:
+        'Market Sphere Group will publish opportunities here soon. Meanwhile, reach us by email or browse another field.',
+      emptyContactLabel: 'Contact us',
+      emptyBrowseLabel: 'Browse other columns',
+      backLabel: 'All fields',
+    },
+    listing: {
+      backLabel: 'Back to listings',
+      contactLabel: 'Contact Market Sphere',
+      whatsappLabel: 'WhatsApp',
+      detailsEyebrow: 'Listing details',
+      galleryLabel: 'Gallery',
+    },
     extraSections: [] as CmsExtraSection[],
   },
 }

@@ -18,6 +18,9 @@ export const FIELD_HINTS = {
   businessName: 'Your registered or trading name — must include letters.',
   description: 'Tell customers what you offer — at least 20 characters.',
   location: 'City, town, or area in Botswana — not numbers only.',
+  listingTitle: 'Clear listing title — at least 3 characters.',
+  listingSummary: 'Short teaser for the card — 10–280 characters.',
+  priceLabel: 'Optional price text, e.g. P1.2M or P4,500 / month.',
   contactEmail: 'Optional business email customers can reach you on.',
   contactPhone: 'Optional business phone — digits only.',
   serviceTitle: 'Name of the service you provide — at least 2 characters.',
@@ -240,6 +243,37 @@ export function validateLocation(value: string): ValidationResult {
   if (v.length > 120) return 'Location must be at most 120 characters'
   if (isNumericOnly(v)) return 'Location must be a place name, not only numbers'
   if (!hasLetters(v)) return 'Location must include letters'
+  return null
+}
+
+export function validateRequiredLocation(value: string): ValidationResult {
+  const v = trim(value)
+  if (!v) return 'Location is required'
+  return validateLocation(v)
+}
+
+export function validateListingTitle(value: string): ValidationResult {
+  const required = validateRequired(value, 'Title', 3, 140)
+  if (required) return required
+  const v = trim(value)
+  if (isNumericOnly(v)) return 'Title cannot be only numbers'
+  if (!hasLetters(v)) return 'Title must include letters'
+  return null
+}
+
+export function validatePriceLabel(value: string): ValidationResult {
+  const v = trim(value)
+  if (!v) return null
+  if (v.length > 80) return 'Price label must be at most 80 characters'
+  return null
+}
+
+export function validateListingSummary(value: string): ValidationResult {
+  const v = trim(value)
+  if (!v) return 'Short summary is required'
+  if (v.length < 10) return 'Summary must be at least 10 characters'
+  if (v.length > 280) return 'Summary must be at most 280 characters'
+  if (isNumericOnly(v)) return 'Summary cannot be only numbers'
   return null
 }
 

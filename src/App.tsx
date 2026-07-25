@@ -19,7 +19,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
 import { Services } from './pages/Services'
-import { Showcase, ShowcaseColumnPage } from './pages/Showcase'
+import { Showcase, ShowcaseColumnPage, ShowcaseListingPage } from './pages/Showcase'
 import { Contact } from './pages/Contact'
 import { FAQ } from './pages/FAQ'
 import { Browse } from './pages/Browse'
@@ -131,6 +131,14 @@ export default function App() {
                         element={
                           <ErrorBoundary label="showcase-column">
                             <ShowcaseColumnPage />
+                          </ErrorBoundary>
+                        }
+                      />
+                      <Route
+                        path="showcase/:slug/:listingId"
+                        element={
+                          <ErrorBoundary label="showcase-listing">
+                            <ShowcaseListingPage />
                           </ErrorBoundary>
                         }
                       />

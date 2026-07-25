@@ -174,10 +174,18 @@ export function seoForPath(pathname: string): { title: string; description: stri
   if (match) return { title: match.title, description: match.description }
 
   if (normalized.startsWith('/showcase/')) {
+    const parts = normalized.split('/').filter(Boolean)
+    if (parts.length >= 3) {
+      return {
+        title: 'Showcase Listing | Market Sphere Group',
+        description:
+          'View Market Sphere Group showcase opportunities and contact the team for more details.',
+      }
+    }
     return {
-      title: 'Showcase Listing | Market Sphere Group',
+      title: 'Showcase Field | Market Sphere Group',
       description:
-        'View Market Sphere Group showcase opportunities and contact the team for more details.',
+        'Browse Market Sphere Group showcase listings for this field across Botswana.',
     }
   }
 

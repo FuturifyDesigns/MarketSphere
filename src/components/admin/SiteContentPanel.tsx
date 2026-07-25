@@ -14,6 +14,7 @@ const CONTENT_LABELS: Record<SiteContentKey, string> = {
   contact: 'Contact page',
   about: 'About page',
   services: 'Services page',
+  showcase: 'Showcase page',
 }
 
 const PAGE_LINKS: Partial<Record<SiteContentKey, string>> = {
@@ -22,6 +23,7 @@ const PAGE_LINKS: Partial<Record<SiteContentKey, string>> = {
   services: '/services',
   contact: '/contact',
   faq: '/faq',
+  showcase: '/showcase',
 }
 
 export function SiteContentPanel() {

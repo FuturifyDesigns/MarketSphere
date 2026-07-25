@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import gsap from 'gsap'
@@ -29,6 +29,8 @@ import { SHOWCASE_DEAL_LABELS, showcaseContactMailto, showcaseWhatsAppLink } fro
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
+import { EditableSection } from '../components/cms/EditableSection'
+import { EditableText } from '../components/cms/EditableText'
 import { Button } from '../components/ui/Button'
 import './Showcase.css'
 
@@ -291,14 +293,17 @@ function ShowcaseLightbox({
 function ListingCard({
   listing,
   columnTitle,
+  columnSlug,
   order = 0,
 }: {
   listing: ShowcaseListing
   columnTitle?: string
+  columnSlug: string
   order?: number
 }) {
   const { ref, shown } = useReveal<HTMLElement>()
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const detailPath = `/showcase/${columnSlug}/${listing.id}`
   const mailto = showcaseContactMailto(listing.title, columnTitle)
   const whatsapp = showcaseWhatsAppLink(COMPANY.phones[0], listing.title)
 
@@ -322,8 +327,9 @@ function ListingCard({
           onZoom={(i) => setLightbox(i)}
         />
         <span className="showcase-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
+        {listing.featured ? <span className="showcase-card__featured-badge">Featured</span> : null}
       </div>
-      <div className="showcase-card__body">
+      <Link to={detailPath} className="showcase-card__body showcase-card__body-link">
         <h3>{listing.title}</h3>
         {listing.location ? (
           <p className="showcase-card__location">
@@ -332,15 +338,15 @@ function ListingCard({
         ) : null}
         {listing.price_label ? <p className="showcase-card__price">{listing.price_label}</p> : null}
         {listing.summary ? <p className="showcase-card__summary">{listing.summary}</p> : null}
-        {listing.description ? <p className="showcase-card__description">{listing.description}</p> : null}
-        <div className="showcase-card__actions">
-          <a className="btn btn--primary btn--sm" href={mailto}>
-            <Mail size={14} /> Contact Market Sphere
-          </a>
-          <a className="btn btn--secondary btn--sm" href={whatsapp} target="_blank" rel="noreferrer">
-            <Phone size={14} /> WhatsApp
-          </a>
-        </div>
+        <span className="showcase-card__more">View full details</span>
+      </Link>
+      <div className="showcase-card__actions">
+        <a className="btn btn--primary btn--sm" href={mailto}>
+          <Mail size={14} /> Contact Market Sphere
+        </a>
+        <a className="btn btn--secondary btn--sm" href={whatsapp} target="_blank" rel="noreferrer">
+          <Phone size={14} /> WhatsApp
+        </a>
       </div>
 
       {lightbox !== null && listing.image_urls.length > 0 ? (
@@ -575,22 +581,27 @@ export function Showcase() {
 
   return (
     <div ref={pageRef} className="page showcase-page showcase-hub">
-      <section className="showcase-hero">
+      <EditableSection id="showcase-hero" label="Showcase hero" className="showcase-hero">
         <div className="container showcase-hero__layout">
           <div className="showcase-hero__inner" data-showcase-hero-copy>
             <span className="showcase-hero__eyebrow">
               <span className="showcase-hero__eyebrow-dot" />
-              Market Sphere Showcase
+              <EditableText contentKey="showcase" path="hero.eyebrow" as="span" />
             </span>
             <h1 className="display-xl">
-              Find what moves
+              <EditableText contentKey="showcase" path="hero.titleLine1" as="span" />
               <br />
-              <em className="text-gold">you forward.</em>
+              <em className="text-gold">
+                <EditableText contentKey="showcase" path="hero.titleEmphasis" as="span" />
+              </em>
             </h1>
-            <p className="lead showcase-hero__lead">
-              Explore properties, programmes, projects and opportunities across Botswana — curated
-              by Market Sphere Group.
-            </p>
+            <EditableText
+              contentKey="showcase"
+              path="hero.lead"
+              as="p"
+              className="lead showcase-hero__lead"
+              multiline
+            />
           </div>
 
           <div className="showcase-hero__mosaic">
@@ -610,20 +621,36 @@ export function Showcase() {
               </button>
             ))}
             <span className="showcase-hero__orbit" aria-hidden="true" />
-            <span className="showcase-hero__mosaic-label">Across Botswana</span>
+            <EditableText
+              contentKey="showcase"
+              path="hero.mosaicLabel"
+              as="span"
+              className="showcase-hero__mosaic-label"
+            />
           </div>
         </div>
-      </section>
+      </EditableSection>
 
       <section id="showcase-columns" className="section showcase-columns-section">
         <div className="container">
-          <div className="showcase-section-heading" data-showcase-heading>
+          <EditableSection
+            id="showcase-fields-heading"
+            label="Fields heading"
+            as="div"
+            className="showcase-section-heading"
+            data-showcase-heading=""
+          >
             <div>
-              <span className="section-label">Choose your field</span>
-              <h2>Explore the Showcase</h2>
+              <EditableText
+                contentKey="showcase"
+                path="fields.eyebrow"
+                as="span"
+                className="section-label"
+              />
+              <EditableText contentKey="showcase" path="fields.title" as="h2" />
             </div>
-            <p>Scroll to reveal each field, one by one. Open a card to see its live listings.</p>
-          </div>
+            <EditableText contentKey="showcase" path="fields.lead" as="p" multiline />
+          </EditableSection>
         </div>
         {loading ? (
           <div className="container">
@@ -791,9 +818,6 @@ export function ShowcaseColumnPage() {
     }
   }, [slug])
 
-  const featured = useMemo(() => listings.filter((l) => l.featured), [listings])
-  const rest = useMemo(() => listings.filter((l) => !l.featured), [listings])
-
   useEffect(() => {
     if (loading || !column || !pageRef.current) return
 
@@ -841,6 +865,11 @@ export function ShowcaseColumnPage() {
     )
   }
 
+  const orderedListings = [
+    ...listings.filter((item) => item.featured),
+    ...listings.filter((item) => !item.featured),
+  ]
+
   return (
     <div ref={pageRef} className="page showcase-page showcase-column-page">
       <section className="showcase-column-hero">
@@ -851,13 +880,19 @@ export function ShowcaseColumnPage() {
         <div className="container showcase-column-hero__layout">
           <div className="showcase-column-hero__inner" data-column-copy>
             <Link to="/showcase" className="showcase-back">
-              <ArrowLeft size={16} /> All fields
+              <ArrowLeft size={16} />{' '}
+              <EditableText contentKey="showcase" path="column.backLabel" as="span" />
             </Link>
             <span className="showcase-column-hero__icon">
               <ColumnIcon name={column.icon} />
             </span>
             <div>
-              <span className="section-label">Market Sphere Showcase</span>
+              <EditableText
+                contentKey="showcase"
+                path="column.eyebrow"
+                as="span"
+                className="section-label"
+              />
               <h1 className="display-xl">{column.title}</h1>
             </div>
             {column.tagline ? <p className="lead">{column.tagline}</p> : null}
@@ -873,43 +908,219 @@ export function ShowcaseColumnPage() {
               {error}
             </p>
           ) : listings.length === 0 ? (
-            <div className="showcase-empty">
-              <h2>No live listings yet</h2>
-              <p>
-                Market Sphere Group will publish opportunities here soon. Meanwhile, reach us at{' '}
-                <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
-              </p>
+            <EditableSection id="showcase-empty" label="Empty state" as="div" className="showcase-empty">
+              <EditableText contentKey="showcase" path="column.emptyTitle" as="h2" />
+              <EditableText contentKey="showcase" path="column.emptyBody" as="p" multiline />
               <div className="showcase-empty__actions">
-                <Button to="/contact">Contact us</Button>
+                <Button to="/contact">
+                  <EditableText contentKey="showcase" path="column.emptyContactLabel" as="span" />
+                </Button>
                 <Button to="/showcase" variant="secondary">
-                  Browse other columns
+                  <EditableText contentKey="showcase" path="column.emptyBrowseLabel" as="span" />
                 </Button>
               </div>
-            </div>
+            </EditableSection>
           ) : (
-            <>
-              {featured.length > 0 ? (
-                <div className="showcase-listings-block">
-                  <h2 className="showcase-listings-heading">Featured</h2>
-                  <div className="showcase-listings">
-                    {featured.map((listing, i) => (
-                      <ListingCard key={listing.id} listing={listing} columnTitle={column.title} order={i} />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <div className="showcase-listings-block">
-                {featured.length > 0 ? <h2 className="showcase-listings-heading">All listings</h2> : null}
-                <div className="showcase-listings">
-                  {(featured.length > 0 ? rest : listings).map((listing, i) => (
-                    <ListingCard key={listing.id} listing={listing} columnTitle={column.title} order={i} />
-                  ))}
-                </div>
+            <div className="showcase-listings-block">
+              <EditableSection
+                id="showcase-listings-heading"
+                label="Listings heading"
+                as="div"
+                className="showcase-listings-heading-wrap"
+              >
+                <EditableText
+                  contentKey="showcase"
+                  path="column.listingsEyebrow"
+                  as="span"
+                  className="section-label"
+                />
+                <h2 className="showcase-listings-heading">
+                  {listings.length === 1 ? (
+                    <EditableText contentKey="showcase" path="column.listingsTitleSingular" as="span" />
+                  ) : (
+                    <>
+                      {listings.length}{' '}
+                      <EditableText contentKey="showcase" path="column.listingsTitle" as="span" />
+                    </>
+                  )}
+                </h2>
+              </EditableSection>
+              <div className="showcase-listings">
+                {orderedListings.map((listing, i) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    columnTitle={column.title}
+                    columnSlug={column.slug}
+                    order={i}
+                  />
+                ))}
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
+    </div>
+  )
+}
+
+export function ShowcaseListingPage() {
+  const { slug, listingId } = useParams<{ slug: string; listingId: string }>()
+  const [column, setColumn] = useState<ShowcaseColumn | null>(null)
+  const [listing, setListing] = useState<ShowcaseListing | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [lightbox, setLightbox] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      if (!slug || !listingId) {
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
+      const { data: col, error: colError } = await supabase
+        .from('showcase_columns')
+        .select('*')
+        .eq('slug', slug)
+        .eq('active', true)
+        .maybeSingle()
+
+      if (cancelled) return
+
+      if (colError || !col) {
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
+      const { data: row, error: listError } = await supabase
+        .from('showcase_listings')
+        .select('*')
+        .eq('id', listingId)
+        .eq('column_id', col.id)
+        .eq('status', 'published')
+        .maybeSingle()
+
+      if (cancelled) return
+
+      if (listError || !row) {
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
+      setColumn(col)
+      setListing(row)
+      setNotFound(false)
+      setLoading(false)
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [slug, listingId])
+
+  if (loading) {
+    return (
+      <div className="page showcase-page">
+        <div className="container showcase-status">Loading listing…</div>
+      </div>
+    )
+  }
+
+  if (notFound || !column || !listing) {
+    return (
+      <div className="page showcase-page">
+        <div className="container showcase-empty">
+          <h1>Listing not found</h1>
+          <p>This showcase listing is unavailable or no longer published.</p>
+          <Button to={slug ? `/showcase/${slug}` : '/showcase'}>Back to Showcase</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const mailto = showcaseContactMailto(listing.title, column.title)
+  const whatsapp = showcaseWhatsAppLink(COMPANY.phones[0], listing.title)
+
+  return (
+    <div className="page showcase-page showcase-listing-page">
+      <section className="section showcase-listing-detail">
+        <div className="container showcase-listing-detail__layout">
+          <div className="showcase-listing-detail__gallery">
+            <Link to={`/showcase/${column.slug}`} className="showcase-back">
+              <ArrowLeft size={16} />{' '}
+              <EditableText contentKey="showcase" path="listing.backLabel" as="span" />
+            </Link>
+            <EditableText
+              contentKey="showcase"
+              path="listing.galleryLabel"
+              as="span"
+              className="section-label"
+            />
+            <ShowcaseGallery
+              images={listing.image_urls}
+              title={listing.title}
+              onZoom={(i) => setLightbox(i)}
+            />
+          </div>
+
+          <div className="showcase-listing-detail__copy">
+            <EditableText
+              contentKey="showcase"
+              path="listing.detailsEyebrow"
+              as="span"
+              className="section-label"
+            />
+            <p className="showcase-listing-detail__column">{column.title}</p>
+            <h1 className="display-xl">{listing.title}</h1>
+            <div className="showcase-listing-detail__meta">
+              {listing.featured ? (
+                <span className="showcase-card__featured-badge showcase-card__featured-badge--inline">
+                  Featured
+                </span>
+              ) : null}
+              <p className="showcase-card__deal showcase-listing-detail__deal">
+                {SHOWCASE_DEAL_LABELS[listing.deal_type]}
+              </p>
+            </div>
+            {listing.location ? (
+              <p className="showcase-card__location">
+                <MapPin size={16} aria-hidden /> {listing.location}
+              </p>
+            ) : null}
+            {listing.price_label ? <p className="showcase-card__price">{listing.price_label}</p> : null}
+            {listing.summary ? <p className="lead">{listing.summary}</p> : null}
+            {listing.description ? (
+              <p className="showcase-listing-detail__description">{listing.description}</p>
+            ) : null}
+            <div className="showcase-card__actions">
+              <a className="btn btn--primary" href={mailto}>
+                <Mail size={16} />{' '}
+                <EditableText contentKey="showcase" path="listing.contactLabel" as="span" />
+              </a>
+              <a className="btn btn--secondary" href={whatsapp} target="_blank" rel="noreferrer">
+                <Phone size={16} />{' '}
+                <EditableText contentKey="showcase" path="listing.whatsappLabel" as="span" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {lightbox !== null && listing.image_urls.length > 0 ? (
+        <ShowcaseLightbox
+          images={listing.image_urls}
+          startIndex={lightbox}
+          title={listing.title}
+          onClose={() => setLightbox(null)}
+        />
+      ) : null}
     </div>
   )
 }

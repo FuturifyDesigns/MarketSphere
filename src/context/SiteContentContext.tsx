@@ -143,7 +143,7 @@ function normalizeBlock(key: SiteContentKey, block: unknown) {
     )
   }
 
-  for (const pageKey of ['home', 'about', 'services', 'contact', 'faq', 'company'] as SiteContentKey[]) {
+  for (const pageKey of ['home', 'about', 'services', 'contact', 'faq', 'company', 'showcase'] as SiteContentKey[]) {
     if (key !== pageKey) continue
     const page = merged as { extraSections?: CmsExtraSection[] }
     if (!page.extraSections) {
