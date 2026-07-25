@@ -83,6 +83,40 @@
   right: auto;
 }
 
+.cms-section__controls {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.cms-section__undo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 6px;
+  background: rgba(8, 8, 10, 0.94);
+  color: #f7efd8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.cms-section__undo:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.18);
+  border-color: var(--gold, #d4af37);
+}
+
+.cms-section__undo:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .live-editor-bar {
   position: sticky;
   top: 0;
@@ -172,6 +206,16 @@
 .live-editor-bar__btn--ghost:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(212, 175, 55, 0.45);
+}
+
+.live-editor-bar__btn--undo {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(212, 175, 55, 0.18);
+  color: #f6e7b2;
+}
+
+.live-editor-bar__btn--undo:hover {
+  background: rgba(212, 175, 55, 0.28);
 }
 
 .live-editor-bar__btn--logout {
@@ -820,6 +864,56 @@ html.cms-editing .svc-page__media-tools {
   line-height: 1.35;
   color: rgba(247, 239, 216, 0.78);
   text-align: center;
+}
+
+.cms-asset-edit__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 120, 100, 0.45);
+  background: rgba(80, 24, 18, 0.88);
+  color: #ffd7cf;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cms-asset-edit__clear:hover:not(:disabled) {
+  background: rgba(110, 30, 22, 0.95);
+}
+
+.services-showcase__remove-card {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  border-color: rgba(255, 120, 100, 0.45) !important;
+  background: rgba(80, 24, 18, 0.88) !important;
+  color: #ffd7cf !important;
+}
+
+.services-showcase__remove-card:hover {
+  background: rgba(110, 30, 22, 0.95) !important;
+}
+
+.services-showcase__remove-card--panel {
+  align-self: flex-start;
+  margin-top: 0.85rem;
+  min-width: 9.5rem;
+  width: auto;
+  flex: 0 0 auto;
+  box-shadow: 0 6px 18px rgba(80, 24, 18, 0.22);
+}
+
+.services-showcase--cms-editing .services-showcase__media-tools,
+.svc-page--cms-editing .svc-page__media-tools {
+  position: relative;
+  inset: auto;
+  min-height: 11rem;
+  border-radius: inherit;
 }
 
 .services-showcase__visual--editing,

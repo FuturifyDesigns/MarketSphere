@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Film, ImagePlus, Loader2 } from 'lucide-react'
+import { Film, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { SiteContentKey } from '../../lib/siteContentDefaults'
 import { uploadSiteAsset } from '../../lib/siteAssetUpload'
 import { useSiteContent } from '../../context/SiteContentContext'
@@ -17,6 +17,8 @@ type EditableAssetProps = {
   /** Large clickable photo zone for service/staff cards. */
   variant?: 'button' | 'dropzone'
   hint?: string
+  allowClear?: boolean
+  clearLabel?: string
 }
 
 export function EditableAsset({
@@ -28,12 +30,15 @@ export function EditableAsset({
   label = 'Upload image or video',
   variant = 'button',
   hint,
+  allowClear = false,
+  clearLabel = 'Remove photo',
 }: EditableAssetProps) {
   const { updateField } = useSiteContent()
   const canEdit = useSectionFieldEdit()
   const { showToast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   if (!canEdit) return null
 
@@ -49,6 +54,19 @@ export function EditableAsset({
       showToast(message, 'error')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const clearMedia = async () => {
+    if (!value || clearing) return
+    setClearing(true)
+    try {
+      await updateField(contentKey, path, '')
+      showToast('Photo removed from this card.')
+    } catch {
+      showToast('Could not remove photo.', 'error')
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -74,7 +92,7 @@ export function EditableAsset({
         type="button"
         className={`cms-asset-edit__btn${variant === 'dropzone' ? ' cms-asset-edit__btn--dropzone' : ''}`}
         onClick={() => inputRef.current?.click()}
-        disabled={uploading}
+        disabled={uploading || clearing}
       >
         {icon}
         <span className="cms-asset-edit__label">{uploading ? 'Uploading…' : label}</span>
@@ -84,6 +102,17 @@ export function EditableAsset({
           </span>
         ) : null}
       </button>
+      {allowClear && value ? (
+        <button
+          type="button"
+          className="cms-asset-edit__clear"
+          onClick={() => void clearMedia()}
+          disabled={uploading || clearing}
+        >
+          <Trash2 size={14} />
+          {clearing ? 'Removing…' : clearLabel}
+        </button>
+      ) : null}
       {value && variant !== 'dropzone' ? <code className="cms-asset-edit__path">{value}</code> : null}
     </div>
   )

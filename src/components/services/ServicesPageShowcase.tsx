@@ -45,7 +45,7 @@ export function ServicesPageShowcase() {
 
   useEffect(() => {
     const root = rootRef.current
-    if (!root) return
+    if (!root || canEditField) return
 
     let cleanupShowcase: (() => void) | undefined
     let initialized = false
@@ -64,18 +64,26 @@ export function ServicesPageShowcase() {
       removeIntroListener()
       cleanupShowcase?.()
     }
-  }, [items.length])
+  }, [items.length, canEditField])
 
   useEffect(() => {
     const root = rootRef.current
     if (!root || !canEditField) return
-    gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__copy, .svc-page__media'), {
+    gsap.set(root.querySelectorAll('.svc-page__slide, .svc-page__copy, .svc-page__media, .svc-page__title, .svc-page__tagline, .svc-page__desc, .svc-page__cta'), {
       pointerEvents: 'auto',
+      autoAlpha: 1,
+      opacity: 1,
+      visibility: 'visible',
+      clearProps: 'transform',
     })
   }, [canEditField, items.length])
 
   return (
-    <section className="svc-page" ref={rootRef} aria-label="Our services showcase">
+    <section
+      className={`svc-page${canEditField ? ' svc-page--cms-editing' : ''}`}
+      ref={rootRef}
+      aria-label="Our services showcase"
+    >
       <div className="svc-page__pin">
         <div className="svc-page__progress" aria-hidden="true">
           <div className="svc-page__progress-track" />
@@ -136,6 +144,8 @@ export function ServicesPageShowcase() {
                             label={service.image ? 'Replace photo' : 'Add photo here'}
                             variant="dropzone"
                             hint="Click this panel to place the service image"
+                            allowClear={Boolean(service.image)}
+                            clearLabel="Remove photo"
                           />
                           <div className="services-showcase__media-tools-row">
                             <EditableAsset
@@ -145,22 +155,9 @@ export function ServicesPageShowcase() {
                               uploadFolder="services"
                               accept="video/mp4,video/webm"
                               label="Upload video"
+                              allowClear={Boolean(service.video)}
+                              clearLabel="Remove video"
                             />
-                            {items.length > 1 ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                onClick={() =>
-                                  void persistItems(
-                                    items.filter((row) => row.id !== service.id),
-                                    'Service card removed.',
-                                  )
-                                }
-                              >
-                                Remove card
-                              </Button>
-                            ) : null}
                           </div>
                         </div>
                       ) : null}
@@ -179,6 +176,33 @@ export function ServicesPageShowcase() {
                     >
                       <ArrowRight size={14} />
                     </EditableLink>
+                    {canEditField ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="services-showcase__remove-card services-showcase__remove-card--panel"
+                        onClick={() => {
+                          if (items.length <= 1) {
+                            showToast('Keep at least one service card.', 'error')
+                            return
+                          }
+                          if (
+                            !window.confirm(
+                              'Remove this service card? You can Undo from the section controls if needed.',
+                            )
+                          ) {
+                            return
+                          }
+                          void persistItems(
+                            items.filter((row) => row.id !== service.id),
+                            'Service card removed.',
+                          )
+                        }}
+                      >
+                        Remove card
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </article>

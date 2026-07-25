@@ -1,12 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, LogOut, Pencil, PencilOff } from 'lucide-react'
+import { LayoutDashboard, LogOut, Pencil, PencilOff, Undo2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useSiteEdit } from '../../context/SiteEditContext'
 import './cms.css'
 
 export function LiveEditorBar() {
   const { profile, signOut } = useAuth()
-  const { canEdit, editMode, setEditMode } = useSiteEdit()
+  const { canEdit, editMode, setEditMode, canUndoActiveSection, undoActiveSection } = useSiteEdit()
   const navigate = useNavigate()
 
   if (!canEdit || !editMode) return null
@@ -30,6 +30,17 @@ export function LiveEditorBar() {
           </div>
         </div>
         <div className="live-editor-bar__actions">
+          {canUndoActiveSection ? (
+            <button
+              type="button"
+              className="live-editor-bar__btn live-editor-bar__btn--undo"
+              onClick={() => void undoActiveSection()}
+              title="Undo all changes in the section you are editing"
+            >
+              <Undo2 size={15} />
+              Undo section
+            </button>
+          ) : null}
           <Link to="/dashboard/admin" state={{ tab: 'site-content' }} className="live-editor-bar__btn live-editor-bar__btn--ghost">
             <LayoutDashboard size={15} />
             Dashboard
@@ -58,13 +69,13 @@ export function LiveEditorBar() {
         <div className="live-editor-bar__step">
           <span className="live-editor-bar__step-num">2</span>
           <p>
-            Change text, photos, or use <strong>Add</strong> buttons
+            Change text, photos, or use <strong>Add</strong> / <strong>Remove</strong>
           </p>
         </div>
         <div className="live-editor-bar__step">
           <span className="live-editor-bar__step-num">3</span>
           <p>
-            Click <strong>DONE</strong> on that section — or Exit editor above
+            Use <strong>Undo</strong> if needed, then click <strong>DONE</strong>
           </p>
         </div>
       </div>

@@ -185,23 +185,27 @@
 .svc-page__copy {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
   max-width: 34rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: var(--radius-lg);
+  background: #faf8f4;
+  border: 1px solid rgba(201, 162, 75, 0.18);
+  box-shadow: 0 10px 36px rgba(74, 63, 47, 0.1);
 }
 
 .svc-page__index {
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.12em;
-  color: var(--color-gold);
-  opacity: 0.8;
+  color: #8a6a1f;
 }
 
 .svc-page__tagline {
   font-family: var(--font-display);
   font-size: clamp(1.1rem, 2.2vw, 1.45rem);
   font-style: italic;
-  color: var(--text-secondary);
+  color: #5c4a28;
   line-height: 1.35;
 }
 
@@ -210,14 +214,16 @@
   font-size: clamp(1.75rem, 3.5vw, 2.75rem);
   line-height: 1.08;
   letter-spacing: 0.02em;
+  color: #14100c;
 }
 
 .svc-page__desc {
   font-size: 1rem;
   line-height: 1.75;
-  color: var(--text-secondary);
+  color: #2f2820;
   max-width: 48ch;
 }
+
 
 .svc-page__cta {
   display: inline-flex;
@@ -291,23 +297,24 @@
     align-items: flex-start;
     padding: 1rem 1.1rem;
     border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--card-bg) 97%, transparent);
-    box-shadow: 0 8px 28px color-mix(in srgb, var(--color-bronze) 10%, transparent);
+    background: #faf8f4;
+    border: 1px solid rgba(201, 162, 75, 0.18);
+    box-shadow: 0 8px 28px rgba(74, 63, 47, 0.1);
     position: relative;
     z-index: 2;
     width: 100%;
   }
 
   .svc-page__title {
-    color: var(--text-primary);
+    color: #14100c;
   }
 
   .svc-page__tagline {
-    color: var(--text-secondary);
+    color: #5c4a28;
   }
 
   .svc-page__desc {
-    color: var(--text-secondary);
+    color: #2f2820;
   }
 
   .svc-page__media-wrap {
@@ -348,3 +355,68 @@
     animation: none;
   }
 }
+
+/* CMS edit: show all cards stacked with readable controls */
+.svc-page--cms-editing .svc-page__pin {
+  position: relative;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.svc-page--cms-editing .svc-page__intro,
+.svc-page--cms-editing .svc-page__progress,
+.svc-page--cms-editing .svc-page__dots {
+  display: none !important;
+}
+
+.svc-page--cms-editing .svc-page__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: auto;
+  padding: 1.25rem 0;
+}
+
+.svc-page--cms-editing .svc-page__slide {
+  position: relative !important;
+  inset: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  pointer-events: auto !important;
+  height: auto !important;
+  min-height: 0;
+}
+
+.svc-page--cms-editing .svc-page__slide-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.9fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.svc-page--cms-editing .svc-page__copy,
+.svc-page--cms-editing .svc-page__title,
+.svc-page--cms-editing .svc-page__tagline,
+.svc-page--cms-editing .svc-page__desc,
+.svc-page--cms-editing .svc-page__cta {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.svc-page--cms-editing .svc-page__media-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .svc-page--cms-editing .svc-page__slide-inner {
+    grid-template-columns: 1fr;
+  }
+}
+

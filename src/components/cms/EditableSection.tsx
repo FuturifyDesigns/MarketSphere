@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { Pencil } from 'lucide-react'
+import { Pencil, Undo2 } from 'lucide-react'
 import { SectionEditProvider } from '../../context/SectionEditContext'
 import { useSiteEdit } from '../../context/SiteEditContext'
 import './cms.css'
@@ -29,7 +29,7 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
   { id, label, as: Tag = 'section', className = '', children, ...rest },
   ref,
 ) {
-  const { editMode, isSectionActive, toggleSection } = useSiteEdit()
+  const { editMode, isSectionActive, toggleSection, canUndoActiveSection, undoActiveSection } = useSiteEdit()
   const isActive = isSectionActive(id)
   const nodeRef = useRef<HTMLElement | null>(null)
   const setRefs = useCallback(
@@ -41,6 +41,7 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
     [ref],
   )
   const [editBtnStyle, setEditBtnStyle] = useState<CSSProperties>(HIDDEN_BUTTON_STYLE)
+  const [undoing, setUndoing] = useState(false)
 
   useEffect(() => {
     if (!editMode) {
@@ -64,7 +65,7 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
 
         setEditBtnStyle({
           position: 'fixed',
-          top: rect.top + 12,
+          top: Math.max(12, rect.top + 12),
           left: Math.min(Math.max(12, rect.right - 12), window.innerWidth - 12),
           transform: 'translateX(-100%)',
           zIndex: 1300,
@@ -82,37 +83,60 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
       window.removeEventListener('scroll', update, true)
       window.removeEventListener('resize', update)
     }
-  }, [editMode, isActive, children])
+  }, [editMode, isActive, children, canUndoActiveSection])
+
+  const handleUndo = async () => {
+    if (!canUndoActiveSection || undoing) return
+    setUndoing(true)
+    try {
+      await undoActiveSection()
+    } finally {
+      setUndoing(false)
+    }
+  }
 
   const editButton =
     editMode && typeof document !== 'undefined'
       ? createPortal(
-          <button
-            type="button"
-            style={editBtnStyle}
-            className={`cms-section__edit cms-section__edit--portal ${isActive ? 'cms-section__edit--active' : ''}`}
-            onClick={() => toggleSection(id)}
-            aria-pressed={isActive}
-            aria-label={
-              isActive
-                ? `Exit editing ${label}. Click again to lock this section.`
-                : `Edit ${label}. Click again on this button to exit edit.`
-            }
-            title={
-              isActive
-                ? 'Click again to exit edit for this section'
-                : 'Click to edit · click again to exit'
-            }
-          >
-            <span className="cms-section__edit-main">
-              <Pencil size={14} aria-hidden="true" />
-              <span className="cms-section__edit-state">{isActive ? 'DONE' : 'EDIT'}</span>
-              <span className="cms-section__edit-label">{label}</span>
-            </span>
-            <span className="cms-section__edit-hint">
-              {isActive ? 'Click again to exit edit' : 'Click to edit · click again to exit'}
-            </span>
-          </button>,
+          <div className="cms-section__controls" style={editBtnStyle}>
+            {isActive && canUndoActiveSection ? (
+              <button
+                type="button"
+                className="cms-section__undo"
+                onClick={() => void handleUndo()}
+                disabled={undoing}
+                title="Undo all changes made in this section since you clicked EDIT"
+              >
+                <Undo2 size={14} aria-hidden="true" />
+                {undoing ? 'Undoing…' : 'Undo'}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={`cms-section__edit cms-section__edit--portal ${isActive ? 'cms-section__edit--active' : ''}`}
+              onClick={() => toggleSection(id)}
+              aria-pressed={isActive}
+              aria-label={
+                isActive
+                  ? `Exit editing ${label}. Click again to lock this section.`
+                  : `Edit ${label}. Click again on this button to exit edit.`
+              }
+              title={
+                isActive
+                  ? 'Click again to exit edit for this section'
+                  : 'Click to edit · click again to exit'
+              }
+            >
+              <span className="cms-section__edit-main">
+                <Pencil size={14} aria-hidden="true" />
+                <span className="cms-section__edit-state">{isActive ? 'DONE' : 'EDIT'}</span>
+                <span className="cms-section__edit-label">{label}</span>
+              </span>
+              <span className="cms-section__edit-hint">
+                {isActive ? 'Click again to exit edit' : 'Click to edit · click again to exit'}
+              </span>
+            </button>
+          </div>,
           document.body,
         )
       : null

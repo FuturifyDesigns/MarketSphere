@@ -30,6 +30,8 @@ type SiteContentContextValue = {
   getBlock: <T = unknown>(key: SiteContentKey) => T
   updateBlock: (key: SiteContentKey, value: unknown) => Promise<void>
   updateField: (key: SiteContentKey, path: string, value: unknown) => Promise<void>
+  getContentSnapshot: () => SiteContentMap
+  restoreContentSnapshot: (snapshot: SiteContentMap) => Promise<void>
 }
 
 const SiteContentContext = createContext<SiteContentContextValue | null>(null)
@@ -298,6 +300,19 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     [content, updateBlock],
   )
 
+  const getContentSnapshot = useCallback(() => structuredClone(content) as SiteContentMap, [content])
+
+  const restoreContentSnapshot = useCallback(
+    async (snapshot: SiteContentMap) => {
+      const keys = Object.keys(snapshot) as SiteContentKey[]
+      for (const key of keys) {
+        if (!(key in DEFAULT_SITE_CONTENT)) continue
+        await updateBlock(key, snapshot[key])
+      }
+    },
+    [updateBlock],
+  )
+
   const getBlock = useCallback(
     <T,>(key: SiteContentKey): T => {
       return normalizeBlock(key, content[key] ?? cloneDefaults()[key]) as T
@@ -313,8 +328,10 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
       getBlock,
       updateBlock,
       updateField,
+      getContentSnapshot,
+      restoreContentSnapshot,
     }),
-    [content, loading, isAdmin, getBlock, updateBlock, updateField],
+    [content, loading, isAdmin, getBlock, updateBlock, updateField, getContentSnapshot, restoreContentSnapshot],
   )
 
   return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>

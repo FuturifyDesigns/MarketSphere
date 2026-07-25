@@ -110,6 +110,7 @@ export function ServicesShowcase() {
       showToast('Keep at least one service card.', 'error')
       return
     }
+    if (!window.confirm('Remove this service card? You can Undo from the section controls if needed.')) return
     void persistItems(
       items.filter((item) => item.id !== id),
       'Service card removed.',
@@ -120,15 +121,23 @@ export function ServicesShowcase() {
     const root = rootRef.current
     if (!root || !canEditField) return
 
-    // Keep slides/copy hittable — do not revive the intro mega title over active slides.
-    gsap.set(root.querySelectorAll('.services-showcase__slide, .services-showcase__copy, .services-showcase__visual'), {
-      pointerEvents: 'auto',
-    })
+    gsap.set(
+      root.querySelectorAll(
+        '.services-showcase__slide, .services-showcase__copy, .services-showcase__visual, .services-showcase__title, .services-showcase__tagline, .services-showcase__desc, .services-showcase__cta',
+      ),
+      {
+        pointerEvents: 'auto',
+        autoAlpha: 1,
+        opacity: 1,
+        visibility: 'visible',
+        clearProps: 'transform',
+      },
+    )
   }, [canEditField, items.length])
 
   useEffect(() => {
     const root = rootRef.current
-    if (!root || items.length === 0) return
+    if (!root || items.length === 0 || canEditField) return
 
     let ctx: gsap.Context | undefined
     let belowFoldCleanup: (() => void) | undefined
@@ -366,10 +375,17 @@ export function ServicesShowcase() {
       belowFoldCleanup?.()
       ctx?.revert()
     }
-  }, [items.length])
+  }, [items.length, canEditField])
 
   return (
-    <EditableSection id="home-services-showcase" label="Services showcase" as="section" className="services-showcase" ref={rootRef} aria-label="Our services">
+    <EditableSection
+      id="home-services-showcase"
+      label="Services showcase"
+      as="section"
+      className={`services-showcase${canEditField ? ' services-showcase--cms-editing' : ''}`}
+      ref={rootRef}
+      aria-label="Our services"
+    >
       <div className="services-showcase__pin">
         <div className="services-showcase__bg-stack" aria-hidden="true">
           {items.map((service) => (
@@ -420,6 +436,17 @@ export function ServicesShowcase() {
                     >
                       <ArrowRight size={14} />
                     </EditableLink>
+                    {canEditField ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="services-showcase__remove-card services-showcase__remove-card--panel"
+                        onClick={() => removeService(service.id)}
+                      >
+                        Remove card
+                      </Button>
+                    ) : null}
                   </div>
                   <div className={`services-showcase__visual${canEditField ? ' services-showcase__visual--editing' : ''}`}>
                     <PosterTilt>
@@ -446,6 +473,8 @@ export function ServicesShowcase() {
                           label={service.image ? 'Replace photo' : 'Add photo here'}
                           variant="dropzone"
                           hint="Click this panel to place the service image"
+                          allowClear={Boolean(service.image)}
+                          clearLabel="Remove photo"
                         />
                         <div className="services-showcase__media-tools-row">
                           <EditableAsset
@@ -455,17 +484,9 @@ export function ServicesShowcase() {
                             uploadFolder="services"
                             accept="video/mp4,video/webm"
                             label="Upload video"
+                            allowClear={Boolean(service.video)}
+                            clearLabel="Remove video"
                           />
-                          {items.length > 1 ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => removeService(service.id)}
-                            >
-                              Remove card
-                            </Button>
-                          ) : null}
                         </div>
                       </div>
                     ) : null}
@@ -534,6 +555,8 @@ export function ServicesShowcase() {
                           label={service.image ? 'Replace photo' : 'Add photo here'}
                           variant="dropzone"
                           hint="Click this panel to place the service image"
+                          allowClear={Boolean(service.image)}
+                          clearLabel="Remove photo"
                         />
                         <div className="services-showcase__media-tools-row">
                           <EditableAsset
@@ -543,17 +566,9 @@ export function ServicesShowcase() {
                             uploadFolder="services"
                             accept="video/mp4,video/webm"
                             label="Upload video"
+                            allowClear={Boolean(service.video)}
+                            clearLabel="Remove video"
                           />
-                          {items.length > 1 ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => removeService(service.id)}
-                            >
-                              Remove card
-                            </Button>
-                          ) : null}
                         </div>
                       </div>
                     ) : null}
@@ -561,6 +576,17 @@ export function ServicesShowcase() {
                   <EditableText contentKey="services" path={`items.${i}.tagline`} as="p" className="services-showcase__tagline" />
                   <EditableText contentKey="services" path={`items.${i}.title`} as="h3" className="services-showcase__title" />
                   <EditableText contentKey="services" path={`items.${i}.description`} as="p" className="services-showcase__desc" multiline />
+                  {canEditField ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="services-showcase__remove-card services-showcase__remove-card--panel"
+                      onClick={() => removeService(service.id)}
+                    >
+                      Remove card
+                    </Button>
+                  ) : null}
                 </div>
               </article>
             )

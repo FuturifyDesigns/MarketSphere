@@ -127,11 +127,17 @@ function StaffNode({
             uploadFolder="staff"
             accept="image/jpeg,image/png,image/webp,image/gif"
             label="Change photo"
+            allowClear={Boolean(member.image)}
+            clearLabel="Remove photo"
           />
           {onRemove ? (
-            <button type="button" className="cms-editable__trigger" onClick={onRemove}>
+            <button
+              type="button"
+              className="services-showcase__remove-card services-showcase__remove-card--panel"
+              onClick={onRemove}
+            >
               <Trash2 size={12} />
-              Remove
+              Remove member
             </button>
           ) : null}
         </div>
