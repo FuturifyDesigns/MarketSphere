@@ -63,12 +63,22 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
           return
         }
 
+        const edgePad = 12
+        const editorBar = document.querySelector('.live-editor-bar')
+        const barBottom = editorBar?.getBoundingClientRect().bottom ?? 0
+        const minTop = Math.max(edgePad, barBottom + edgePad)
+        const maxTop = Math.max(minTop, window.innerHeight - edgePad - 72)
+        const top = Math.min(Math.max(minTop, rect.top + edgePad), maxTop)
+
+        // Anchor to the section's right edge, but keep the full control stack on-screen.
+        const desiredRight = Math.min(rect.right - edgePad, window.innerWidth - edgePad)
+        const right = Math.max(edgePad, window.innerWidth - desiredRight)
+
         setEditBtnStyle({
-          position: 'fixed',
-          top: Math.max(12, rect.top + 12),
-          left: Math.min(Math.max(12, rect.right - 12), window.innerWidth - 12),
-          transform: 'translateX(-100%)',
-          zIndex: 1300,
+          top,
+          right,
+          left: 'auto',
+          transform: 'none',
           display: 'inline-flex',
         })
       })
