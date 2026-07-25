@@ -370,23 +370,22 @@
   position: sticky;
   top: calc(var(--nav-height) + 0.65rem);
   height: calc(100svh - var(--nav-height) - 1.3rem);
-  display: flex;
-  justify-content: center;
-  align-items: center;
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 0.75rem clamp(1.25rem, 4vw, 2.5rem);
+  padding: 0;
   box-sizing: border-box;
 }
 
 .showcase-column-stage__frame {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
   display: flex;
-  align-self: center;
-  width: min(100%, 1120px);
-  height: auto;
-  max-height: calc(100svh - var(--nav-height) - 2.8rem);
+  width: min(calc(100% - clamp(2rem, 6vw, 4rem)), 1120px);
+  height: min(72svh, 680px);
+  max-height: calc(100% - 2rem);
 }
 
 .showcase-column-stage__rail {
@@ -415,8 +414,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: auto;
-  max-height: inherit;
+  height: 100%;
   margin: 0;
   overflow: hidden;
   text-decoration: none;
@@ -449,7 +447,7 @@
 
 .showcase-column-tile__media {
   position: relative;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
   display: grid;
   place-items: center;
@@ -461,9 +459,8 @@
 
 .showcase-column-tile__media img {
   width: 100%;
-  height: auto;
-  max-height: calc(100svh - var(--nav-height) - 9.5rem);
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   object-position: center;
   display: block;
   transition: filter 0.35s ease;
@@ -1213,22 +1210,20 @@
 
   .showcase-column-stage__sticky {
     height: calc(100svh - var(--nav-height) - 1rem);
-    justify-content: center;
-    align-items: center;
   }
 
   .showcase-column-stage__rail {
     display: none;
   }
 
-  .showcase-column-stage__frame,
+  .showcase-column-stage__frame {
+    width: min(calc(100% - 2rem), 1120px);
+    height: min(70svh, 620px);
+  }
+
   .showcase-column-tile {
     width: 100%;
     max-width: 100%;
-  }
-
-  .showcase-column-tile__media img {
-    max-height: calc(100svh - var(--nav-height) - 8.5rem);
   }
 
   .showcase-column-hero__cover-shade {
