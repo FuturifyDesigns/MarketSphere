@@ -654,49 +654,51 @@ export function Showcase() {
                 style={{ zIndex: i + 1 }}
               >
                 <div className="showcase-column-stage__atmosphere" aria-hidden="true" />
-                <div className="container showcase-column-stage__sticky">
-                  <div className="showcase-column-stage__rail" data-showcase-rail aria-hidden="true">
-                    <span>{String(i + 1).padStart(2, '0')}</span>
-                    <span>/</span>
-                    <span>{String(columns.length).padStart(2, '0')}</span>
-                  </div>
-                  <Link
-                    to={`/showcase/${column.slug}`}
-                    className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
-                    data-showcase-column
-                    onPointerMove={handlePointerMove}
-                    onPointerLeave={handlePointerLeave}
-                    onClick={(event) => openColumn(event, column.slug)}
-                  >
-                    <div className="showcase-column-tile__media">
-                      <img
-                        src={COLUMN_COVERS[column.slug]}
-                        alt={`${column.title} showcase`}
-                        loading={i < 2 ? 'eager' : 'lazy'}
-                        decoding="async"
-                        data-showcase-cover
-                      />
-                      <span className="showcase-column-tile__shine" />
+                <div className="showcase-column-stage__sticky">
+                  <div className="showcase-column-stage__frame">
+                    <div className="showcase-column-stage__rail" data-showcase-rail aria-hidden="true">
+                      <span>{String(i + 1).padStart(2, '0')}</span>
+                      <span>/</span>
+                      <span>{String(columns.length).padStart(2, '0')}</span>
                     </div>
-                    <div className="showcase-column-tile__footer">
-                      <span className="showcase-column-tile__icon">
-                        <ColumnIcon name={column.icon} />
-                      </span>
-                      <div className="showcase-column-tile__copy">
-                        <h3>{column.title}</h3>
-                        {column.tagline ? <p>{column.tagline}</p> : null}
+                    <Link
+                      to={`/showcase/${column.slug}`}
+                      className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
+                      data-showcase-column
+                      onPointerMove={handlePointerMove}
+                      onPointerLeave={handlePointerLeave}
+                      onClick={(event) => openColumn(event, column.slug)}
+                    >
+                      <div className="showcase-column-tile__media">
+                        <img
+                          src={COLUMN_COVERS[column.slug]}
+                          alt={`${column.title} showcase`}
+                          loading={i < 2 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          data-showcase-cover
+                        />
+                        <span className="showcase-column-tile__shine" />
                       </div>
-                      <span className="showcase-column-tile__meta">
-                        <span>
-                          {counts[column.id] || 0} live listing
-                          {(counts[column.id] || 0) === 1 ? '' : 's'}
+                      <div className="showcase-column-tile__footer">
+                        <span className="showcase-column-tile__icon">
+                          <ColumnIcon name={column.icon} />
                         </span>
-                        <span className="showcase-column-tile__arrow">
-                          <ArrowRight size={18} aria-hidden />
+                        <div className="showcase-column-tile__copy">
+                          <h3>{column.title}</h3>
+                          {column.tagline ? <p>{column.tagline}</p> : null}
+                        </div>
+                        <span className="showcase-column-tile__meta">
+                          <span>
+                            {counts[column.id] || 0} live listing
+                            {(counts[column.id] || 0) === 1 ? '' : 's'}
+                          </span>
+                          <span className="showcase-column-tile__arrow">
+                            <ArrowRight size={18} aria-hidden />
+                          </span>
                         </span>
-                      </span>
-                    </div>
-                  </Link>
+                      </div>
+                    </Link>
+                  </div>
                 </div>
               </article>
             ))}
