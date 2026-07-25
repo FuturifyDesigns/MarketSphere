@@ -1,8 +1,10 @@
 .app-toast {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 1400;
+  top: calc(var(--nav-height, 4.5rem) + 0.85rem);
+  right: 1.25rem;
+  bottom: auto;
+  left: auto;
+  z-index: 10050;
   max-width: min(380px, calc(100vw - 2rem));
   padding: 0.9rem 1.15rem;
   border-radius: 12px;
@@ -11,6 +13,11 @@
   line-height: 1.45;
   box-shadow: 0 16px 40px rgba(14, 17, 22, 0.24);
   animation: toast-in 0.28s ease;
+}
+
+/* Clear the sticky live-editor bar when it is open */
+html:has(.live-editor-bar) .app-toast {
+  top: calc(var(--nav-height, 4.5rem) + 6.5rem);
 }
 
 .app-toast--success {
@@ -34,7 +41,7 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
@@ -46,7 +53,11 @@
   .app-toast {
     left: 1rem;
     right: 1rem;
-    bottom: calc(1rem + env(safe-area-inset-bottom));
+    top: calc(var(--nav-height, 4.5rem) + 0.65rem);
     max-width: none;
+  }
+
+  html:has(.live-editor-bar) .app-toast {
+    top: calc(var(--nav-height, 4.5rem) + 8.5rem);
   }
 }
