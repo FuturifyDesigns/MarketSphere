@@ -10,9 +10,11 @@ import {
   collectErrors,
   FIELD_HINTS,
   hasErrors,
+  validateConfirmPassword,
   validatePassword,
   type FieldErrors,
 } from '../../lib/validation'
+import { useSubmitLock } from '../../hooks/useSubmitLock'
 import './ChangePasswordCard.css'
 
 type PasswordFields = 'password' | 'confirmPassword'
@@ -25,44 +27,41 @@ export function ChangePasswordCard() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<PasswordFields>>({})
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const { locked, runLocked } = useSubmitLock()
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    if (saving || locked) return
     setFormError('')
 
     const nextErrors = collectErrors<PasswordFields>([
       ['password', validatePassword(password)],
-      [
-        'confirmPassword',
-        !confirmPassword
-          ? 'Confirm your new password'
-          : password !== confirmPassword
-            ? 'Passwords do not match'
-            : null,
-      ],
+      ['confirmPassword', validateConfirmPassword(password, confirmPassword)],
     ])
     setFieldErrors(nextErrors)
     if (hasErrors(nextErrors)) return
 
-    setSaving(true)
-    try {
-      const { error } = await updatePassword(password)
-      if (error) {
-        setFormError(error.message || 'Could not update password.')
-        showToast(error.message || 'Could not update password.', 'error')
-        return
+    await runLocked(async () => {
+      setSaving(true)
+      try {
+        const { error } = await updatePassword(password)
+        if (error) {
+          setFormError(error.message || 'Could not update password.')
+          showToast(error.message || 'Could not update password.', 'error')
+          return
+        }
+        setPassword('')
+        setConfirmPassword('')
+        setFieldErrors({})
+        showToast('Password updated.')
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not update password.'
+        setFormError(message)
+        showToast(message, 'error')
+      } finally {
+        setSaving(false)
       }
-      setPassword('')
-      setConfirmPassword('')
-      setFieldErrors({})
-      showToast('Password updated.')
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not update password.'
-      setFormError(message)
-      showToast(message, 'error')
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   return (
@@ -110,7 +109,7 @@ export function ChangePasswordCard() {
           </p>
         ) : null}
 
-        <Button type="submit" size="lg" disabled={saving}>
+        <Button type="submit" size="lg" disabled={saving || locked}>
           {saving ? 'Updating…' : 'Update password'}
         </Button>
       </form>

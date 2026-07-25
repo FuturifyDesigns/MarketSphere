@@ -619,7 +619,7 @@ export function ProviderDashboard() {
   }
 
   const addService = async () => {
-    if (!provider) return
+    if (!provider || saving) return
     setSaveError('')
 
     const errors = collectErrors<ServiceFields>([
@@ -629,29 +629,34 @@ export function ProviderDashboard() {
     setServiceErrors(errors)
     if (hasErrors(errors)) return
 
-    const { data, error } = await supabase
-      .from('provider_services')
-      .insert({
-        provider_id: provider.id,
-        title: newService.title.trim(),
-        description: newService.description.trim() || null,
-        category_id: newService.category_id || null,
-      })
-      .select('*, categories(*)')
-      .single()
-    if (error) {
-      setSaveError('Could not add service. Please try again.')
-      showToast('Could not add service. Please try again.', 'error')
-      return
-    }
-    if (data) {
-      setProvider({
-        ...provider,
-        provider_services: [...(provider.provider_services || []), data],
-      })
-      setNewService({ title: '', description: '', category_id: '' })
-      setServiceErrors({})
-      showToast('Service added successfully.')
+    setSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('provider_services')
+        .insert({
+          provider_id: provider.id,
+          title: newService.title.trim(),
+          description: newService.description.trim() || null,
+          category_id: newService.category_id || null,
+        })
+        .select('*, categories(*)')
+        .single()
+      if (error) {
+        setSaveError('Could not add service. Please try again.')
+        showToast('Could not add service. Please try again.', 'error')
+        return
+      }
+      if (data) {
+        setProvider({
+          ...provider,
+          provider_services: [...(provider.provider_services || []), data],
+        })
+        setNewService({ title: '', description: '', category_id: '' })
+        setServiceErrors({})
+        showToast('Service added successfully.')
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -1026,7 +1031,9 @@ export function ProviderDashboard() {
                   error={serviceErrors.description}
                 />
                 {saveError && tab === 'services' && <p className="upload-error" role="alert">{saveError}</p>}
-                <Button onClick={() => void addService()}>Add Service</Button>
+                <Button onClick={() => void addService()} disabled={saving}>
+                  {saving ? 'Adding…' : 'Add Service'}
+                </Button>
               </div>
             ) : (
               <p className="dashboard-empty">Create your profile first.</p>

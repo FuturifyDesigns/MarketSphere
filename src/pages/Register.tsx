@@ -6,12 +6,14 @@ import { useToast } from '../context/ToastContext'
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
+import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import {
   clearFieldError,
   collectErrors,
   FIELD_HINTS,
   hasErrors,
   sanitizePersonName,
+  validateConfirmPassword,
   validateEmail,
   validateName,
   validatePassword,
@@ -27,16 +29,17 @@ import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import { useSubmitLock } from '../hooks/useSubmitLock'
 import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
+import { storeOAuthSignupIntent } from '../lib/oauthIntent'
 import './authTheme.css'
 import './Auth.css'
 
-type RegisterFields = 'full_name' | 'email' | 'phone' | 'password'
+type RegisterFields = 'full_name' | 'email' | 'phone' | 'password' | 'confirmPassword'
 const AUTH_RATE_LIMIT_MS = 8_000
 
 export function Register() {
   const pageRef = useRef<HTMLDivElement>(null)
   useAuthPageEnter(pageRef)
-  const { signUp } = useAuth()
+  const { signUp, signInWithGoogle } = useAuth()
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
   const defaultRole = searchParams.get('role') === 'provider' ? 'provider' : 'customer'
@@ -45,6 +48,7 @@ export function Register() {
     full_name: '',
     email: '',
     password: '',
+    confirmPassword: '',
     phoneCountry: '+267',
     phoneLocal: '',
     role: defaultRole,
@@ -53,6 +57,7 @@ export function Register() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [privacyConsent, setPrivacyConsent] = useState(false)
   const [consentError, setConsentError] = useState('')
   const { locked, runLocked } = useSubmitLock()
@@ -81,6 +86,7 @@ export function Register() {
       ['email', validateEmail(form.email)],
       ['phone', validatePhoneLocal(form.phoneLocal, true)],
       ['password', validatePassword(form.password)],
+      ['confirmPassword', validateConfirmPassword(form.password, form.confirmPassword)],
     ])
     setFieldErrors(errors)
     if (hasErrors(errors)) return
@@ -127,6 +133,29 @@ export function Register() {
         setLoading(false)
       }
     })
+  }
+
+  const handleGoogle = async () => {
+    if (loading || locked || googleLoading) return
+    setError('')
+    setConsentError('')
+
+    if (!privacyConsent) {
+      const msg = 'Please accept the Terms of Service and Privacy Policy to continue with Google.'
+      setConsentError(msg)
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
+
+    setGoogleLoading(true)
+    storeOAuthSignupIntent(form.role === 'provider' ? 'provider' : 'customer', true)
+    const { error: err } = await signInWithGoogle()
+    if (err) {
+      setGoogleLoading(false)
+      setError(err.message)
+      showToast(err.message, 'error')
+    }
   }
 
   if (success) {
@@ -211,6 +240,15 @@ export function Register() {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
+              <GoogleAuthButton
+                label={isProvider ? 'Sign up with Google as Provider' : 'Sign up with Google'}
+                loading={googleLoading}
+                disabled={loading || locked}
+                onClick={() => void handleGoogle()}
+              />
+              <div className="auth-divider" role="separator" aria-label="or">
+                <span>or</span>
+              </div>
               <Input
                 label="Full Name"
                 autoComplete="name"
@@ -249,6 +287,14 @@ export function Register() {
                   <PasswordStrengthBar password={form.password} />
                 </div>
               ) : null}
+              <PasswordInput
+                label="Confirm password"
+                autoComplete="new-password"
+                value={form.confirmPassword}
+                onChange={(e) => updateField('confirmPassword', e.target.value)}
+                hint={FIELD_HINTS.confirmPassword}
+                error={fieldErrors.confirmPassword}
+              />
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
@@ -285,7 +331,7 @@ export function Register() {
                   {consentError}
                 </p>
               ) : null}
-              <Button type="submit" size="lg" disabled={loading || locked || !privacyConsent}>
+              <Button type="submit" size="lg" disabled={loading || locked || googleLoading || !privacyConsent}>
                 {loading
                   ? 'Submitting application...'
                   : isProvider

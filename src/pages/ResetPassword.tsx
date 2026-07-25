@@ -102,7 +102,11 @@ export function ResetPassword() {
       ['password', validatePassword(password)],
       [
         'confirmPassword',
-        password !== confirmPassword ? 'Passwords do not match' : null,
+        !confirmPassword
+          ? 'Confirm your password'
+          : password !== confirmPassword
+            ? 'Passwords do not match'
+            : null,
       ],
     ])
     setFieldErrors(errors)
@@ -238,7 +242,7 @@ export function ResetPassword() {
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
-              <Button type="submit" size="lg" disabled={loading}>
+              <Button type="submit" size="lg" disabled={loading || locked}>
                 {loading ? 'Updating...' : 'Update Password'} <ArrowRight size={16} />
               </Button>
             </form>

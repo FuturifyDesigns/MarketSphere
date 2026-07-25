@@ -27,6 +27,7 @@ interface AuthContextType {
     },
   ) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<SignInResult>
+  signInWithGoogle: () => Promise<{ error: Error | null }>
   resetPasswordForEmail: (email: string) => Promise<{ error: Error | null }>
   updatePassword: (password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
@@ -245,6 +246,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getAuthRouteUrl('/auth/callback'),
+          queryParams: {
+            access_type: 'online',
+            prompt: 'select_account',
+          },
+        },
+      })
+      return { error: error as Error | null }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error : new Error('Google sign-in failed. Please try again.'),
+      }
+    }
+  }
+
   const resetPasswordForEmail = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -278,6 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signUp,
         signIn,
+        signInWithGoogle,
         resetPasswordForEmail,
         updatePassword,
         signOut,

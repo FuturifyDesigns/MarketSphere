@@ -12,6 +12,7 @@ import {
 import { COMPANY, LOGO_PATH } from '../lib/constants'
 import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
+import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import {
   clearFieldError,
   collectErrors,
@@ -35,7 +36,7 @@ const AUTH_RATE_LIMIT_MS = 5_000
 export function Login() {
   const pageRef = useRef<HTMLDivElement>(null)
   useAuthPageEnter(pageRef)
-  const { signIn } = useAuth()
+  const { signIn, signInWithGoogle } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [email, setEmail] = useState(() => getRememberedEmail())
@@ -44,7 +45,21 @@ export function Login() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors<LoginFields>>({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const { locked, runLocked } = useSubmitLock()
+
+  const handleGoogle = async () => {
+    if (loading || locked || googleLoading) return
+    setError('')
+    setGoogleLoading(true)
+    applyRememberMePreference(rememberMe, email.trim())
+    const { error: err } = await signInWithGoogle()
+    if (err) {
+      setGoogleLoading(false)
+      setError(err.message)
+      showToast(err.message, 'error')
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -134,6 +149,15 @@ export function Login() {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
+              <GoogleAuthButton
+                label="Continue with Google"
+                loading={googleLoading}
+                disabled={loading || locked}
+                onClick={() => void handleGoogle()}
+              />
+              <div className="auth-divider" role="separator" aria-label="or">
+                <span>or</span>
+              </div>
               <Input
                 label="Email"
                 type="email"
@@ -178,7 +202,7 @@ export function Login() {
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
-              <Button type="submit" size="lg" disabled={loading || locked}>
+              <Button type="submit" size="lg" disabled={loading || locked || googleLoading}>
                 {loading ? 'Signing in...' : 'Sign In'} <ArrowRight size={16} />
               </Button>
             </form>

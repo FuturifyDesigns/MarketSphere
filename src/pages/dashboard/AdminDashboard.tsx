@@ -102,6 +102,8 @@ export function AdminDashboard() {
   const [categoryErrors, setCategoryErrors] = useState<FieldErrors<CategoryFields>>({})
   const [testimonialErrors, setTestimonialErrors] = useState<FieldErrors<TestimonialFields>>({})
   const [formError, setFormError] = useState('')
+  const [categorySaving, setCategorySaving] = useState(false)
+  const [testimonialSaving, setTestimonialSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [banTarget, setBanTarget] = useState<Profile | null>(null)
   const [banReason, setBanReason] = useState('')
@@ -291,6 +293,7 @@ export function AdminDashboard() {
   }
 
   const addCategory = async () => {
+    if (categorySaving) return
     setFormError('')
     const slug = newCategory.slug.trim() || slugify(newCategory.name)
 
@@ -308,17 +311,22 @@ export function AdminDashboard() {
       description: newCategory.description.trim() || null,
     }
 
-    const { data, error } = await supabase.from('categories').insert(payload).select().single()
-    if (error || !data) {
-      setFormError('Could not add category. The slug may already exist.')
-      showToast('Could not add category.', 'error')
-      return
-    }
+    setCategorySaving(true)
+    try {
+      const { data, error } = await supabase.from('categories').insert(payload).select().single()
+      if (error || !data) {
+        setFormError('Could not add category. The slug may already exist.')
+        showToast('Could not add category.', 'error')
+        return
+      }
 
-    setCategories((current) => [...current, data])
-    setNewCategory({ name: '', slug: '', description: '' })
-    setCategoryErrors({})
-    showToast('Category added.')
+      setCategories((current) => [...current, data])
+      setNewCategory({ name: '', slug: '', description: '' })
+      setCategoryErrors({})
+      showToast('Category added.')
+    } finally {
+      setCategorySaving(false)
+    }
   }
 
   const deleteCategory = async (id: string) => {
@@ -333,6 +341,7 @@ export function AdminDashboard() {
   }
 
   const addTestimonial = async () => {
+    if (testimonialSaving) return
     setFormError('')
 
     const errors = collectErrors<TestimonialFields>([
@@ -343,28 +352,33 @@ export function AdminDashboard() {
     setTestimonialErrors(errors)
     if (hasErrors(errors)) return
 
-    const { data, error } = await supabase
-      .from('testimonials')
-      .insert({
-        client_name: newTestimonial.client_name.trim(),
-        content: newTestimonial.content.trim(),
-        service_type: newTestimonial.service_type.trim() || null,
-        rating: 5,
-        approved: true,
-      })
-      .select()
-      .single()
+    setTestimonialSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .insert({
+          client_name: newTestimonial.client_name.trim(),
+          content: newTestimonial.content.trim(),
+          service_type: newTestimonial.service_type.trim() || null,
+          rating: 5,
+          approved: true,
+        })
+        .select()
+        .single()
 
-    if (error || !data) {
-      setFormError('Could not add testimonial. Please try again.')
-      showToast('Could not add testimonial.', 'error')
-      return
+      if (error || !data) {
+        setFormError('Could not add testimonial. Please try again.')
+        showToast('Could not add testimonial.', 'error')
+        return
+      }
+
+      setTestimonials((current) => [data, ...current])
+      setNewTestimonial({ client_name: '', content: '', service_type: '' })
+      setTestimonialErrors({})
+      showToast('Testimonial added.')
+    } finally {
+      setTestimonialSaving(false)
     }
-
-    setTestimonials((current) => [data, ...current])
-    setNewTestimonial({ client_name: '', content: '', service_type: '' })
-    setTestimonialErrors({})
-    showToast('Testimonial added.')
   }
 
   const toggleTestimonial = async (id: string, approved: boolean) => {
@@ -778,7 +792,9 @@ export function AdminDashboard() {
                   error={categoryErrors.description}
                 />
                 {formError && tab === 'categories' ? <p className="upload-error" role="alert">{formError}</p> : null}
-                <Button onClick={() => void addCategory()}>Add category</Button>
+                <Button onClick={() => void addCategory()} disabled={categorySaving}>
+                  {categorySaving ? 'Adding…' : 'Add category'}
+                </Button>
               </div>
             </section>
           </div>
@@ -879,7 +895,9 @@ export function AdminDashboard() {
                   error={testimonialErrors.content}
                 />
                 {formError && tab === 'testimonials' ? <p className="upload-error" role="alert">{formError}</p> : null}
-                <Button onClick={() => void addTestimonial()}>Publish testimonial</Button>
+                <Button onClick={() => void addTestimonial()} disabled={testimonialSaving}>
+                  {testimonialSaving ? 'Publishing…' : 'Publish testimonial'}
+                </Button>
               </div>
             </section>
           </div>

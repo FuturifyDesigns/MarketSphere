@@ -141,7 +141,7 @@ export function ForgotPassword() {
               <div className="auth-form__feedback" aria-live="polite">
                 {error ? <p className="auth-error" role="alert">{error}</p> : null}
               </div>
-              <Button type="submit" size="lg" disabled={loading}>
+              <Button type="submit" size="lg" disabled={loading || locked}>
                 {loading ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={16} />
               </Button>
             </form>

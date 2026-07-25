@@ -26,7 +26,8 @@ export const FIELD_HINTS = {
   categorySlug: 'URL-friendly ID: lowercase letters, numbers, and hyphens.',
   categoryDescription: 'Optional short summary for this category.',
   clientName: 'First name or initials — letters only.',
-  testimonialContent: 'What the client said — at least 10 characters.',
+  testimonialContent: 'What the client said — 10–800 characters.',
+  confirmPassword: 'Re-enter the same password to confirm.',
   serviceType: 'Optional label, e.g. Academic Tuition.',
 } as const
 
@@ -278,7 +279,7 @@ export function validateCategoryName(value: string): ValidationResult {
 }
 
 export function validateTestimonialContent(value: string): ValidationResult {
-  const required = validateRequired(value, 'Testimonial', 10, 1000)
+  const required = validateRequired(value, 'Testimonial', 10, 800)
   if (required) return required
   if (isNumericOnly(trim(value))) return 'Testimonial cannot be only numbers'
   if (!hasLetters(trim(value))) return 'Testimonial must include text'
@@ -286,7 +287,27 @@ export function validateTestimonialContent(value: string): ValidationResult {
 }
 
 export function validateClientName(value: string): ValidationResult {
-  return validateName(value, 'Client name')
+  const required = validateRequired(value, 'Client name', 2, 80)
+  if (required) return required
+  const v = trim(value)
+  if (/\d/.test(v)) return 'Client name should not contain numbers'
+  if (!PERSON_NAME_RE.test(v)) {
+    return 'Client name can only include letters, spaces, hyphens, and apostrophes'
+  }
+  return null
+}
+
+export function validateConfirmPassword(password: string, confirm: string): ValidationResult {
+  if (!confirm) return 'Confirm your password'
+  if (password !== confirm) return 'Passwords do not match'
+  return null
+}
+
+export function validateBanReason(value: string): ValidationResult {
+  const required = validateRequired(value, 'Ban reason', 3, 500)
+  if (required) return required
+  if (!hasLetters(trim(value))) return 'Ban reason must include some text'
+  return null
 }
 
 export function validateServiceType(value: string): ValidationResult {

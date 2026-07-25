@@ -43,6 +43,7 @@ import type { Provider } from '../lib/types'
 import { getProviderPrimaryCategory } from '../lib/providerCategory'
 import { displayName, initialLetter } from '../lib/safe'
 import { useSubmitLock } from '../hooks/useSubmitLock'
+import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
 import './ProviderProfile.css'
 import '../components/ui/GallerySlideshow.css'
 
@@ -182,8 +183,16 @@ export function ProviderProfile() {
     setEnquiryErrors(errors)
     if (hasErrors(errors)) return
 
+    if (isClientRateLimited('enquiry-submit', 15_000)) {
+      const msg = clientRateLimitMessage(15_000)
+      setEnquiryError(msg)
+      showToast(msg, 'error')
+      return
+    }
+
     await runEnquiryLocked(async () => {
       setSubmittingEnquiry(true)
+      markClientRateLimited('enquiry-submit')
       try {
         const { error } = await supabase.from('enquiries').insert({
           customer_id: user.id,
