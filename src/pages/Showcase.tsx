@@ -438,39 +438,42 @@ export function Showcase() {
             '-=0.52',
           )
 
-        gsap.utils.toArray<HTMLElement>('[data-showcase-column]').forEach((tile, index) => {
-          const direction = index % 2 === 0 ? -1 : 1
+        const stages = gsap.utils.toArray<HTMLElement>('[data-showcase-stage]')
+        stages.forEach((stage, index) => {
+          const tile = stage.querySelector<HTMLElement>('[data-showcase-column]')
+          if (!tile) return
+
           gsap.fromTo(
             tile,
-            { autoAlpha: 0, y: 70, rotation: direction * 1.5 },
+            { autoAlpha: 0, y: 80, scale: 0.94 },
             {
               autoAlpha: 1,
               y: 0,
-              rotation: 0,
-              duration: 0.9,
+              scale: 1,
+              duration: 1,
               ease: 'power3.out',
               scrollTrigger: {
-                trigger: tile,
-                start: 'top 86%',
+                trigger: stage,
+                start: 'top 78%',
                 once: true,
               },
             },
           )
 
-          gsap.fromTo(
-            tile,
-            { '--scroll-y': '-8px' },
-            {
-              '--scroll-y': '8px',
+          if (index < stages.length - 1) {
+            gsap.to(tile, {
+              scale: 0.92,
+              autoAlpha: 0.42,
+              filter: 'blur(2px)',
               ease: 'none',
               scrollTrigger: {
-                trigger: tile,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.7,
+                trigger: stages[index + 1],
+                start: 'top 92%',
+                end: 'top 28%',
+                scrub: true,
               },
-            },
-          )
+            })
+          }
         })
 
         ScrollTrigger.refresh()
@@ -483,7 +486,7 @@ export function Showcase() {
       () => {
         gsap.set('[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-column]', {
           autoAlpha: 1,
-          clearProps: 'transform',
+          clearProps: 'transform,filter',
         })
       },
       root,
@@ -502,15 +505,11 @@ export function Showcase() {
     const y = ((event.clientY - bounds.top) / bounds.height) * 100
     event.currentTarget.style.setProperty('--pointer-x', `${x}%`)
     event.currentTarget.style.setProperty('--pointer-y', `${y}%`)
-    event.currentTarget.style.setProperty('--image-x', `${(x - 50) * -0.06}px`)
-    event.currentTarget.style.setProperty('--image-y', `${(y - 50) * -0.06}px`)
   }
 
   const handlePointerLeave = (event: ReactPointerEvent<HTMLAnchorElement>) => {
     event.currentTarget.style.setProperty('--pointer-x', '50%')
     event.currentTarget.style.setProperty('--pointer-y', '50%')
-    event.currentTarget.style.setProperty('--image-x', '0px')
-    event.currentTarget.style.setProperty('--image-y', '0px')
   }
 
   const openColumn = (
@@ -536,8 +535,8 @@ export function Showcase() {
 
     timeline
       .set(curtain, { display: 'grid', yPercent: 100 })
-      .to(card, { scale: 1.015, duration: 0.24, ease: 'power2.out' }, 0)
-      .to(cover, { scale: 1.09, duration: 0.45, ease: 'power2.inOut' }, 0)
+      .to(card, { scale: 1.01, duration: 0.24, ease: 'power2.out' }, 0)
+      .to(cover, { autoAlpha: 0.92, duration: 0.35, ease: 'power2.inOut' }, 0)
       .to(curtain, { yPercent: 0, duration: 0.52, ease: 'power4.inOut' }, 0.12)
   }
 
@@ -591,7 +590,7 @@ export function Showcase() {
               <span className="section-label">Choose your field</span>
               <h2>Explore the Showcase</h2>
             </div>
-            <p>Hover to discover. Select a field to see its current listings and opportunities.</p>
+            <p>Scroll to reveal each field, one by one. Open a card to see its live listings.</p>
           </div>
           {loading ? (
             <p className="showcase-status">Loading showcase…</p>
@@ -602,46 +601,55 @@ export function Showcase() {
           ) : (
             <div className="showcase-columns">
               {columns.map((column, i) => (
-                <Link
+                <article
                   key={column.id}
-                  to={`/showcase/${column.slug}`}
-                  className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
-                  data-showcase-column
-                  onPointerMove={handlePointerMove}
-                  onPointerLeave={handlePointerLeave}
-                  onClick={(event) => openColumn(event, column.slug)}
+                  className="showcase-column-stage"
+                  data-showcase-stage
+                  style={{ zIndex: i + 1 }}
                 >
-                  <div className="showcase-column-tile__media">
-                    <img
-                      src={COLUMN_COVERS[column.slug]}
-                      alt={`${column.title} showcase`}
-                      loading={i < 2 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      data-showcase-cover
-                    />
-                    <span className="showcase-column-tile__shine" />
-                    <span className="showcase-column-tile__number">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
+                  <div className="showcase-column-stage__rail" aria-hidden="true">
+                    <span>{String(i + 1).padStart(2, '0')}</span>
+                    <span>/</span>
+                    <span>{String(columns.length).padStart(2, '0')}</span>
                   </div>
-                  <div className="showcase-column-tile__footer">
-                    <span className="showcase-column-tile__icon">
-                      <ColumnIcon name={column.icon} />
-                    </span>
-                    <div className="showcase-column-tile__copy">
-                      <h3>{column.title}</h3>
-                      {column.tagline ? <p>{column.tagline}</p> : null}
+                  <Link
+                    to={`/showcase/${column.slug}`}
+                    className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
+                    data-showcase-column
+                    onPointerMove={handlePointerMove}
+                    onPointerLeave={handlePointerLeave}
+                    onClick={(event) => openColumn(event, column.slug)}
+                  >
+                    <div className="showcase-column-tile__media">
+                      <img
+                        src={COLUMN_COVERS[column.slug]}
+                        alt={`${column.title} showcase`}
+                        loading={i < 2 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        data-showcase-cover
+                      />
+                      <span className="showcase-column-tile__shine" />
                     </div>
-                    <span className="showcase-column-tile__meta">
-                      <span>
-                        {counts[column.id] || 0} live listing{(counts[column.id] || 0) === 1 ? '' : 's'}
+                    <div className="showcase-column-tile__footer">
+                      <span className="showcase-column-tile__icon">
+                        <ColumnIcon name={column.icon} />
                       </span>
-                      <span className="showcase-column-tile__arrow">
-                        <ArrowRight size={18} aria-hidden />
+                      <div className="showcase-column-tile__copy">
+                        <h3>{column.title}</h3>
+                        {column.tagline ? <p>{column.tagline}</p> : null}
+                      </div>
+                      <span className="showcase-column-tile__meta">
+                        <span>
+                          {counts[column.id] || 0} live listing
+                          {(counts[column.id] || 0) === 1 ? '' : 's'}
+                        </span>
+                        <span className="showcase-column-tile__arrow">
+                          <ArrowRight size={18} aria-hidden />
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                </Link>
+                    </div>
+                  </Link>
+                </article>
               ))}
             </div>
           )}
@@ -754,8 +762,8 @@ export function ShowcaseColumnPage() {
         timeline
           .fromTo(
             '[data-column-cover]',
-            { clipPath: 'inset(0 0 100% 0)', scale: 1.08 },
-            { clipPath: 'inset(0 0 0% 0)', scale: 1, duration: 1.05, ease: 'power4.inOut' },
+            { clipPath: 'inset(0 0 100% 0)' },
+            { clipPath: 'inset(0 0 0% 0)', duration: 1.05, ease: 'power4.inOut' },
           )
           .fromTo(
             '[data-column-copy] > *',
@@ -763,17 +771,6 @@ export function ShowcaseColumnPage() {
             { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.08 },
             '-=0.58',
           )
-
-        gsap.to('[data-column-cover] img', {
-          yPercent: 6,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '.showcase-column-hero',
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 0.8,
-          },
-        })
       },
       root,
     )

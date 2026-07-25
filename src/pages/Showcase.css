@@ -135,9 +135,10 @@
 .showcase-hero__mosaic-card img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 68% center;
+  object-fit: contain;
+  object-position: center;
   display: block;
+  background: #0d0b08;
 }
 
 .showcase-hero__mosaic-card--1 {
@@ -212,7 +213,7 @@
 }
 
 .showcase-columns-section {
-  padding: clamp(4rem, 8vw, 7rem) 0;
+  padding: clamp(3rem, 6vw, 5rem) 0 clamp(6rem, 12vw, 10rem);
 }
 
 .showcase-section-heading {
@@ -237,54 +238,88 @@
 }
 
 .showcase-columns {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28vh, 36vh, 42vh);
+}
+
+.showcase-column-stage {
+  position: sticky;
+  top: calc(var(--nav-height) + 0.65rem);
+  height: calc(100svh - var(--nav-height) - 1.3rem);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1.25rem, 3vw, 2rem);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  padding-bottom: 0.35rem;
+}
+
+.showcase-column-stage__rail {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 2.4rem;
+  color: var(--color-gold);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
 }
 
 .showcase-column-tile {
   --pointer-x: 50%;
   --pointer-y: 50%;
-  --image-x: 0px;
-  --image-y: 0px;
-  --scroll-y: 0px;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 1180px);
+  height: 100%;
+  margin-inline: auto;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
   border: 1px solid color-mix(in srgb, var(--card-border) 82%, #c9a24b);
-  border-radius: 22px;
-  background: var(--bg-elevated);
-  box-shadow: 0 12px 40px rgba(26, 21, 16, 0.06);
-  transform-origin: center;
+  border-radius: 24px;
+  background: #0f0c08;
+  box-shadow:
+    0 24px 70px rgba(26, 21, 16, 0.18),
+    0 0 0 1px rgba(201, 162, 75, 0.05);
+  transform-origin: center top;
   transition: border-color 0.3s ease, box-shadow 0.35s ease;
 }
 
 .showcase-column-tile:hover {
   border-color: rgba(201, 162, 75, 0.65);
-  box-shadow: 0 24px 60px rgba(26, 21, 16, 0.16);
+  box-shadow:
+    0 30px 80px rgba(26, 21, 16, 0.24),
+    0 0 0 1px rgba(201, 162, 75, 0.16);
 }
 
 .showcase-column-tile__media {
   position: relative;
-  aspect-ratio: 3 / 2;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  background: #0d0b08;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(201, 162, 75, 0.12), transparent 48%),
+    linear-gradient(180deg, #17120c 0%, #0b0906 100%);
 }
 
 .showcase-column-tile__media img {
   width: 100%;
-  height: 106%;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   display: block;
-  transform: translate3d(var(--image-x), calc(var(--image-y) + var(--scroll-y)), 0) scale(1.01);
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
-  will-change: transform;
+  transition: filter 0.35s ease;
 }
 
 .showcase-column-tile:hover .showcase-column-tile__media img {
-  transform: translate3d(var(--image-x), calc(var(--image-y) + var(--scroll-y)), 0) scale(1.055);
-  filter: saturate(1.08) contrast(1.02);
+  filter: saturate(1.05) contrast(1.02);
 }
 
 .showcase-column-tile__shine {
@@ -293,8 +328,8 @@
   opacity: 0;
   background: radial-gradient(
     circle at var(--pointer-x) var(--pointer-y),
-    rgba(255, 220, 139, 0.28),
-    transparent 24%
+    rgba(255, 220, 139, 0.22),
+    transparent 28%
   );
   mix-blend-mode: screen;
   transition: opacity 0.3s ease;
@@ -305,36 +340,16 @@
   opacity: 1;
 }
 
-.showcase-column-tile__number {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 50%;
-  background: rgba(8, 7, 5, 0.64);
-  backdrop-filter: blur(9px);
-  color: #f3cf76;
-  font: 650 0.72rem/1 var(--font-ui);
-  letter-spacing: 0.08em;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
-}
-
-.showcase-column-tile:hover .showcase-column-tile__number {
-  transform: rotate(12deg) scale(1.08);
-  background: #c9a24b;
-  color: #120e08;
-}
-
 .showcase-column-tile__footer {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.95rem;
-  padding: 1.15rem 1.2rem;
+  flex: 0 0 auto;
+  padding: 1rem 1.2rem 1.15rem;
+  border-top: 1px solid rgba(201, 162, 75, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 234, 0.98), rgba(248, 241, 228, 0.98));
 }
 
 .showcase-column-tile__icon {
@@ -365,15 +380,16 @@
 .showcase-column-tile__copy h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
   font-weight: 600;
   letter-spacing: -0.01em;
+  color: #17120c;
 }
 
 .showcase-column-tile__copy p {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: rgba(23, 18, 12, 0.68);
   line-height: 1.45;
 }
 
@@ -383,7 +399,7 @@
   gap: 0.7rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--color-gold);
+  color: #9a7528;
   white-space: nowrap;
 }
 
@@ -442,12 +458,16 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  background: #090704;
+  display: grid;
+  place-items: center;
 }
 
 .showcase-column-hero__cover img {
   width: 100%;
-  height: 112%;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 
@@ -1019,7 +1039,16 @@
   }
 
   .showcase-columns {
+    gap: 22vh;
+  }
+
+  .showcase-column-stage {
     grid-template-columns: 1fr;
+    height: calc(100svh - var(--nav-height) - 1rem);
+  }
+
+  .showcase-column-stage__rail {
+    display: none;
   }
 
   .showcase-column-hero__cover-shade {
@@ -1065,23 +1094,15 @@
 
   .showcase-column-tile__footer {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    padding: 0.9rem;
+    padding: 0.85rem 0.9rem;
   }
 
   .showcase-column-tile__copy p {
     display: none;
   }
 
-  .showcase-column-tile__media {
-    aspect-ratio: 3 / 2;
-  }
-
   .showcase-column-hero {
     min-height: 690px;
-  }
-
-  .showcase-column-hero__cover img {
-    object-position: 68% center;
   }
 
   .showcase-column-hero__cover-shade {
