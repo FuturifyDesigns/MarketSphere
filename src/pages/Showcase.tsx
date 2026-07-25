@@ -556,9 +556,21 @@ export function Showcase() {
 
     timeline
       .set(curtain, { display: 'grid', yPercent: 100 })
-      .to(frame, { scale: 1.01, duration: 0.24, ease: 'power2.out' }, 0)
-      .to(cover, { autoAlpha: 0.92, duration: 0.35, ease: 'power2.inOut' }, 0)
-      .to(curtain, { yPercent: 0, duration: 0.52, ease: 'power4.inOut' }, 0.12)
+      .to(
+        frame,
+        {
+          keyframes: {
+            x: [0, -12, 10, -7, 5, -2, 0],
+            rotation: [0, -0.7, 0.6, -0.4, 0.28, -0.1, 0],
+            scale: [1, 1.008, 1.014, 1.018, 1.02, 1.02, 1.02],
+            easeEach: 'sine.inOut',
+          },
+          duration: 0.5,
+        },
+        0,
+      )
+      .to(cover, { autoAlpha: 0.92, duration: 0.4, ease: 'power2.inOut' }, 0.1)
+      .to(curtain, { yPercent: 0, duration: 0.52, ease: 'power4.inOut' }, 0.34)
   }
 
   return (
@@ -579,9 +591,6 @@ export function Showcase() {
               Explore properties, programmes, projects and opportunities across Botswana — curated
               by Market Sphere Group.
             </p>
-            <a href="#showcase-columns" className="showcase-hero__explore">
-              Explore all fields <ArrowRight size={17} />
-            </a>
           </div>
 
           <div className="showcase-hero__mosaic">
@@ -853,9 +862,6 @@ export function ShowcaseColumnPage() {
             </div>
             {column.tagline ? <p className="lead">{column.tagline}</p> : null}
             {column.description ? <p className="showcase-column-hero__desc">{column.description}</p> : null}
-            <a href="#live-listings" className="showcase-column-hero__cta">
-              View live listings <ArrowRight size={16} />
-            </a>
           </div>
         </div>
       </section>
