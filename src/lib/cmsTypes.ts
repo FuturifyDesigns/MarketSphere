@@ -60,11 +60,28 @@ export function createHomeStat(): import('./siteContentDefaults').HomeStat {
   }
 }
 
+export function createStaffMember(): {
+  id: string
+  name: string
+  role: string
+  phone: string
+  image: string
+} {
+  return {
+    id: `staff-${crypto.randomUUID()}`,
+    name: 'New team member',
+    role: 'Role / title',
+    phone: '',
+    image: '',
+  }
+}
+
 export const PAGE_CONTENT_KEYS: SiteContentKey[] = [
   'home',
   'about',
   'services',
   'contact',
   'faq',
+  'showcase',
   'company',
 ]

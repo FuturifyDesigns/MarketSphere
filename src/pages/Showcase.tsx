@@ -31,6 +31,7 @@ import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
+import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { Button } from '../components/ui/Button'
 import './Showcase.css'
 
@@ -726,6 +727,11 @@ export function Showcase() {
           </div>
         )}
       </section>
+      <EditableSection id="showcase-extra" label="Extra sections" as="div" className="section">
+        <div className="container">
+          <CmsExtraSections contentKey="showcase" />
+        </div>
+      </EditableSection>
       <div ref={curtainRef} className="showcase-transition-curtain" aria-hidden="true">
         <span>Entering the field</span>
       </div>

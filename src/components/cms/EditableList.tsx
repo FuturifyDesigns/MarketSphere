@@ -69,6 +69,9 @@ export function EditableList<T extends { id: string }>({
             <Plus size={14} />
             Add item
           </Button>
+          <p className="cms-list-edit__hint">
+            Click section <strong>DONE</strong> when finished editing this list.
+          </p>
         </div>
       ) : null}
     </div>

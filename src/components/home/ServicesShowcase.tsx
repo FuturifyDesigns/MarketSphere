@@ -9,6 +9,7 @@ import { markServicesShowcaseReady } from '../../lib/servicesShowcaseReady'
 import { initBelowFoldSections } from '../../animations/belowFoldReveal'
 import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
 import { isCmsEditActive } from '../../lib/cmsEditMode'
+import { createMarketingService } from '../../lib/cmsTypes'
 import { useSiteContent } from '../../context/SiteContentContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableSection } from '../cms/EditableSection'
@@ -16,6 +17,8 @@ import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
 import { EditableAsset } from '../cms/EditableAsset'
 import { useSiteEdit } from '../../context/SiteEditContext'
+import { useToast } from '../../context/ToastContext'
+import { Button } from '../ui/Button'
 import './ServicesShowcase.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -85,11 +88,33 @@ function setSlideHidden(slide: HTMLElement, isRight: boolean) {
 
 export function ServicesShowcase() {
   const rootRef = useRef<HTMLElement>(null)
-  const { getBlock } = useSiteContent()
+  const { getBlock, updateField } = useSiteContent()
   const { editMode, isSectionActive } = useSiteEdit()
+  const { showToast } = useToast()
   const canEditField = editMode && isSectionActive('home-services-showcase')
   const servicesBlock = getBlock<{ items: MarketingService[] }>('services')
   const items = servicesBlock.items || []
+
+  const persistItems = async (next: MarketingService[], message: string) => {
+    try {
+      await updateField('services', 'items', next)
+      showToast(message)
+    } catch {
+      showToast('Could not save service cards.', 'error')
+    }
+  }
+
+  const addService = () => void persistItems([...items, createMarketingService()], 'Service card added — edit text and photo below.')
+  const removeService = (id: string) => {
+    if (items.length <= 1) {
+      showToast('Keep at least one service card.', 'error')
+      return
+    }
+    void persistItems(
+      items.filter((item) => item.id !== id),
+      'Service card removed.',
+    )
+  }
 
   useEffect(() => {
     const root = rootRef.current
@@ -424,6 +449,16 @@ export function ServicesShowcase() {
                           accept="video/mp4,video/webm"
                           label="Upload video"
                         />
+                        {items.length > 1 ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => removeService(service.id)}
+                          >
+                            Remove card
+                          </Button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -494,6 +529,16 @@ export function ServicesShowcase() {
                           accept="video/mp4,video/webm"
                           label="Upload video"
                         />
+                        {items.length > 1 ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => removeService(service.id)}
+                          >
+                            Remove card
+                          </Button>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -506,6 +551,17 @@ export function ServicesShowcase() {
           })}
         </div>
       </div>
+
+      {canEditField ? (
+        <div className="container cms-list-edit__add services-showcase__cms-add">
+          <Button type="button" size="sm" variant="secondary" onClick={addService}>
+            Add service card
+          </Button>
+          <p className="cms-list-edit__hint">
+            New cards appear in this showcase and on the Services page. Click section <strong>DONE</strong> when finished.
+          </p>
+        </div>
+      ) : null}
     </EditableSection>
   )
 }

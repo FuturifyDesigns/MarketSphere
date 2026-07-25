@@ -116,11 +116,44 @@
     inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
   color: inherit;
   text-align: center;
-  cursor: pointer;
   transition:
     border-color 0.25s ease,
     transform 0.25s ease,
     box-shadow 0.25s ease;
+}
+
+.staff-tree__node-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.staff-tree__node-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.staff-tree__photo--empty {
+  background:
+    radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--color-gold) 35%, transparent), transparent 55%),
+    var(--color-night);
+}
+
+.staff-tree__empty {
+  margin: 1.5rem 0;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .staff-tree__node:hover {

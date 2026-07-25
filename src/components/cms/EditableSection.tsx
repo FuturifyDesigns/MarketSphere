@@ -93,10 +93,25 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
             className={`cms-section__edit cms-section__edit--portal ${isActive ? 'cms-section__edit--active' : ''}`}
             onClick={() => toggleSection(id)}
             aria-pressed={isActive}
+            aria-label={
+              isActive
+                ? `Exit editing ${label}. Click again to lock this section.`
+                : `Edit ${label}. Click again on this button to exit edit.`
+            }
+            title={
+              isActive
+                ? 'Click again to exit edit for this section'
+                : 'Click to edit · click again to exit'
+            }
           >
-            <Pencil size={14} aria-hidden="true" />
-            EDIT
-            <span className="cms-section__edit-label">{label}</span>
+            <span className="cms-section__edit-main">
+              <Pencil size={14} aria-hidden="true" />
+              <span className="cms-section__edit-state">{isActive ? 'DONE' : 'EDIT'}</span>
+              <span className="cms-section__edit-label">{label}</span>
+            </span>
+            <span className="cms-section__edit-hint">
+              {isActive ? 'Click again to exit edit' : 'Click to edit · click again to exit'}
+            </span>
           </button>,
           document.body,
         )

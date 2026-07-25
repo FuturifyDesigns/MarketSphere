@@ -5,6 +5,7 @@ import { initServicesPageShowcase } from '../../animations/servicesPageReveal'
 import { createMarketingService } from '../../lib/cmsTypes'
 import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
+import { useToast } from '../../context/ToastContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
@@ -29,8 +30,18 @@ export function ServicesPageShowcase() {
   const rootRef = useRef<HTMLElement>(null)
   const { getBlock, updateField } = useSiteContent()
   const canEditField = useSectionFieldEdit()
+  const { showToast } = useToast()
   const services = getBlock<ServicesBlock>('services')
   const items = services.items || []
+
+  const persistItems = async (next: MarketingService[], message: string) => {
+    try {
+      await updateField('services', 'items', next)
+      showToast(message)
+    } catch {
+      showToast('Could not save service cards.', 'error')
+    }
+  }
 
   useEffect(() => {
     const root = rootRef.current
@@ -132,6 +143,21 @@ export function ServicesPageShowcase() {
                             accept="video/mp4,video/webm"
                             label="Upload video"
                           />
+                          {items.length > 1 ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              onClick={() =>
+                                void persistItems(
+                                  items.filter((row) => row.id !== service.id),
+                                  'Service card removed.',
+                                )
+                              }
+                            >
+                              Remove card
+                            </Button>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -163,20 +189,13 @@ export function ServicesPageShowcase() {
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => void updateField('services', 'items', [...items, createMarketingService()])}
+            onClick={() => void persistItems([...items, createMarketingService()], 'Service card added.')}
           >
-            Add service
+            Add service card
           </Button>
-          {items.length > 1 ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => void updateField('services', 'items', items.slice(0, -1))}
-            >
-              Remove last service
-            </Button>
-          ) : null}
+          <p className="cms-list-edit__hint">
+            Cards sync with the homepage services showcase. Click section <strong>DONE</strong> when finished editing.
+          </p>
         </div>
       ) : null}
     </section>

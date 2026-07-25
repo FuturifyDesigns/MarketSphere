@@ -122,6 +122,9 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
 
       {canEdit ? (
         <div className="cms-extra-sections__add">
+          <p className="cms-list-edit__hint">
+            Add a new block to this page. Click section <strong>DONE</strong> when finished.
+          </p>
           <Button type="button" size="sm" variant="secondary" onClick={() => void persist([...sections, createExtraSection('content')])}>
             <Plus size={14} />
             Add content section

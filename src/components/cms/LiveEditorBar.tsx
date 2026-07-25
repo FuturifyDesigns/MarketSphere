@@ -45,7 +45,10 @@ export function LiveEditorBar() {
         </div>
       </div>
       <p className="live-editor-bar__hint container">
-        Click <strong>EDIT</strong> on any section, then click highlighted text to update it.
+        1) Click <strong>EDIT</strong> on a section to unlock its fields.
+        2) Click highlighted text, photos, or <strong>Add</strong> buttons to change content.
+        3) Click the same button again (<strong>DONE</strong>) to exit that section — or use{' '}
+        <strong>Exit editor</strong> above to leave live editing entirely.
       </p>
     </div>
   )
@@ -61,9 +64,13 @@ export function LiveEditorEntry() {
       type="button"
       className="live-editor-entry"
       onClick={() => setEditMode(true)}
+      title="Opens live editing. Use EDIT on each section, then click the same button again to exit that section."
     >
       <Pencil size={15} />
-      Edit live website
+      <span className="live-editor-entry__copy">
+        <strong>Edit live website</strong>
+        <span className="live-editor-entry__hint">Click section EDIT · click again to exit</span>
+      </span>
     </button>
   )
 }
