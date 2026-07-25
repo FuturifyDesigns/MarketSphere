@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { SHOWCASE_DEAL_LABELS, showcaseContactMailto, showcaseWhatsAppLink } from '../lib/showcase'
+import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
 import { Button } from '../components/ui/Button'
@@ -426,68 +427,105 @@ export function Showcase() {
     const mm = gsap.matchMedia()
 
     mm.add(
-      '(prefers-reduced-motion: no-preference)',
-      () => {
-        const heroTimeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
-        heroTimeline
-          .fromTo('[data-showcase-hero-copy]', { autoAlpha: 0, y: 34 }, { autoAlpha: 1, y: 0, duration: 0.85 })
-          .fromTo(
-            '[data-showcase-mosaic-card]',
-            { autoAlpha: 0, y: 44, rotation: (index) => (index - 1) * 4 },
-            { autoAlpha: 1, y: 0, rotation: 0, duration: 0.8, stagger: 0.1 },
-            '-=0.52',
-          )
+      {
+        isMotionOk: '(prefers-reduced-motion: no-preference)',
+        reduceMotion: '(prefers-reduced-motion: reduce)',
+      },
+      (context) => {
+        const { isMotionOk, reduceMotion } = context.conditions!
 
-        const stages = gsap.utils.toArray<HTMLElement>('[data-showcase-stage]')
+        if (reduceMotion) {
+          gsap.set(
+            '[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-heading], [data-showcase-column], [data-showcase-rail]',
+            { autoAlpha: 1, clearProps: 'transform' },
+          )
+          return
+        }
+
+        if (!isMotionOk) return
+
+        const heroCopy = root.querySelectorAll<HTMLElement>('[data-showcase-hero-copy] > *')
+        const mosaic = root.querySelectorAll<HTMLElement>('[data-showcase-mosaic-card]')
+        const heading = root.querySelectorAll<HTMLElement>('[data-showcase-heading] > *')
+
+        gsap.set(heroCopy, { autoAlpha: 0, y: 28 })
+        gsap.set(mosaic, { autoAlpha: 0, y: 36 })
+        gsap.set(heading, { autoAlpha: 0, y: 24 })
+
+        gsap
+          .timeline({ defaults: { ease: 'power3.out' } })
+          .to(heroCopy, { autoAlpha: 1, y: 0, duration: 0.85, stagger: 0.1 })
+          .to(mosaic, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, '-=0.5')
+
+        gsap.to(heading, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.12,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: '[data-showcase-heading]',
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          },
+        })
+
+        const stages = gsap.utils.toArray<HTMLElement>('[data-showcase-stage]', root)
+
         stages.forEach((stage, index) => {
           const tile = stage.querySelector<HTMLElement>('[data-showcase-column]')
+          const media = stage.querySelector<HTMLElement>('.showcase-column-tile__media')
+          const footer = stage.querySelector<HTMLElement>('.showcase-column-tile__footer')
+          const rail = stage.querySelector<HTMLElement>('[data-showcase-rail]')
           if (!tile) return
 
-          gsap.fromTo(
-            tile,
-            { autoAlpha: 0, y: 80, scale: 0.94 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              scale: 1,
-              duration: 1,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: stage,
-                start: 'top 78%',
-                once: true,
-              },
+          gsap.set(tile, { transformOrigin: '50% 50%', autoAlpha: 0, y: 64, scale: 0.96 })
+          if (media) gsap.set(media, { autoAlpha: 0, y: 28 })
+          if (footer) gsap.set(footer, { autoAlpha: 0, y: 18 })
+          if (rail) gsap.set(rail, { autoAlpha: 0, x: -12 })
+
+          const fadeIn = gsap.timeline({
+            defaults: { ease: 'power3.out' },
+            scrollTrigger: {
+              trigger: stage,
+              start: 'top 78%',
+              toggleActions: 'play none none reverse',
+              invalidateOnRefresh: true,
             },
-          )
+          })
+
+          fadeIn.to(tile, { autoAlpha: 1, y: 0, scale: 1, duration: 1.05 })
+          if (media) fadeIn.to(media, { autoAlpha: 1, y: 0, duration: 0.95 }, 0.12)
+          if (footer) fadeIn.to(footer, { autoAlpha: 1, y: 0, duration: 0.8 }, 0.24)
+          if (rail) fadeIn.to(rail, { autoAlpha: 1, x: 0, duration: 0.65 }, 0.18)
 
           if (index < stages.length - 1) {
             gsap.to(tile, {
-              scale: 0.92,
-              autoAlpha: 0.42,
-              filter: 'blur(2px)',
+              scale: 0.94,
               ease: 'none',
               scrollTrigger: {
                 trigger: stages[index + 1],
-                start: 'top 92%',
-                end: 'top 28%',
-                scrub: true,
+                start: 'top 90%',
+                end: 'top 40%',
+                scrub: 1.2,
+                invalidateOnRefresh: true,
               },
             })
           }
         })
 
-        ScrollTrigger.refresh()
-      },
-      root,
-    )
-
-    mm.add(
-      '(prefers-reduced-motion: reduce)',
-      () => {
-        gsap.set('[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-column]', {
-          autoAlpha: 1,
-          clearProps: 'transform,filter',
+        const images = root.querySelectorAll<HTMLImageElement>('[data-showcase-cover]')
+        const onImageReady = () => flushScrollRefresh()
+        images.forEach((img) => {
+          if (img.complete) return
+          img.addEventListener('load', onImageReady, { once: true })
         })
+
+        flushScrollRefresh()
+
+        return () => {
+          images.forEach((img) => img.removeEventListener('load', onImageReady))
+        }
       },
       root,
     )
@@ -585,7 +623,7 @@ export function Showcase() {
 
       <section id="showcase-columns" className="section showcase-columns-section">
         <div className="container">
-          <div className="showcase-section-heading">
+          <div className="showcase-section-heading" data-showcase-heading>
             <div>
               <span className="section-label">Choose your field</span>
               <h2>Explore the Showcase</h2>
@@ -603,52 +641,54 @@ export function Showcase() {
               {columns.map((column, i) => (
                 <article
                   key={column.id}
-                  className="showcase-column-stage"
+                  className={`showcase-column-stage${i === columns.length - 1 ? ' showcase-column-stage--last' : ''}`}
                   data-showcase-stage
                   style={{ zIndex: i + 1 }}
                 >
-                  <div className="showcase-column-stage__rail" aria-hidden="true">
-                    <span>{String(i + 1).padStart(2, '0')}</span>
-                    <span>/</span>
-                    <span>{String(columns.length).padStart(2, '0')}</span>
-                  </div>
-                  <Link
-                    to={`/showcase/${column.slug}`}
-                    className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
-                    data-showcase-column
-                    onPointerMove={handlePointerMove}
-                    onPointerLeave={handlePointerLeave}
-                    onClick={(event) => openColumn(event, column.slug)}
-                  >
-                    <div className="showcase-column-tile__media">
-                      <img
-                        src={COLUMN_COVERS[column.slug]}
-                        alt={`${column.title} showcase`}
-                        loading={i < 2 ? 'eager' : 'lazy'}
-                        decoding="async"
-                        data-showcase-cover
-                      />
-                      <span className="showcase-column-tile__shine" />
+                  <div className="showcase-column-stage__sticky">
+                    <div className="showcase-column-stage__rail" data-showcase-rail aria-hidden="true">
+                      <span>{String(i + 1).padStart(2, '0')}</span>
+                      <span>/</span>
+                      <span>{String(columns.length).padStart(2, '0')}</span>
                     </div>
-                    <div className="showcase-column-tile__footer">
-                      <span className="showcase-column-tile__icon">
-                        <ColumnIcon name={column.icon} />
-                      </span>
-                      <div className="showcase-column-tile__copy">
-                        <h3>{column.title}</h3>
-                        {column.tagline ? <p>{column.tagline}</p> : null}
+                    <Link
+                      to={`/showcase/${column.slug}`}
+                      className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
+                      data-showcase-column
+                      onPointerMove={handlePointerMove}
+                      onPointerLeave={handlePointerLeave}
+                      onClick={(event) => openColumn(event, column.slug)}
+                    >
+                      <div className="showcase-column-tile__media">
+                        <img
+                          src={COLUMN_COVERS[column.slug]}
+                          alt={`${column.title} showcase`}
+                          loading={i < 2 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          data-showcase-cover
+                        />
+                        <span className="showcase-column-tile__shine" />
                       </div>
-                      <span className="showcase-column-tile__meta">
-                        <span>
-                          {counts[column.id] || 0} live listing
-                          {(counts[column.id] || 0) === 1 ? '' : 's'}
+                      <div className="showcase-column-tile__footer">
+                        <span className="showcase-column-tile__icon">
+                          <ColumnIcon name={column.icon} />
                         </span>
-                        <span className="showcase-column-tile__arrow">
-                          <ArrowRight size={18} aria-hidden />
+                        <div className="showcase-column-tile__copy">
+                          <h3>{column.title}</h3>
+                          {column.tagline ? <p>{column.tagline}</p> : null}
+                        </div>
+                        <span className="showcase-column-tile__meta">
+                          <span>
+                            {counts[column.id] || 0} live listing
+                            {(counts[column.id] || 0) === 1 ? '' : 's'}
+                          </span>
+                          <span className="showcase-column-tile__arrow">
+                            <ArrowRight size={18} aria-hidden />
+                          </span>
                         </span>
-                      </span>
-                    </div>
-                  </Link>
+                      </div>
+                    </Link>
+                  </div>
                 </article>
               ))}
             </div>
