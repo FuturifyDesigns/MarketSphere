@@ -436,7 +436,7 @@ export function Showcase() {
 
         if (reduceMotion) {
           gsap.set(
-            '[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-heading], [data-showcase-column], [data-showcase-rail]',
+            '[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-heading], [data-showcase-column], [data-showcase-stage-heading]',
             { autoAlpha: 1, clearProps: 'transform' },
           )
           return
@@ -476,13 +476,13 @@ export function Showcase() {
           const tile = stage.querySelector<HTMLElement>('[data-showcase-column]')
           const media = stage.querySelector<HTMLElement>('.showcase-column-tile__media')
           const footer = stage.querySelector<HTMLElement>('.showcase-column-tile__footer')
-          const rail = stage.querySelector<HTMLElement>('[data-showcase-rail]')
+          const stageHeading = stage.querySelector<HTMLElement>('[data-showcase-stage-heading]')
           if (!tile) return
 
           gsap.set(tile, { transformOrigin: '50% 50%', autoAlpha: 0, y: 64, scale: 0.96 })
           if (media) gsap.set(media, { autoAlpha: 0, y: 28 })
           if (footer) gsap.set(footer, { autoAlpha: 0, y: 18 })
-          if (rail) gsap.set(rail, { autoAlpha: 0, x: -12 })
+          if (stageHeading) gsap.set(stageHeading, { autoAlpha: 0, y: 22 })
 
           const fadeIn = gsap.timeline({
             defaults: { ease: 'power3.out' },
@@ -494,10 +494,10 @@ export function Showcase() {
             },
           })
 
-          fadeIn.to(tile, { autoAlpha: 1, y: 0, scale: 1, duration: 1.05 })
+          if (stageHeading) fadeIn.to(stageHeading, { autoAlpha: 1, y: 0, duration: 0.75 }, 0)
+          fadeIn.to(tile, { autoAlpha: 1, y: 0, scale: 1, duration: 1.05 }, 0.08)
           if (media) fadeIn.to(media, { autoAlpha: 1, y: 0, duration: 0.95 }, 0.12)
           if (footer) fadeIn.to(footer, { autoAlpha: 1, y: 0, duration: 0.8 }, 0.24)
-          if (rail) fadeIn.to(rail, { autoAlpha: 1, x: 0, duration: 0.65 }, 0.18)
 
           if (index < stages.length - 1) {
             gsap.to(tile, {
@@ -655,12 +655,13 @@ export function Showcase() {
               >
                 <div className="showcase-column-stage__atmosphere" aria-hidden="true" />
                 <div className="showcase-column-stage__sticky">
+                  <div className="showcase-column-stage__heading" data-showcase-stage-heading>
+                    <span className="showcase-column-stage__index">
+                      Field {String(i + 1).padStart(2, '0')} of {String(columns.length).padStart(2, '0')}
+                    </span>
+                    <h3 className="showcase-column-stage__title">{column.title}</h3>
+                  </div>
                   <div className="showcase-column-stage__frame">
-                    <div className="showcase-column-stage__rail" data-showcase-rail aria-hidden="true">
-                      <span>{String(i + 1).padStart(2, '0')}</span>
-                      <span>/</span>
-                      <span>{String(columns.length).padStart(2, '0')}</span>
-                    </div>
                     <Link
                       to={`/showcase/${column.slug}`}
                       className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
@@ -684,8 +685,9 @@ export function Showcase() {
                           <ColumnIcon name={column.icon} />
                         </span>
                         <div className="showcase-column-tile__copy">
-                          <h3>{column.title}</h3>
-                          {column.tagline ? <p>{column.tagline}</p> : null}
+                          <p className="showcase-column-tile__lede">
+                            {column.tagline || `Explore ${column.title}`}
+                          </p>
                         </div>
                         <span className="showcase-column-tile__meta">
                           <span>
