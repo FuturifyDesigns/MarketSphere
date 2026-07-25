@@ -18,6 +18,7 @@ import { EditableLink } from '../cms/EditableLink'
 import { EditableAsset } from '../cms/EditableAsset'
 import { useSiteEdit } from '../../context/SiteEditContext'
 import { useToast } from '../../context/ToastContext'
+import { useConfirm } from '../../context/ConfirmContext'
 import { Button } from '../ui/Button'
 import './ServicesShowcase.css'
 
@@ -91,6 +92,7 @@ export function ServicesShowcase() {
   const { getBlock, updateField } = useSiteContent()
   const { editMode, isSectionActive } = useSiteEdit()
   const { showToast } = useToast()
+  const { confirm } = useConfirm()
   const canEditField = editMode && isSectionActive('home-services-showcase')
   const servicesBlock = getBlock<{ items: MarketingService[] }>('services')
   const items = servicesBlock.items || []
@@ -105,12 +107,20 @@ export function ServicesShowcase() {
   }
 
   const addService = () => void persistItems([...items, createMarketingService()], 'Service card added — edit text and photo below.')
-  const removeService = (id: string) => {
+  const removeService = async (id: string) => {
     if (items.length <= 1) {
       showToast('Keep at least one service card.', 'error')
       return
     }
-    if (!window.confirm('Remove this service card? You can Undo from the section controls if needed.')) return
+    const ok = await confirm({
+      title: 'Remove service card?',
+      message:
+        'This removes the card from the home and services showcase. You can Undo from the section controls if needed.',
+      confirmLabel: 'Remove card',
+      cancelLabel: 'Keep card',
+      tone: 'danger',
+    })
+    if (!ok) return
     void persistItems(
       items.filter((item) => item.id !== id),
       'Service card removed.',
@@ -442,7 +452,7 @@ export function ServicesShowcase() {
                         size="sm"
                         variant="secondary"
                         className="services-showcase__remove-card services-showcase__remove-card--panel"
-                        onClick={() => removeService(service.id)}
+                        onClick={() => void removeService(service.id)}
                       >
                         Remove card
                       </Button>
@@ -558,7 +568,7 @@ export function ServicesShowcase() {
                       size="sm"
                       variant="secondary"
                       className="services-showcase__remove-card services-showcase__remove-card--panel"
-                      onClick={() => removeService(service.id)}
+                      onClick={() => void removeService(service.id)}
                     >
                       Remove card
                     </Button>

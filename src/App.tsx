@@ -7,6 +7,7 @@ import { SiteContentProvider } from './context/SiteContentContext'
 import { SiteEditProvider } from './context/SiteEditContext'
 import { CmsTextEditorProvider } from './context/CmsTextEditorContext'
 import { ToastProvider } from './context/ToastContext'
+import { ConfirmProvider } from './context/ConfirmContext'
 import { isIntroComplete, onIntroComplete } from './lib/intro'
 import { preloadServiceVideos } from './lib/serviceVideoCache'
 import { preloadAllImages } from './lib/imagePreload'
@@ -96,6 +97,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
+        <ConfirmProvider>
         <CookieConsentProvider>
           <SiteContentProvider>
             <BrowserRouter>
@@ -208,6 +210,7 @@ export default function App() {
             </BrowserRouter>
           </SiteContentProvider>
         </CookieConsentProvider>
+        </ConfirmProvider>
       </ToastProvider>
     </AuthProvider>
   )

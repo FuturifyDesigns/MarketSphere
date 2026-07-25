@@ -5,6 +5,7 @@
 .cms-section--live {
   outline: 1px dashed rgba(212, 175, 55, 0.25);
   outline-offset: 6px;
+  overflow: visible;
 }
 
 .cms-section--active {
@@ -13,11 +14,24 @@
   background: rgba(212, 175, 55, 0.04);
 }
 
-.cms-section__edit {
+.cms-section__controls {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 30;
+  z-index: 60;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  max-width: min(240px, calc(100% - 24px));
+  pointer-events: auto;
+}
+
+.cms-section__edit {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 1;
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
@@ -32,7 +46,7 @@
   letter-spacing: 0.12em;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  max-width: min(240px, calc(100vw - 24px));
+  max-width: 100%;
   text-align: left;
 }
 
@@ -76,24 +90,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.cms-section__edit--portal {
-  position: relative;
-  top: auto;
-  right: auto;
-  max-width: min(240px, calc(100vw - 24px));
-}
-
-.cms-section__controls {
-  position: fixed;
-  z-index: 1300;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-  max-width: min(260px, calc(100vw - 24px));
-  pointer-events: auto;
 }
 
 .cms-section__undo {
@@ -917,10 +913,10 @@ html.cms-editing .svc-page__media-tools {
 
 .services-showcase--cms-editing .services-showcase__media-tools,
 .svc-page--cms-editing .svc-page__media-tools {
-  position: relative;
-  inset: auto;
+  position: absolute;
+  inset: 0;
   min-height: 0;
-  border-radius: var(--radius-md);
+  border-radius: inherit;
 }
 
 .services-showcase__visual--editing,
@@ -987,4 +983,98 @@ html.cms-editing .svc-page__media-tools {
 
 .services-showcase__cms-panel-copy strong {
   color: #fff;
+}
+
+/* In-app confirm dialog (replaces window.confirm for CMS actions) */
+.cms-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.cms-confirm__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(10, 8, 6, 0.62);
+  cursor: pointer;
+}
+
+.cms-confirm__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 26rem);
+  padding: 1.35rem 1.4rem 1.2rem;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background:
+    linear-gradient(180deg, rgba(34, 28, 20, 0.98), rgba(18, 16, 12, 0.98));
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  color: #f7efd8;
+}
+
+.cms-confirm__title {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.cms-confirm__message {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(247, 239, 216, 0.82);
+}
+
+.cms-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.cms-confirm__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 6.5rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cms-confirm__btn--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #f7efd8;
+}
+
+.cms-confirm__btn--ghost:hover {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cms-confirm__btn--primary {
+  background: var(--gold, #d4af37);
+  color: #111;
+}
+
+.cms-confirm__btn--danger {
+  background: rgba(140, 36, 28, 0.95);
+  border-color: rgba(255, 120, 100, 0.45);
+  color: #ffd7cf;
+}
+
+.cms-confirm__btn--danger:hover {
+  background: rgba(170, 42, 32, 0.98);
 }

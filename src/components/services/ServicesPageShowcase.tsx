@@ -6,6 +6,7 @@ import { createMarketingService } from '../../lib/cmsTypes'
 import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import { useToast } from '../../context/ToastContext'
+import { useConfirm } from '../../context/ConfirmContext'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
@@ -31,6 +32,7 @@ export function ServicesPageShowcase() {
   const { getBlock, updateField } = useSiteContent()
   const canEditField = useSectionFieldEdit()
   const { showToast } = useToast()
+  const { confirm } = useConfirm()
   const services = getBlock<ServicesBlock>('services')
   const items = services.items || []
 
@@ -41,6 +43,26 @@ export function ServicesPageShowcase() {
     } catch {
       showToast('Could not save service cards.', 'error')
     }
+  }
+
+  const removeService = async (id: string) => {
+    if (items.length <= 1) {
+      showToast('Keep at least one service card.', 'error')
+      return
+    }
+    const ok = await confirm({
+      title: 'Remove service card?',
+      message:
+        'This removes the card from the home and services showcase. You can Undo from the section controls if needed.',
+      confirmLabel: 'Remove card',
+      cancelLabel: 'Keep card',
+      tone: 'danger',
+    })
+    if (!ok) return
+    void persistItems(
+      items.filter((row) => row.id !== id),
+      'Service card removed.',
+    )
   }
 
   useEffect(() => {
@@ -170,23 +192,7 @@ export function ServicesPageShowcase() {
                         size="sm"
                         variant="secondary"
                         className="services-showcase__remove-card services-showcase__remove-card--panel"
-                        onClick={() => {
-                          if (items.length <= 1) {
-                            showToast('Keep at least one service card.', 'error')
-                            return
-                          }
-                          if (
-                            !window.confirm(
-                              'Remove this service card? You can Undo from the section controls if needed.',
-                            )
-                          ) {
-                            return
-                          }
-                          void persistItems(
-                            items.filter((row) => row.id !== service.id),
-                            'Service card removed.',
-                          )
-                        }}
+                        onClick={() => void removeService(service.id)}
                       >
                         Remove card
                       </Button>

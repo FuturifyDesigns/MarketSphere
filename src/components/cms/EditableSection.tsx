@@ -1,15 +1,11 @@
 import {
   forwardRef,
   useCallback,
-  useEffect,
-  useRef,
   useState,
   type ComponentPropsWithoutRef,
-  type CSSProperties,
   type ElementType,
   type ReactNode,
 } from 'react'
-import { createPortal } from 'react-dom'
 import { Pencil, Undo2 } from 'lucide-react'
 import { SectionEditProvider } from '../../context/SectionEditContext'
 import { useSiteEdit } from '../../context/SiteEditContext'
@@ -23,77 +19,21 @@ type EditableSectionProps = {
   children: ReactNode
 } & Omit<ComponentPropsWithoutRef<'section'>, 'id' | 'children' | 'className'>
 
-const HIDDEN_BUTTON_STYLE: CSSProperties = { display: 'none' }
-
 export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(function EditableSection(
   { id, label, as: Tag = 'section', className = '', children, ...rest },
   ref,
 ) {
   const { editMode, isSectionActive, toggleSection, canUndoActiveSection, undoActiveSection } = useSiteEdit()
   const isActive = isSectionActive(id)
-  const nodeRef = useRef<HTMLElement | null>(null)
+  const [undoing, setUndoing] = useState(false)
+
   const setRefs = useCallback(
     (node: HTMLElement | null) => {
-      nodeRef.current = node
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
     },
     [ref],
   )
-  const [editBtnStyle, setEditBtnStyle] = useState<CSSProperties>(HIDDEN_BUTTON_STYLE)
-  const [undoing, setUndoing] = useState(false)
-
-  useEffect(() => {
-    if (!editMode) {
-      setEditBtnStyle(HIDDEN_BUTTON_STYLE)
-      return
-    }
-
-    const section = nodeRef.current
-    if (!section) return
-
-    let frame = 0
-    const update = () => {
-      if (frame) return
-      frame = window.requestAnimationFrame(() => {
-        frame = 0
-        const rect = section.getBoundingClientRect()
-        if (rect.width === 0 && rect.height === 0) {
-          setEditBtnStyle(HIDDEN_BUTTON_STYLE)
-          return
-        }
-
-        const edgePad = 12
-        const editorBar = document.querySelector('.live-editor-bar')
-        const barBottom = editorBar?.getBoundingClientRect().bottom ?? 0
-        const minTop = Math.max(edgePad, barBottom + edgePad)
-        const maxTop = Math.max(minTop, window.innerHeight - edgePad - 72)
-        const top = Math.min(Math.max(minTop, rect.top + edgePad), maxTop)
-
-        // Anchor to the section's right edge, but keep the full control stack on-screen.
-        const desiredRight = Math.min(rect.right - edgePad, window.innerWidth - edgePad)
-        const right = Math.max(edgePad, window.innerWidth - desiredRight)
-
-        setEditBtnStyle({
-          top,
-          right,
-          left: 'auto',
-          transform: 'none',
-          display: 'inline-flex',
-        })
-      })
-    }
-
-    update()
-    window.addEventListener('scroll', update, { capture: true, passive: true })
-    window.addEventListener('resize', update, { passive: true })
-
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', update, true)
-      window.removeEventListener('resize', update)
-    }
-  }, [editMode, isActive, children, canUndoActiveSection])
 
   const handleUndo = async () => {
     if (!canUndoActiveSection || undoing) return
@@ -105,10 +45,16 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
     }
   }
 
-  const editButton =
-    editMode && typeof document !== 'undefined'
-      ? createPortal(
-          <div className="cms-section__controls" style={editBtnStyle}>
+  return (
+    <SectionEditProvider sectionId={id} isActive={isActive}>
+      <Tag
+        ref={setRefs}
+        {...rest}
+        className={`cms-section ${className} ${editMode ? 'cms-section--live' : ''} ${isActive ? 'cms-section--active' : ''}`.trim()}
+        data-cms-section={id}
+      >
+        {editMode ? (
+          <div className="cms-section__controls">
             {isActive && canUndoActiveSection ? (
               <button
                 type="button"
@@ -123,7 +69,7 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
             ) : null}
             <button
               type="button"
-              className={`cms-section__edit cms-section__edit--portal ${isActive ? 'cms-section__edit--active' : ''}`}
+              className={`cms-section__edit ${isActive ? 'cms-section__edit--active' : ''}`}
               onClick={() => toggleSection(id)}
               aria-pressed={isActive}
               aria-label={
@@ -146,22 +92,10 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
                 {isActive ? 'Click again to exit edit' : 'Click to edit · click again to exit'}
               </span>
             </button>
-          </div>,
-          document.body,
-        )
-      : null
-
-  return (
-    <SectionEditProvider sectionId={id} isActive={isActive}>
-      <Tag
-        ref={setRefs}
-        {...rest}
-        className={`cms-section ${className} ${editMode ? 'cms-section--live' : ''} ${isActive ? 'cms-section--active' : ''}`.trim()}
-        data-cms-section={id}
-      >
+          </div>
+        ) : null}
         {children}
       </Tag>
-      {editButton}
     </SectionEditProvider>
   )
 })
