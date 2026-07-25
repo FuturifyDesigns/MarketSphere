@@ -294,7 +294,7 @@
   --stage-wash: #f4ecde;
   --stage-accent: rgba(201, 162, 75, 0.22);
   position: relative;
-  height: 155vh;
+  height: 100svh;
   margin: 0;
   color: var(--stage-ink);
   background:
@@ -361,9 +361,9 @@
 }
 
 .showcase-column-stage--last {
-  height: calc(100svh - var(--nav-height) + 4rem);
+  height: 100svh;
   margin-bottom: 0;
-  padding-bottom: 2rem;
+  padding-bottom: 0;
 }
 
 .showcase-column-stage__sticky {
@@ -1201,12 +1201,9 @@
     gap: 0;
   }
 
-  .showcase-column-stage {
-    height: 135vh;
-  }
-
+  .showcase-column-stage,
   .showcase-column-stage--last {
-    height: calc(100svh - var(--nav-height) + 2rem);
+    height: 100svh;
   }
 
   .showcase-column-stage__sticky {
