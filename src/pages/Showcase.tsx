@@ -1105,12 +1105,17 @@ export function ShowcaseListingPage() {
             {listing.description ? (
               <p className="showcase-listing-detail__description">{listing.description}</p>
             ) : null}
-            <div className="showcase-card__actions">
-              <a className="btn btn--primary" href={mailto}>
+            <div className="showcase-card__actions showcase-listing-detail__actions">
+              <a className="btn btn--primary btn--md" href={mailto}>
                 <Mail size={16} />{' '}
                 <EditableText contentKey="showcase" path="listing.contactLabel" as="span" />
               </a>
-              <a className="btn btn--secondary" href={whatsapp} target="_blank" rel="noreferrer">
+              <a
+                className="btn btn--secondary btn--md"
+                href={whatsapp}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Phone size={16} />{' '}
                 <EditableText contentKey="showcase" path="listing.whatsappLabel" as="span" />
               </a>
