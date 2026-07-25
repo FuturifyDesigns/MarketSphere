@@ -601,21 +601,23 @@ export function Showcase() {
             </a>
           </div>
 
-          <div className="showcase-hero__mosaic" aria-hidden="true">
+          <div className="showcase-hero__mosaic">
             {[
-              COLUMN_COVERS['real-estate'],
-              COLUMN_COVERS['youth-empowerment'],
-              COLUMN_COVERS.farming,
-            ].map((cover, index) => (
-              <div
-                key={cover}
+              { cover: COLUMN_COVERS['real-estate'], label: 'Real Estate' },
+              { cover: COLUMN_COVERS['youth-empowerment'], label: 'Youth Empowerment' },
+              { cover: COLUMN_COVERS.farming, label: 'Farming' },
+            ].map((item, index) => (
+              <button
+                key={item.cover}
+                type="button"
                 className={`showcase-hero__mosaic-card showcase-hero__mosaic-card--${index + 1}`}
                 data-showcase-mosaic-card
+                aria-label={`${item.label} preview`}
               >
-                <img src={cover} alt="" />
-              </div>
+                <img src={item.cover} alt="" />
+              </button>
             ))}
-            <span className="showcase-hero__orbit" />
+            <span className="showcase-hero__orbit" aria-hidden="true" />
             <span className="showcase-hero__mosaic-label">Across Botswana</span>
           </div>
         </div>
@@ -630,70 +632,76 @@ export function Showcase() {
             </div>
             <p>Scroll to reveal each field, one by one. Open a card to see its live listings.</p>
           </div>
-          {loading ? (
+        </div>
+        {loading ? (
+          <div className="container">
             <p className="showcase-status">Loading showcase…</p>
-          ) : error ? (
+          </div>
+        ) : error ? (
+          <div className="container">
             <p className="showcase-status showcase-status--error" role="alert">
               {error}
             </p>
-          ) : (
-            <div className="showcase-columns">
-              {columns.map((column, i) => (
-                <article
-                  key={column.id}
-                  className={`showcase-column-stage${i === columns.length - 1 ? ' showcase-column-stage--last' : ''}`}
-                  data-showcase-stage
-                  style={{ zIndex: i + 1 }}
-                >
-                  <div className="showcase-column-stage__sticky">
-                    <div className="showcase-column-stage__rail" data-showcase-rail aria-hidden="true">
-                      <span>{String(i + 1).padStart(2, '0')}</span>
-                      <span>/</span>
-                      <span>{String(columns.length).padStart(2, '0')}</span>
-                    </div>
-                    <Link
-                      to={`/showcase/${column.slug}`}
-                      className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
-                      data-showcase-column
-                      onPointerMove={handlePointerMove}
-                      onPointerLeave={handlePointerLeave}
-                      onClick={(event) => openColumn(event, column.slug)}
-                    >
-                      <div className="showcase-column-tile__media">
-                        <img
-                          src={COLUMN_COVERS[column.slug]}
-                          alt={`${column.title} showcase`}
-                          loading={i < 2 ? 'eager' : 'lazy'}
-                          decoding="async"
-                          data-showcase-cover
-                        />
-                        <span className="showcase-column-tile__shine" />
-                      </div>
-                      <div className="showcase-column-tile__footer">
-                        <span className="showcase-column-tile__icon">
-                          <ColumnIcon name={column.icon} />
-                        </span>
-                        <div className="showcase-column-tile__copy">
-                          <h3>{column.title}</h3>
-                          {column.tagline ? <p>{column.tagline}</p> : null}
-                        </div>
-                        <span className="showcase-column-tile__meta">
-                          <span>
-                            {counts[column.id] || 0} live listing
-                            {(counts[column.id] || 0) === 1 ? '' : 's'}
-                          </span>
-                          <span className="showcase-column-tile__arrow">
-                            <ArrowRight size={18} aria-hidden />
-                          </span>
-                        </span>
-                      </div>
-                    </Link>
+          </div>
+        ) : (
+          <div className="showcase-columns">
+            {columns.map((column, i) => (
+              <article
+                key={column.id}
+                className={`showcase-column-stage${i === columns.length - 1 ? ' showcase-column-stage--last' : ''}`}
+                data-showcase-stage
+                data-field={column.slug}
+                style={{ zIndex: i + 1 }}
+              >
+                <div className="showcase-column-stage__atmosphere" aria-hidden="true" />
+                <div className="container showcase-column-stage__sticky">
+                  <div className="showcase-column-stage__rail" data-showcase-rail aria-hidden="true">
+                    <span>{String(i + 1).padStart(2, '0')}</span>
+                    <span>/</span>
+                    <span>{String(columns.length).padStart(2, '0')}</span>
                   </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
+                  <Link
+                    to={`/showcase/${column.slug}`}
+                    className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
+                    data-showcase-column
+                    onPointerMove={handlePointerMove}
+                    onPointerLeave={handlePointerLeave}
+                    onClick={(event) => openColumn(event, column.slug)}
+                  >
+                    <div className="showcase-column-tile__media">
+                      <img
+                        src={COLUMN_COVERS[column.slug]}
+                        alt={`${column.title} showcase`}
+                        loading={i < 2 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        data-showcase-cover
+                      />
+                      <span className="showcase-column-tile__shine" />
+                    </div>
+                    <div className="showcase-column-tile__footer">
+                      <span className="showcase-column-tile__icon">
+                        <ColumnIcon name={column.icon} />
+                      </span>
+                      <div className="showcase-column-tile__copy">
+                        <h3>{column.title}</h3>
+                        {column.tagline ? <p>{column.tagline}</p> : null}
+                      </div>
+                      <span className="showcase-column-tile__meta">
+                        <span>
+                          {counts[column.id] || 0} live listing
+                          {(counts[column.id] || 0) === 1 ? '' : 's'}
+                        </span>
+                        <span className="showcase-column-tile__arrow">
+                          <ArrowRight size={18} aria-hidden />
+                        </span>
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
       <div ref={curtainRef} className="showcase-transition-curtain" aria-hidden="true">
         <span>Entering the field</span>

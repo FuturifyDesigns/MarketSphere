@@ -124,11 +124,19 @@
 
 .showcase-hero__mosaic-card {
   position: absolute;
+  padding: 0;
   overflow: hidden;
   border: 1px solid rgba(230, 189, 92, 0.24);
   border-radius: 20px;
   background: #111;
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+  transform-origin: center center;
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s ease,
+    border-color 0.35s ease,
+    z-index 0s;
 }
 
 .showcase-hero__mosaic-card img {
@@ -138,6 +146,8 @@
   object-position: center;
   display: block;
   background: #0d0b08;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.4s ease;
+  will-change: transform;
 }
 
 .showcase-hero__mosaic-card--1 {
@@ -162,6 +172,43 @@
   bottom: 0;
   z-index: 3;
   transform: rotate(-5deg);
+}
+
+.showcase-hero__mosaic-card:hover,
+.showcase-hero__mosaic-card:focus-visible {
+  z-index: 8;
+  border-color: rgba(230, 189, 92, 0.7);
+  box-shadow:
+    0 36px 80px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(230, 189, 92, 0.25);
+  outline: none;
+}
+
+.showcase-hero__mosaic-card--1:hover,
+.showcase-hero__mosaic-card--1:focus-visible {
+  transform: rotate(0deg) translateY(-14px) scale(1.045);
+}
+
+.showcase-hero__mosaic-card--2:hover,
+.showcase-hero__mosaic-card--2:focus-visible {
+  transform: rotate(1deg) translateY(-16px) scale(1.08);
+}
+
+.showcase-hero__mosaic-card--3:hover,
+.showcase-hero__mosaic-card--3:focus-visible {
+  transform: rotate(-1deg) translateY(-14px) scale(1.08);
+}
+
+.showcase-hero__mosaic-card:hover img,
+.showcase-hero__mosaic-card:focus-visible img {
+  transform: scale(1.07);
+  filter: saturate(1.08) contrast(1.03);
+}
+
+.showcase-hero__mosaic:has(.showcase-hero__mosaic-card:hover) .showcase-hero__mosaic-card:not(:hover),
+.showcase-hero__mosaic:has(.showcase-hero__mosaic-card:focus-visible) .showcase-hero__mosaic-card:not(:focus-visible) {
+  filter: brightness(0.72);
+  transition: filter 0.35s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .showcase-hero__orbit {
@@ -212,7 +259,7 @@
 }
 
 .showcase-columns-section {
-  padding: clamp(3rem, 6vw, 5rem) 0 clamp(6rem, 12vw, 10rem);
+  padding: clamp(3rem, 6vw, 5rem) 0 0;
 }
 
 .showcase-section-heading {
@@ -243,14 +290,80 @@
 }
 
 .showcase-column-stage {
+  --stage-ink: #17120c;
+  --stage-wash: #f4ecde;
+  --stage-accent: rgba(201, 162, 75, 0.22);
   position: relative;
   height: 155vh;
   margin: 0;
+  color: var(--stage-ink);
+  background:
+    radial-gradient(circle at 12% 18%, var(--stage-accent), transparent 34rem),
+    radial-gradient(circle at 88% 72%, rgba(255, 255, 255, 0.35), transparent 28rem),
+    linear-gradient(165deg, var(--stage-wash) 0%, color-mix(in srgb, var(--stage-wash) 78%, #fff) 100%);
+}
+
+.showcase-column-stage__atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(23, 18, 12, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 18, 12, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, #000 10%, transparent 92%);
+}
+
+.showcase-column-stage[data-field='real-estate'] {
+  --stage-wash: #efe6d8;
+  --stage-accent: rgba(168, 126, 58, 0.28);
+}
+
+.showcase-column-stage[data-field='youth-empowerment'] {
+  --stage-wash: #ece4d2;
+  --stage-accent: rgba(201, 162, 75, 0.3);
+}
+
+.showcase-column-stage[data-field='farming'] {
+  --stage-wash: #e7eddf;
+  --stage-accent: rgba(96, 122, 70, 0.24);
+}
+
+.showcase-column-stage[data-field='entrepreneurship'] {
+  --stage-wash: #f3e7d0;
+  --stage-accent: rgba(196, 140, 48, 0.28);
+}
+
+.showcase-column-stage[data-field='academic-tuition'] {
+  --stage-wash: #e8ebe4;
+  --stage-accent: rgba(90, 110, 86, 0.2);
+}
+
+.showcase-column-stage[data-field='platform-marketing'] {
+  --stage-wash: #ebe4d9;
+  --stage-accent: rgba(120, 92, 58, 0.22);
+}
+
+.showcase-column-stage[data-field='music-education'] {
+  --stage-wash: #efe6e0;
+  --stage-accent: rgba(140, 96, 72, 0.22);
+}
+
+.showcase-column-stage[data-field='career-development'] {
+  --stage-wash: #e9e4dc;
+  --stage-accent: rgba(90, 84, 72, 0.2);
+}
+
+.showcase-column-stage[data-field='it-services'] {
+  --stage-wash: #e4e8ea;
+  --stage-accent: rgba(70, 92, 104, 0.2);
 }
 
 .showcase-column-stage--last {
   height: calc(100svh - var(--nav-height) + 4rem);
-  margin-bottom: 2rem;
+  margin-bottom: 0;
+  padding-bottom: 2rem;
 }
 
 .showcase-column-stage__sticky {
@@ -992,9 +1105,19 @@
   .showcase-gallery__slide img,
   .showcase-lightbox__img,
   .showcase-hero__eyebrow-dot,
-  .showcase-hero__orbit {
+  .showcase-hero__orbit,
+  .showcase-hero__mosaic-card,
+  .showcase-hero__mosaic-card img {
     transition: none;
     animation: none;
+  }
+
+  .showcase-hero__mosaic-card:hover,
+  .showcase-hero__mosaic-card:focus-visible,
+  .showcase-hero__mosaic-card:hover img,
+  .showcase-hero__mosaic-card:focus-visible img {
+    transform: none;
+    filter: none;
   }
 }
 
