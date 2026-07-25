@@ -1,6 +1,7 @@
 /**
  * Path → hash bootstrap for SPA deep links on static hosts.
  * External file so CSP can allow script-src 'self' without 'unsafe-inline'.
+ * Preserves ?code=&state= query params (required for OAuth callbacks).
  */
 ;(function () {
   var path = window.location.pathname

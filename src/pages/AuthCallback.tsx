@@ -16,15 +16,31 @@ import './Auth.css'
 
 type CallbackStatus = 'loading' | 'success' | 'error'
 
-function readOAuthCode() {
-  const fromSearch = new URLSearchParams(window.location.search).get('code')
-  if (fromSearch) return fromSearch
-
+function readOAuthParams() {
+  const fromSearch = new URLSearchParams(window.location.search)
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash
-  const hashPath = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
-  if (hashPath) {
-    const fromHash = new URLSearchParams(hashPath).get('code')
-    if (fromHash) return fromHash
+  const hashQuery = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
+  const fromHash = new URLSearchParams(hashQuery)
+
+  return {
+    code: fromSearch.get('code') || fromHash.get('code'),
+    errorDescription:
+      fromSearch.get('error_description') ||
+      fromHash.get('error_description') ||
+      fromSearch.get('error') ||
+      fromHash.get('error'),
+  }
+}
+
+function clearOAuthParamsFromUrl() {
+  window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}#/auth/callback`)
+}
+
+async function waitForProfile(userId: string, attempts = 8): Promise<Profile | null> {
+  for (let i = 0; i < attempts; i += 1) {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+    if (!error && data) return data as Profile
+    await new Promise((resolve) => window.setTimeout(resolve, 250))
   }
   return null
 }
@@ -43,17 +59,29 @@ export function AuthCallback() {
 
     const finish = async () => {
       try {
-        const code = readOAuthCode()
+        const { code, errorDescription } = readOAuthParams()
+
+        if (errorDescription) {
+          setStatus('error')
+          setMessage(decodeURIComponent(errorDescription.replace(/\+/g, ' ')))
+          return
+        }
+
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (cancelled) return
           if (error) {
-            setStatus('error')
-            setMessage(error.message || 'Google sign-in failed.')
-            return
+            // detectSessionInUrl may already have exchanged this code.
+            const {
+              data: { session: existing },
+            } = await supabase.auth.getSession()
+            if (!existing) {
+              setStatus('error')
+              setMessage(error.message || 'Google sign-in failed.')
+              return
+            }
           }
-          // Clean sensitive query params from the address bar.
-          window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}#/auth/callback`)
+          clearOAuthParamsFromUrl()
         }
 
         const {
@@ -68,28 +96,26 @@ export function AuthCallback() {
         }
 
         const intent = consumeOAuthSignupIntent()
+        const createdAtMs = Date.parse(session.user.created_at || '')
+        const isNewAccount = Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 10 * 60 * 1000
+
         const fullName =
           (session.user.user_metadata?.full_name as string | undefined) ||
           (session.user.user_metadata?.name as string | undefined) ||
           ''
 
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle()
-
+        const profile = await waitForProfile(session.user.id)
         if (cancelled) return
 
-        if (profileError || !profile) {
+        if (!profile) {
           await signOut()
           setStatus('error')
           setMessage('Could not load your account profile. Please try again.')
           return
         }
 
-        if (isProfileBanned(profile as Profile)) {
-          const banMessage = getBanMessage(profile as Profile)
+        if (isProfileBanned(profile)) {
+          const banMessage = getBanMessage(profile)
           await signOut()
           setStatus('error')
           setMessage(banMessage)
@@ -100,12 +126,12 @@ export function AuthCallback() {
         if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
           updates.full_name = fullName.trim()
         }
-        // Only elevate customer → provider from explicit signup intent; never touch admin.
-        if (intent?.role === 'provider' && profile.role === 'customer') {
+        // Only apply provider intent for brand-new Google accounts — never change an existing user.
+        if (isNewAccount && intent?.role === 'provider' && profile.role === 'customer') {
           updates.role = 'provider'
         }
 
-        let nextRole = profile.role as string
+        let nextRole = profile.role
         if (Object.keys(updates).length > 0) {
           const { data: updated, error: updateError } = await supabase
             .from('profiles')
@@ -116,7 +142,7 @@ export function AuthCallback() {
           if (updateError) {
             console.error('[auth] oauth profile update failed', updateError)
           } else if (updated?.role) {
-            nextRole = updated.role
+            nextRole = updated.role as Profile['role']
           }
         }
 
@@ -124,8 +150,8 @@ export function AuthCallback() {
         if (cancelled) return
 
         setStatus('success')
-        setMessage('Signed in successfully.')
-        showToast('Signed in with Google.')
+        setMessage(isNewAccount ? 'Account created. Signing you in…' : 'Welcome back. Signing you in…')
+        showToast(isNewAccount ? 'Account created with Google.' : 'Signed in with Google.')
 
         if (nextRole === 'admin') navigate('/dashboard/admin', { replace: true })
         else if (nextRole === 'provider') navigate('/dashboard/provider', { replace: true })
@@ -163,7 +189,7 @@ export function AuthCallback() {
                 ✓
               </div>
               <h2>You&apos;re signed in</h2>
-              <p className="auth-subtitle">Redirecting to your dashboard…</p>
+              <p className="auth-subtitle">{message}</p>
             </>
           ) : (
             <>

@@ -241,11 +241,14 @@ export function Register() {
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
               <GoogleAuthButton
-                label={isProvider ? 'Sign up with Google as Provider' : 'Sign up with Google'}
+                label="Continue with Google"
                 loading={googleLoading}
                 disabled={loading || locked}
                 onClick={() => void handleGoogle()}
               />
+              <p className="auth-google-hint">
+                New here? We&apos;ll create your account. Already registered? You&apos;ll be signed in.
+              </p>
               <div className="auth-divider" role="separator" aria-label="or">
                 <span>or</span>
               </div>

@@ -31,6 +31,17 @@ export function consumeOAuthSignupIntent(): {
   }
 }
 
+/**
+ * OAuth redirect URLs cannot include a hash fragment (browsers strip it).
+ * Use a real path so the host receives /auth/callback?code=…&state=…
+ * and route-bootstrap can rewrite it to #/auth/callback?code=…&state=…
+ */
 export function getOAuthCallbackUrl() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  return `${window.location.origin}${base}/auth/callback`
+}
+
+/** Hash-router URL for in-app navigation after OAuth completes. */
+export function getOAuthCallbackHashUrl() {
   return getAuthRouteUrl('/auth/callback')
 }

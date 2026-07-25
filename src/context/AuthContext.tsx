@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { getAuthRouteUrl } from '../lib/authRoutes'
+import { getOAuthCallbackUrl } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned, storeAccountNotice } from '../lib/accountGuard'
 import type { Profile } from '../lib/types'
 
@@ -248,10 +249,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      // Same flow for new + existing accounts: Supabase creates on first Google login,
+      // and signs in / auto-links when the Google email already belongs to a user.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: getAuthRouteUrl('/auth/callback'),
+          redirectTo: getOAuthCallbackUrl(),
           queryParams: {
             access_type: 'online',
             prompt: 'select_account',
