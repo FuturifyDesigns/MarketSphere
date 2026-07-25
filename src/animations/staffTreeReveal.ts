@@ -26,6 +26,24 @@ function relativePoint(el: HTMLElement, svg: SVGSVGElement, edge: 'center' | 'to
   }
 }
 
+/** Measure layout as if GSAP intro transforms were not applied (y/scale at rest). */
+function withRestTransforms<T>(elements: HTMLElement[], measure: () => T): T {
+  const snapshot = elements.map((el) => ({
+    el,
+    x: Number(gsap.getProperty(el, 'x')) || 0,
+    y: Number(gsap.getProperty(el, 'y')) || 0,
+    scale: Number(gsap.getProperty(el, 'scale')) || 1,
+  }))
+  gsap.set(elements, { x: 0, y: 0, scale: 1 })
+  try {
+    return measure()
+  } finally {
+    snapshot.forEach(({ el, x, y, scale }) => {
+      gsap.set(el, { x, y, scale })
+    })
+  }
+}
+
 function isStackedBranches(branchTops: Point[]) {
   if (branchTops.length <= 1) return true
   if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) return true
@@ -54,53 +72,56 @@ function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
   const branchNodes = gsap.utils.toArray<HTMLElement>('.staff-tree__node--branch', root)
   if (!svg || !pathsGroup || !hub || !rootNode || !branchNodes.length) return null
 
-  svg.removeAttribute('viewBox')
-  svg.removeAttribute('width')
-  svg.removeAttribute('height')
-  pathsGroup.replaceChildren()
+  return withRestTransforms([rootNode, hub, ...branchNodes], () => {
+    svg.removeAttribute('viewBox')
+    svg.removeAttribute('width')
+    svg.removeAttribute('height')
+    pathsGroup.replaceChildren()
 
-  const from = relativePoint(rootNode, svg, 'bottom')
-  const hubPoint = relativePoint(hub, svg, 'center')
-  const branchTops = branchNodes.map((node) => relativePoint(node, svg, 'top'))
-  const branchBottoms = branchNodes.map((node) => relativePoint(node, svg, 'bottom'))
-  const stacked = isStackedBranches(branchTops)
+    const from = relativePoint(rootNode, svg, 'bottom')
+    const hubPoint = relativePoint(hub, svg, 'center')
+    // Stop at the top edge of each card — not into the photo.
+    const branchTops = branchNodes.map((node) => relativePoint(node, svg, 'top'))
+    const branchBottoms = branchNodes.map((node) => relativePoint(node, svg, 'bottom'))
+    const stacked = isStackedBranches(branchTops)
 
-  root.dataset.staffTreeLayout = stacked ? 'stacked' : 'forked'
+    root.dataset.staffTreeLayout = stacked ? 'stacked' : 'forked'
 
-  const fragment = document.createDocumentFragment()
-  const trunk = createPath(`M ${from.x} ${from.y + 2} L ${hubPoint.x} ${hubPoint.y}`, 'trunk')
-  fragment.appendChild(trunk)
+    const fragment = document.createDocumentFragment()
+    const trunk = createPath(`M ${from.x} ${from.y} L ${hubPoint.x} ${hubPoint.y}`, 'trunk')
+    fragment.appendChild(trunk)
 
-  let arm: SVGPathElement | null = null
-  const drops: SVGPathElement[] = []
+    let arm: SVGPathElement | null = null
+    const drops: SVGPathElement[] = []
 
-  if (stacked) {
-    drops.push(createPath(`M ${hubPoint.x} ${hubPoint.y} L ${branchTops[0].x} ${branchTops[0].y - 2}`, 'drop-0'))
-    for (let index = 1; index < branchNodes.length; index += 1) {
-      const prevBottom = branchBottoms[index - 1]
-      const nextTop = branchTops[index]
-      const midX = (prevBottom.x + nextTop.x) / 2
-      drops.push(
-        createPath(
-          `M ${prevBottom.x} ${prevBottom.y + 2} L ${midX} ${prevBottom.y + 2} L ${midX} ${nextTop.y - 2} L ${nextTop.x} ${nextTop.y - 2}`,
-          `drop-${index}`,
-        ),
-      )
+    if (stacked) {
+      drops.push(createPath(`M ${hubPoint.x} ${hubPoint.y} L ${branchTops[0].x} ${branchTops[0].y}`, 'drop-0'))
+      for (let index = 1; index < branchNodes.length; index += 1) {
+        const prevBottom = branchBottoms[index - 1]
+        const nextTop = branchTops[index]
+        const midX = (prevBottom.x + nextTop.x) / 2
+        drops.push(
+          createPath(
+            `M ${prevBottom.x} ${prevBottom.y} L ${midX} ${prevBottom.y} L ${midX} ${nextTop.y} L ${nextTop.x} ${nextTop.y}`,
+            `drop-${index}`,
+          ),
+        )
+      }
+    } else {
+      const leftX = Math.min(...branchTops.map((point) => point.x))
+      const rightX = Math.max(...branchTops.map((point) => point.x))
+      arm = createPath(`M ${leftX} ${hubPoint.y} L ${rightX} ${hubPoint.y}`, 'arm')
+      fragment.appendChild(arm)
+      branchTops.forEach((point, index) => {
+        drops.push(createPath(`M ${point.x} ${hubPoint.y} L ${point.x} ${point.y}`, `drop-${index}`))
+      })
     }
-  } else {
-    const leftX = Math.min(...branchTops.map((point) => point.x))
-    const rightX = Math.max(...branchTops.map((point) => point.x))
-    arm = createPath(`M ${leftX} ${hubPoint.y} L ${rightX} ${hubPoint.y}`, 'arm')
-    fragment.appendChild(arm)
-    branchTops.forEach((point, index) => {
-      drops.push(createPath(`M ${point.x} ${hubPoint.y} L ${point.x} ${point.y - 2}`, `drop-${index}`))
-    })
-  }
 
-  drops.forEach((drop) => fragment.appendChild(drop))
-  pathsGroup.appendChild(fragment)
+    drops.forEach((drop) => fragment.appendChild(drop))
+    pathsGroup.appendChild(fragment)
 
-  return { trunk, arm, drops, stacked }
+    return { trunk, arm, drops, stacked }
+  })
 }
 
 function showAllContent(
