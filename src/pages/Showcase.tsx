@@ -436,7 +436,7 @@ export function Showcase() {
 
         if (reduceMotion) {
           gsap.set(
-            '[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-heading], [data-showcase-column], [data-showcase-stage-heading]',
+            '[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-heading], [data-showcase-frame], [data-showcase-stage-heading]',
             { autoAlpha: 1, clearProps: 'transform' },
           )
           return
@@ -472,46 +472,28 @@ export function Showcase() {
 
         const stages = gsap.utils.toArray<HTMLElement>('[data-showcase-stage]', root)
 
-        stages.forEach((stage, index) => {
-          const tile = stage.querySelector<HTMLElement>('[data-showcase-column]')
-          const media = stage.querySelector<HTMLElement>('.showcase-column-tile__media')
+        stages.forEach((stage) => {
+          const frame = stage.querySelector<HTMLElement>('[data-showcase-frame]')
           const footer = stage.querySelector<HTMLElement>('.showcase-column-tile__footer')
           const stageHeading = stage.querySelector<HTMLElement>('[data-showcase-stage-heading]')
-          if (!tile) return
+          if (!frame) return
 
-          gsap.set(tile, { transformOrigin: '50% 50%', autoAlpha: 0, y: 64, scale: 0.96 })
-          if (media) gsap.set(media, { autoAlpha: 0, y: 28 })
-          if (footer) gsap.set(footer, { autoAlpha: 0, y: 18 })
-          if (stageHeading) gsap.set(stageHeading, { autoAlpha: 0, y: 22 })
+          gsap.set(frame, { transformOrigin: '50% 50%', autoAlpha: 0, y: 46 })
+          if (footer) gsap.set(footer, { autoAlpha: 0, y: 14 })
+          if (stageHeading) gsap.set(stageHeading, { autoAlpha: 0, y: 20 })
 
           const fadeIn = gsap.timeline({
-            defaults: { ease: 'power3.out' },
+            defaults: { ease: 'power2.out' },
             scrollTrigger: {
               trigger: stage,
-              start: 'top 78%',
+              start: 'top 72%',
               toggleActions: 'play none none reverse',
-              invalidateOnRefresh: true,
             },
           })
 
-          if (stageHeading) fadeIn.to(stageHeading, { autoAlpha: 1, y: 0, duration: 0.75 }, 0)
-          fadeIn.to(tile, { autoAlpha: 1, y: 0, scale: 1, duration: 1.05 }, 0.08)
-          if (media) fadeIn.to(media, { autoAlpha: 1, y: 0, duration: 0.95 }, 0.12)
-          if (footer) fadeIn.to(footer, { autoAlpha: 1, y: 0, duration: 0.8 }, 0.24)
-
-          if (index < stages.length - 1) {
-            gsap.to(tile, {
-              scale: 0.94,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: stages[index + 1],
-                start: 'top 90%',
-                end: 'top 40%',
-                scrub: 1.2,
-                invalidateOnRefresh: true,
-              },
-            })
-          }
+          if (stageHeading) fadeIn.to(stageHeading, { autoAlpha: 1, y: 0, duration: 0.6 }, 0)
+          fadeIn.to(frame, { autoAlpha: 1, y: 0, duration: 0.85 }, 0.06)
+          if (footer) fadeIn.to(footer, { autoAlpha: 1, y: 0, duration: 0.6 }, 0.22)
         })
 
         const images = root.querySelectorAll<HTMLImageElement>('[data-showcase-cover]')
@@ -564,6 +546,7 @@ export function Showcase() {
 
     setOpeningSlug(slug)
     const card = event.currentTarget
+    const frame = card.closest<HTMLElement>('[data-showcase-frame]') ?? card
     const cover = card.querySelector('[data-showcase-cover]')
     const curtain = curtainRef.current
     const timeline = gsap.timeline({
@@ -573,7 +556,7 @@ export function Showcase() {
 
     timeline
       .set(curtain, { display: 'grid', yPercent: 100 })
-      .to(card, { scale: 1.01, duration: 0.24, ease: 'power2.out' }, 0)
+      .to(frame, { scale: 1.01, duration: 0.24, ease: 'power2.out' }, 0)
       .to(cover, { autoAlpha: 0.92, duration: 0.35, ease: 'power2.inOut' }, 0)
       .to(curtain, { yPercent: 0, duration: 0.52, ease: 'power4.inOut' }, 0.12)
   }
@@ -661,7 +644,7 @@ export function Showcase() {
                     </span>
                     <h3 className="showcase-column-stage__title">{column.title}</h3>
                   </div>
-                  <div className="showcase-column-stage__frame">
+                  <div className="showcase-column-stage__frame" data-showcase-frame>
                     <Link
                       to={`/showcase/${column.slug}`}
                       className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
