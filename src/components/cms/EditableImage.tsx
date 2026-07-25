@@ -28,6 +28,7 @@ export function EditableImage({
   const { showToast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const hasImage = Boolean(src)
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return
@@ -44,9 +45,24 @@ export function EditableImage({
     }
   }
 
+  if (!canEditField && !hasImage) return null
+
   return (
-    <div className={`cms-image-edit ${canEditField ? 'cms-image-edit--active' : ''}`}>
-      <img src={src} alt={alt} className={className} {...imgProps} />
+    <div
+      className={[
+        'cms-image-edit',
+        canEditField ? 'cms-image-edit--active' : '',
+        !hasImage ? 'cms-image-edit--empty' : '',
+        className.includes('cms-extra-section__banner-img') ? 'cms-image-edit--banner' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {hasImage ? (
+        <img src={src} alt={alt} className={className} {...imgProps} />
+      ) : (
+        <div className={`cms-image-edit__placeholder ${className}`.trim()} aria-hidden />
+      )}
       {canEditField ? (
         <>
           <input
@@ -61,11 +77,11 @@ export function EditableImage({
             className="cms-image-edit__overlay"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            aria-label="Change image"
+            aria-label={hasImage ? 'Change image' : 'Add image'}
           >
             <span>
               {uploading ? <Loader2 size={16} className="spin" /> : <ImagePlus size={16} />}
-              {uploading ? 'Uploading…' : 'Change image'}
+              {uploading ? 'Uploading…' : hasImage ? 'Change image' : 'Add image'}
             </span>
           </button>
         </>

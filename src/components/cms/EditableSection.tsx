@@ -80,7 +80,7 @@ export const EditableSection = forwardRef<HTMLElement, EditableSectionProps>(fun
           return
         }
 
-        const controlHeight = isActive && canUndoActiveSection ? 108 : 72
+        const controlHeight = 88
         const top = Math.min(visibleTop + edgePad, Math.max(viewTop, visibleBottom - controlHeight))
         const desiredRight = Math.min(rect.right - edgePad, window.innerWidth - edgePad)
         const right = Math.max(edgePad, window.innerWidth - desiredRight)

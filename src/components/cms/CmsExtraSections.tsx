@@ -6,6 +6,7 @@ import { cmsAssetUrl } from '../../lib/cmsAssetUrl'
 import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import { useToast } from '../../context/ToastContext'
+import { preserveScroll } from '../../lib/preserveScroll'
 import { EditableText } from './EditableText'
 import { EditableButton } from './EditableButton'
 import { EditableImage } from './EditableImage'
@@ -32,30 +33,39 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
     }
   }
 
+  const removeSection = async (id: string) => {
+    await preserveScroll(async () => {
+      await persist(sections.filter((row) => row.id !== id))
+    })
+  }
+
   return (
     <div className="cms-extra-sections">
       {sections.map((section, index) => (
-        <article key={section.id} className="cms-extra-section bento-card">
+        <article key={section.id} className={`cms-extra-section bento-card cms-extra-section--${section.type}`}>
           {canEdit ? (
             <div className="cms-extra-section__admin">
-              <select
-                className="cms-editable__input"
-                value={section.type}
-                onChange={(e) => {
-                  const next = sections.map((row, i) =>
-                    i === index ? { ...row, type: e.target.value as CmsExtraSection['type'] } : row,
-                  )
-                  void persist(next)
-                }}
-              >
-                <option value="content">Content block</option>
-                <option value="cta">Call to action</option>
-                <option value="banner">Image banner</option>
-              </select>
+              <label className="cms-extra-section__admin-label">
+                <span>Section type</span>
+                <select
+                  className="cms-editable__input cms-extra-section__type"
+                  value={section.type}
+                  onChange={(e) => {
+                    const next = sections.map((row, i) =>
+                      i === index ? { ...row, type: e.target.value as CmsExtraSection['type'] } : row,
+                    )
+                    void persist(next)
+                  }}
+                >
+                  <option value="content">Content block</option>
+                  <option value="cta">Call to action</option>
+                  <option value="banner">Image banner</option>
+                </select>
+              </label>
               <button
                 type="button"
-                className="cms-string-list__remove"
-                onClick={() => void persist(sections.filter((row) => row.id !== section.id))}
+                className="cms-extra-section__remove"
+                onClick={() => void removeSection(section.id)}
               >
                 <Trash2 size={14} />
                 Remove section
@@ -63,9 +73,9 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
             </div>
           ) : null}
 
-          {section.type === 'banner' && section.image ? (
+          {section.type === 'banner' ? (
             <div className="cms-extra-section__banner">
-              {canEdit ? (
+              {canEdit || section.image ? (
                 <EditableImage
                   contentKey={contentKey}
                   path={`extraSections.${index}.image`}
@@ -74,9 +84,7 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
                   uploadFolder="banners"
                   className="cms-extra-section__banner-img"
                 />
-              ) : (
-                <img src={cmsAssetUrl(section.image)} alt="" className="cms-extra-section__banner-img" />
-              )}
+              ) : null}
             </div>
           ) : null}
 
@@ -84,16 +92,6 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
             <EditableText contentKey={contentKey} path={`extraSections.${index}.eyebrow`} as="span" className="section-label" />
             <EditableText contentKey={contentKey} path={`extraSections.${index}.title`} as="h2" className="display-lg" />
             <EditableText contentKey={contentKey} path={`extraSections.${index}.body`} as="p" className="lead" multiline />
-
-            {section.type === 'banner' && canEdit ? (
-              <EditableImage
-                contentKey={contentKey}
-                path={`extraSections.${index}.image`}
-                src={cmsAssetUrl(section.image)}
-                alt=""
-                uploadFolder="banners"
-              />
-            ) : null}
 
             {section.type === 'cta' ? (
               <div className="cta-panel__actions">
@@ -104,7 +102,7 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
                   to={section.primaryCtaHref || '/contact'}
                   size="lg"
                 />
-                {section.secondaryCtaLabel ? (
+                {section.secondaryCtaLabel || canEdit ? (
                   <EditableButton
                     contentKey={contentKey}
                     labelPath={`extraSections.${index}.secondaryCtaLabel`}
