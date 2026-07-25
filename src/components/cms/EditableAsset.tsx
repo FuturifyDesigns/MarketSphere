@@ -14,6 +14,9 @@ type EditableAssetProps = {
   uploadFolder?: string
   accept?: string
   label?: string
+  /** Large clickable photo zone for service/staff cards. */
+  variant?: 'button' | 'dropzone'
+  hint?: string
 }
 
 export function EditableAsset({
@@ -23,6 +26,8 @@ export function EditableAsset({
   uploadFolder = 'media',
   accept = 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm',
   label = 'Upload image or video',
+  variant = 'button',
+  hint,
 }: EditableAssetProps) {
   const { updateField } = useSiteContent()
   const canEdit = useSectionFieldEdit()
@@ -47,8 +52,17 @@ export function EditableAsset({
     }
   }
 
+  const isVideo = value.includes('video') || value.endsWith('.mp4') || value.endsWith('.webm')
+  const icon = uploading ? (
+    <Loader2 size={variant === 'dropzone' ? 22 : 16} className="spin" />
+  ) : isVideo ? (
+    <Film size={variant === 'dropzone' ? 22 : 16} />
+  ) : (
+    <ImagePlus size={variant === 'dropzone' ? 22 : 16} />
+  )
+
   return (
-    <div className="cms-asset-edit">
+    <div className={`cms-asset-edit${variant === 'dropzone' ? ' cms-asset-edit--dropzone' : ''}`}>
       <input
         ref={inputRef}
         type="file"
@@ -58,14 +72,19 @@ export function EditableAsset({
       />
       <button
         type="button"
-        className="cms-asset-edit__btn"
+        className={`cms-asset-edit__btn${variant === 'dropzone' ? ' cms-asset-edit__btn--dropzone' : ''}`}
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
       >
-        {uploading ? <Loader2 size={16} className="spin" /> : value.includes('video') || value.endsWith('.mp4') ? <Film size={16} /> : <ImagePlus size={16} />}
-        {uploading ? 'Uploading…' : label}
+        {icon}
+        <span className="cms-asset-edit__label">{uploading ? 'Uploading…' : label}</span>
+        {variant === 'dropzone' ? (
+          <span className="cms-asset-edit__hint">
+            {hint || 'JPEG, PNG or WebP · this is where the card photo goes'}
+          </span>
+        ) : null}
       </button>
-      {value ? <code className="cms-asset-edit__path">{value}</code> : null}
+      {value && variant !== 'dropzone' ? <code className="cms-asset-edit__path">{value}</code> : null}
     </div>
   )
 }

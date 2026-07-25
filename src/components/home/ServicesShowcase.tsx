@@ -421,15 +421,19 @@ export function ServicesShowcase() {
                       <ArrowRight size={14} />
                     </EditableLink>
                   </div>
-                  <div className="services-showcase__visual">
+                  <div className={`services-showcase__visual${canEditField ? ' services-showcase__visual--editing' : ''}`}>
                     <PosterTilt>
-                      <img
-                        src={cmsAssetUrl(service.image)}
-                        alt={service.title}
-                        className="services-showcase__visual-poster"
-                        loading="eager"
-                        decoding="async"
-                      />
+                      {service.image ? (
+                        <img
+                          src={cmsAssetUrl(service.image)}
+                          alt={service.title}
+                          className="services-showcase__visual-poster"
+                          loading="eager"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div className="services-showcase__visual-placeholder" aria-hidden />
+                      )}
                     </PosterTilt>
                     {canEditField ? (
                       <div className="services-showcase__media-tools">
@@ -439,26 +443,30 @@ export function ServicesShowcase() {
                           value={service.image || ''}
                           uploadFolder="services"
                           accept="image/jpeg,image/png,image/webp,image/gif"
-                          label="Change photo"
+                          label={service.image ? 'Replace photo' : 'Add photo here'}
+                          variant="dropzone"
+                          hint="Click this panel to place the service image"
                         />
-                        <EditableAsset
-                          contentKey="services"
-                          path={`items.${i}.video`}
-                          value={service.video || ''}
-                          uploadFolder="services"
-                          accept="video/mp4,video/webm"
-                          label="Upload video"
-                        />
-                        {items.length > 1 ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => removeService(service.id)}
-                          >
-                            Remove card
-                          </Button>
-                        ) : null}
+                        <div className="services-showcase__media-tools-row">
+                          <EditableAsset
+                            contentKey="services"
+                            path={`items.${i}.video`}
+                            value={service.video || ''}
+                            uploadFolder="services"
+                            accept="video/mp4,video/webm"
+                            label="Upload video"
+                          />
+                          {items.length > 1 ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => removeService(service.id)}
+                            >
+                              Remove card
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -504,12 +512,16 @@ export function ServicesShowcase() {
                   <span className="services-showcase__index">0{i + 1}</span>
                   <div className="services-showcase__mobile-visual">
                     <PosterTilt>
-                      <img
-                        src={cmsAssetUrl(service.image)}
-                        alt={service.title}
-                        className="services-showcase__visual-poster"
-                        loading="lazy"
-                      />
+                      {service.image ? (
+                        <img
+                          src={cmsAssetUrl(service.image)}
+                          alt={service.title}
+                          className="services-showcase__visual-poster"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="services-showcase__visual-placeholder" aria-hidden />
+                      )}
                     </PosterTilt>
                     {canEditField ? (
                       <div className="services-showcase__media-tools">
@@ -519,26 +531,30 @@ export function ServicesShowcase() {
                           value={service.image || ''}
                           uploadFolder="services"
                           accept="image/jpeg,image/png,image/webp,image/gif"
-                          label="Change photo"
+                          label={service.image ? 'Replace photo' : 'Add photo here'}
+                          variant="dropzone"
+                          hint="Click this panel to place the service image"
                         />
-                        <EditableAsset
-                          contentKey="services"
-                          path={`items.${i}.video`}
-                          value={service.video || ''}
-                          uploadFolder="services"
-                          accept="video/mp4,video/webm"
-                          label="Upload video"
-                        />
-                        {items.length > 1 ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => removeService(service.id)}
-                          >
-                            Remove card
-                          </Button>
-                        ) : null}
+                        <div className="services-showcase__media-tools-row">
+                          <EditableAsset
+                            contentKey="services"
+                            path={`items.${i}.video`}
+                            value={service.video || ''}
+                            uploadFolder="services"
+                            accept="video/mp4,video/webm"
+                            label="Upload video"
+                          />
+                          {items.length > 1 ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => removeService(service.id)}
+                            >
+                              Remove card
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -553,13 +569,19 @@ export function ServicesShowcase() {
       </div>
 
       {canEditField ? (
-        <div className="container cms-list-edit__add services-showcase__cms-add">
-          <Button type="button" size="sm" variant="secondary" onClick={addService}>
-            Add service card
-          </Button>
-          <p className="cms-list-edit__hint">
-            New cards appear in this showcase and on the Services page. Click section <strong>DONE</strong> when finished.
-          </p>
+        <div className="services-showcase__cms-panel">
+          <div className="container services-showcase__cms-panel-inner">
+            <div className="services-showcase__cms-panel-copy">
+              <span className="services-showcase__cms-panel-label">Service cards</span>
+              <p>
+                Add a new card to this showcase and the Services page. Scroll to the new card, then use{' '}
+                <strong>Add photo here</strong> on the image panel.
+              </p>
+            </div>
+            <Button type="button" size="sm" onClick={addService}>
+              Add service card
+            </Button>
+          </div>
         </div>
       ) : null}
     </EditableSection>

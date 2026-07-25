@@ -21,9 +21,13 @@ export function LiveEditorBar() {
     <div className="live-editor-bar" role="banner" aria-label="Live website editor">
       <div className="live-editor-bar__inner container">
         <div className="live-editor-bar__brand">
-          <Pencil size={16} aria-hidden="true" />
-          <strong>LIVE EDITOR</strong>
-          <span className="live-editor-bar__email">{profile?.email}</span>
+          <span className="live-editor-bar__badge" aria-hidden="true">
+            <Pencil size={15} />
+          </span>
+          <div className="live-editor-bar__brand-copy">
+            <strong>Live editor</strong>
+            <span className="live-editor-bar__email">{profile?.email}</span>
+          </div>
         </div>
         <div className="live-editor-bar__actions">
           <Link to="/dashboard/admin" state={{ tab: 'site-content' }} className="live-editor-bar__btn live-editor-bar__btn--ghost">
@@ -44,12 +48,26 @@ export function LiveEditorBar() {
           </button>
         </div>
       </div>
-      <p className="live-editor-bar__hint container">
-        1) Click <strong>EDIT</strong> on a section to unlock its fields.
-        2) Click highlighted text, photos, or <strong>Add</strong> buttons to change content.
-        3) Click the same button again (<strong>DONE</strong>) to exit that section — or use{' '}
-        <strong>Exit editor</strong> above to leave live editing entirely.
-      </p>
+      <div className="live-editor-bar__guide container" aria-label="How to edit">
+        <div className="live-editor-bar__step">
+          <span className="live-editor-bar__step-num">1</span>
+          <p>
+            Click <strong>EDIT</strong> on a section to unlock it
+          </p>
+        </div>
+        <div className="live-editor-bar__step">
+          <span className="live-editor-bar__step-num">2</span>
+          <p>
+            Change text, photos, or use <strong>Add</strong> buttons
+          </p>
+        </div>
+        <div className="live-editor-bar__step">
+          <span className="live-editor-bar__step-num">3</span>
+          <p>
+            Click <strong>DONE</strong> on that section — or Exit editor above
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

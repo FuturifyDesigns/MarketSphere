@@ -118,7 +118,7 @@ export function ServicesPageShowcase() {
                 <div className="svc-page__slide-inner container">
                   <div className="svc-page__media-wrap">
                     <div className="svc-page__media-glow" aria-hidden="true" />
-                    <div className="svc-page__media">
+                    <div className={`svc-page__media${canEditField ? ' svc-page__media--editing' : ''}`}>
                       <ServiceSlideMedia
                         video={service.video}
                         image={service.image}
@@ -133,31 +133,35 @@ export function ServicesPageShowcase() {
                             value={service.image || ''}
                             uploadFolder="services"
                             accept="image/jpeg,image/png,image/webp,image/gif"
-                            label="Change photo"
+                            label={service.image ? 'Replace photo' : 'Add photo here'}
+                            variant="dropzone"
+                            hint="Click this panel to place the service image"
                           />
-                          <EditableAsset
-                            contentKey="services"
-                            path={`items.${i}.video`}
-                            value={service.video || ''}
-                            uploadFolder="services"
-                            accept="video/mp4,video/webm"
-                            label="Upload video"
-                          />
-                          {items.length > 1 ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              onClick={() =>
-                                void persistItems(
-                                  items.filter((row) => row.id !== service.id),
-                                  'Service card removed.',
-                                )
-                              }
-                            >
-                              Remove card
-                            </Button>
-                          ) : null}
+                          <div className="services-showcase__media-tools-row">
+                            <EditableAsset
+                              contentKey="services"
+                              path={`items.${i}.video`}
+                              value={service.video || ''}
+                              uploadFolder="services"
+                              accept="video/mp4,video/webm"
+                              label="Upload video"
+                            />
+                            {items.length > 1 ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() =>
+                                  void persistItems(
+                                    items.filter((row) => row.id !== service.id),
+                                    'Service card removed.',
+                                  )
+                                }
+                              >
+                                Remove card
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
                       ) : null}
                     </div>
@@ -184,18 +188,23 @@ export function ServicesPageShowcase() {
       </div>
 
       {canEditField ? (
-        <div className="container cms-list-edit__add">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => void persistItems([...items, createMarketingService()], 'Service card added.')}
-          >
-            Add service card
-          </Button>
-          <p className="cms-list-edit__hint">
-            Cards sync with the homepage services showcase. Click section <strong>DONE</strong> when finished editing.
-          </p>
+        <div className="services-showcase__cms-panel">
+          <div className="container services-showcase__cms-panel-inner">
+            <div className="services-showcase__cms-panel-copy">
+              <span className="services-showcase__cms-panel-label">Service cards</span>
+              <p>
+                New cards also appear on the homepage showcase. Use <strong>Add photo here</strong> on the
+                image panel after creating a card.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void persistItems([...items, createMarketingService()], 'Service card added.')}
+            >
+              Add service card
+            </Button>
+          </div>
         </div>
       ) : null}
     </section>

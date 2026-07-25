@@ -44,7 +44,7 @@ export function createMarketingService(): import('./siteContentDefaults').Market
     tagline: 'Service tagline',
     description: 'Describe this service and how it helps clients.',
     icon: 'sparkles',
-    image: '/images/services/youth.jpg',
+    image: 'services/youth-empowerment.webp',
     video: '',
     accent: '#c9a227',
     gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
