@@ -8,7 +8,12 @@ import { AuthPageCover } from '../components/auth/AuthPageCover'
 import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import { Button } from '../components/ui/Button'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
-import { consumeOAuthSignupIntent } from '../lib/oauthIntent'
+import {
+  clearOAuthSignupIntent,
+  consumeOAuthSignupIntent,
+  isOAuthCancelError,
+  peekOAuthReturnTo,
+} from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned } from '../lib/accountGuard'
 import type { Profile } from '../lib/types'
 import './authTheme.css'
@@ -57,13 +62,28 @@ export function AuthCallback() {
   useEffect(() => {
     let cancelled = false
 
+    const returnHome = (path: '/login' | '/register', toastMessage: string) => {
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      showToast(toastMessage, 'info')
+      navigate(path, { replace: true })
+    }
+
     const finish = async () => {
       try {
         const { code, errorDescription } = readOAuthParams()
+        const returnTo = peekOAuthReturnTo() === 'register' ? '/register' : '/login'
 
         if (errorDescription) {
+          const decoded = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+          if (isOAuthCancelError(decoded) || isOAuthCancelError(errorDescription)) {
+            returnHome(returnTo, 'Google sign-in cancelled. You can continue with email.')
+            return
+          }
+          clearOAuthSignupIntent()
+          clearOAuthParamsFromUrl()
           setStatus('error')
-          setMessage(decodeURIComponent(errorDescription.replace(/\+/g, ' ')))
+          setMessage(decoded)
           return
         }
 
@@ -71,11 +91,15 @@ export function AuthCallback() {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (cancelled) return
           if (error) {
-            // detectSessionInUrl may already have exchanged this code.
             const {
               data: { session: existing },
             } = await supabase.auth.getSession()
             if (!existing) {
+              if (isOAuthCancelError(error.message)) {
+                returnHome(returnTo, 'Google sign-in cancelled. You can continue with email.')
+                return
+              }
+              clearOAuthSignupIntent()
               setStatus('error')
               setMessage(error.message || 'Google sign-in failed.')
               return
@@ -90,8 +114,8 @@ export function AuthCallback() {
         if (cancelled) return
 
         if (!session?.user) {
-          setStatus('error')
-          setMessage('Google sign-in did not complete. Please try again.')
+          // No code and no session usually means cancel / incomplete redirect.
+          returnHome(returnTo, 'Google sign-in cancelled. You can continue with email.')
           return
         }
 
@@ -126,7 +150,6 @@ export function AuthCallback() {
         if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
           updates.full_name = fullName.trim()
         }
-        // Only apply provider intent for brand-new Google accounts — never change an existing user.
         if (isNewAccount && intent?.role === 'provider' && profile.role === 'customer') {
           updates.role = 'provider'
         }
@@ -158,6 +181,7 @@ export function AuthCallback() {
         else navigate('/dashboard/customer', { replace: true })
       } catch (error) {
         if (cancelled) return
+        clearOAuthSignupIntent()
         setStatus('error')
         setMessage(error instanceof Error ? error.message : 'Google sign-in failed.')
       }

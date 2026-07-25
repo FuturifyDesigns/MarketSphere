@@ -26,7 +26,9 @@ import { Input } from '../components/ui/Input'
 import { PasswordInput } from '../components/ui/PasswordInput'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import { useSubmitLock } from '../hooks/useSubmitLock'
+import { useResetGoogleLoading } from '../hooks/useResetGoogleLoading'
 import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
+import { storeOAuthSignupIntent } from '../lib/oauthIntent'
 import './authTheme.css'
 import './Auth.css'
 
@@ -47,17 +49,28 @@ export function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const { locked, runLocked } = useSubmitLock()
+  useResetGoogleLoading(setGoogleLoading)
 
   const handleGoogle = async () => {
     if (loading || locked || googleLoading) return
     setError('')
     setGoogleLoading(true)
     applyRememberMePreference(rememberMe, email.trim())
-    const { error: err } = await signInWithGoogle()
-    if (err) {
+    storeOAuthSignupIntent('customer', false, 'login')
+    try {
+      const { error: err } = await signInWithGoogle()
+      if (err) {
+        setError(err.message)
+        showToast(err.message, 'error')
+        setGoogleLoading(false)
+      }
+      // On success the browser navigates away. If the user cancels and comes back,
+      // useResetGoogleLoading clears the stuck loading state.
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Google sign-in failed. Please try again.'
+      setError(msg)
+      showToast(msg, 'error')
       setGoogleLoading(false)
-      setError(err.message)
-      showToast(err.message, 'error')
     }
   }
 

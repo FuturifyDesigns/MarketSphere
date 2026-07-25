@@ -28,6 +28,7 @@ import { PhoneInput } from '../components/ui/PhoneInput'
 import { PasswordStrengthBar } from '../components/ui/PasswordStrengthBar'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import { useSubmitLock } from '../hooks/useSubmitLock'
+import { useResetGoogleLoading } from '../hooks/useResetGoogleLoading'
 import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
 import { storeOAuthSignupIntent } from '../lib/oauthIntent'
 import './authTheme.css'
@@ -61,6 +62,7 @@ export function Register() {
   const [privacyConsent, setPrivacyConsent] = useState(false)
   const [consentError, setConsentError] = useState('')
   const { locked, runLocked } = useSubmitLock()
+  useResetGoogleLoading(setGoogleLoading)
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -77,7 +79,7 @@ export function Register() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (loading || locked) return
+    if (loading || locked || googleLoading) return
     setError('')
     setConsentError('')
 
@@ -149,12 +151,19 @@ export function Register() {
     }
 
     setGoogleLoading(true)
-    storeOAuthSignupIntent(form.role === 'provider' ? 'provider' : 'customer', true)
-    const { error: err } = await signInWithGoogle()
-    if (err) {
+    storeOAuthSignupIntent(form.role === 'provider' ? 'provider' : 'customer', true, 'register')
+    try {
+      const { error: err } = await signInWithGoogle()
+      if (err) {
+        setError(err.message)
+        showToast(err.message, 'error')
+        setGoogleLoading(false)
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Google sign-in failed. Please try again.'
+      setError(msg)
+      showToast(msg, 'error')
       setGoogleLoading(false)
-      setError(err.message)
-      showToast(err.message, 'error')
     }
   }
 
