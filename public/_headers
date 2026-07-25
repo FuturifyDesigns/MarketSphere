@@ -19,3 +19,15 @@
 
 /*.css
   X-Content-Type-Options: nosniff
+
+/favicon.ico
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/favicon-*.png
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/icon-192.png
+  Cache-Control: public, max-age=3600, must-revalidate

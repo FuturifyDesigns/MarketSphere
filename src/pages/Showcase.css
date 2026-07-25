@@ -89,12 +89,13 @@
   font-style: normal;
 }
 
-.showcase-hero__lead {
+.showcase-hero .showcase-hero__lead {
   max-width: 43ch;
   margin: 0.35rem 0 0;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.94);
   font-size: clamp(1.05rem, 1.7vw, 1.22rem);
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
+  line-height: 1.6;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
 }
 
 .showcase-hero__mosaic {
