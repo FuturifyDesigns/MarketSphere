@@ -1,8 +1,6 @@
 import { SERVICES } from './constants'
 
 const base = import.meta.env.BASE_URL
-const CDN_BASE =
-  'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
 
 const blobByVideo = new Map<string, string>()
 const readyByVideo = new Map<string, boolean>()
@@ -17,10 +15,6 @@ function notify() {
 
 function localUrl(path: string) {
   return `${base}${path}`
-}
-
-function cdnUrl(path: string) {
-  return `${CDN_BASE}${path}`
 }
 
 function waitForCanPlayThrough(video: HTMLVideoElement, timeoutMs = 15000) {
@@ -42,17 +36,14 @@ function waitForCanPlayThrough(video: HTMLVideoElement, timeoutMs = 15000) {
 }
 
 async function fetchToBlob(path: string): Promise<string | null> {
-  for (const url of [localUrl(path), cdnUrl(path)]) {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) continue
-      const blob = await response.blob()
-      return URL.createObjectURL(blob)
-    } catch {
-      /* try next source */
-    }
+  try {
+    const response = await fetch(localUrl(path))
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  } catch {
+    return null
   }
-  return null
 }
 
 async function warmDecoder(path: string, src: string) {
@@ -77,7 +68,6 @@ async function warmDecoder(path: string, src: string) {
   notify()
 }
 
-
 /** Start downloading + decoding all service videos (deferred until idle). */
 export function preloadServiceVideos() {
   if (preloadPromise) return preloadPromise
@@ -85,9 +75,13 @@ export function preloadServiceVideos() {
   preloadStarted = true
   preloadPromise = (async () => {
     const paths = SERVICES.map((service) => service.video)
-    await Promise.all(paths.map((path) => fetchToBlob(path).then((blob) => {
-      if (blob) blobByVideo.set(path, blob)
-    })))
+    await Promise.all(
+      paths.map((path) =>
+        fetchToBlob(path).then((blob) => {
+          if (blob) blobByVideo.set(path, blob)
+        }),
+      ),
+    )
 
     for (const path of paths) {
       const blobUrl = blobByVideo.get(path)

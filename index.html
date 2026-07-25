@@ -3,11 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; upgrade-insecure-requests"
+    />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta
       http-equiv="Permissions-Policy"
-      content="geolocation=(), microphone=(), camera=(), payment=()"
+      content="accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()"
     />
 
     <title>Market Sphere Group — Verified Service Providers in Botswana</title>
@@ -28,7 +32,6 @@
     <meta name="geo.placename" content="Gaborone" />
     <link rel="canonical" href="https://marketspheregroup.com/" />
 
-    <!-- Favicons — stable URLs (Google requires a stable favicon URL; avoid query-string versioning) -->
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
@@ -36,7 +39,6 @@
     <link rel="apple-touch-icon" href="/logo-512.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://marketspheregroup.com/" />
     <meta property="og:site_name" content="Market Sphere Group" />
@@ -56,7 +58,6 @@
     <meta property="og:image:height" content="512" />
     <meta property="og:image:alt" content="Market Sphere Group logo" />
 
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary" />
     <meta
       name="twitter:title"
@@ -162,19 +163,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      ;(function () {
-        var path = window.location.pathname
-        if (path === '/' || /\/(index|404)\.html\/?$/.test(path)) return
-        if (window.location.hash && window.location.hash.length > 1) return
-        window.location.replace(
-          '/#/' +
-            path.replace(/^\/+/, '').replace(/\/$/, '') +
-            window.location.search +
-            window.location.hash
-        )
-      })()
-    </script>
+    <script src="/route-bootstrap.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

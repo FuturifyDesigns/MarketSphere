@@ -1,8 +1,6 @@
 export const HERO_VIDEO_PATH = 'home/hero-video.mp4'
 
 const base = import.meta.env.BASE_URL
-const CDN_BASE =
-  'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
 
 let blobUrl: string | null = null
 let ready = false
@@ -15,10 +13,6 @@ function notify() {
 
 function localUrl() {
   return `${base}${HERO_VIDEO_PATH}`
-}
-
-function cdnUrl() {
-  return `${CDN_BASE}${HERO_VIDEO_PATH}`
 }
 
 function waitForEvent(video: HTMLVideoElement, event: 'canplay' | 'canplaythrough', timeoutMs: number) {
@@ -45,17 +39,14 @@ function waitForEvent(video: HTMLVideoElement, event: 'canplay' | 'canplaythroug
 }
 
 async function fetchToBlob(): Promise<string | null> {
-  for (const url of [localUrl(), cdnUrl()]) {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) continue
-      const blob = await response.blob()
-      return URL.createObjectURL(blob)
-    } catch {
-      /* try next source */
-    }
+  try {
+    const response = await fetch(localUrl())
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  } catch {
+    return null
   }
-  return null
 }
 
 async function warmDecoder(src: string) {

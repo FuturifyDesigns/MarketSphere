@@ -1,0 +1,6 @@
+Contact: mailto:security@marketspheregroup.com
+Contact: mailto:info@marketspheregroup.com
+Expires: 2027-07-24T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://marketspheregroup.com/.well-known/security.txt
+Policy: https://marketspheregroup.com/#/privacy

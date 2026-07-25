@@ -7,8 +7,6 @@ import {
 } from '../../lib/serviceVideoCache'
 
 const base = import.meta.env.BASE_URL
-const CDN_BASE =
-  'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
 
 type ServiceSlideMediaProps = {
   video: string
@@ -81,13 +79,7 @@ export function ServiceSlideMedia({ video, image, title, index }: ServiceSlideMe
       playsInline
       preload="auto"
       aria-label={`${title} showcase video`}
-      onError={() => {
-        if (!src.includes('media.githubusercontent.com') && !src.startsWith('blob:')) {
-          setSrc(`${CDN_BASE}${video}`)
-          return
-        }
-        setUseImage(true)
-      }}
+      onError={() => setUseImage(true)}
     />
   )
 }

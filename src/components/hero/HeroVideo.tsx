@@ -13,8 +13,6 @@ import { EditableAsset } from '../cms/EditableAsset'
 import './HeroVideo.css'
 
 const base = import.meta.env.BASE_URL
-const CDN_BASE =
-  'https://media.githubusercontent.com/media/FuturifyDesigns/MarketSphere/main/public/'
 const POSTER = `${base}${LOGO_PATH}`
 const DEFAULT_VIDEO = 'home/hero-video.mp4'
 
@@ -108,15 +106,7 @@ export function HeroVideo() {
             const el = videoRef.current
             if (el && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) setReady(true)
           }}
-          onError={() => {
-            if (isRemoteVideo) {
-              setReady(false)
-              return
-            }
-            if (!resolvedSrc.includes('media.githubusercontent.com') && !resolvedSrc.startsWith('blob:')) {
-              setSrc(`${CDN_BASE}${DEFAULT_VIDEO}`)
-            }
-          }}
+          onError={() => setReady(false)}
         />
       </div>
       {canEditField ? (
