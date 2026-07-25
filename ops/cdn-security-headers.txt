@@ -1,8 +1,9 @@
 # CDN / reverse-proxy security headers for https://marketspheregroup.com
 # Apply at the edge in front of the static origin. Meta tags cannot set HSTS or frame-ancestors.
+# Keep this file in sync with public/_headers and the CSP meta in index.html.
 
 X-Frame-Options: DENY
-Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; upgrade-insecure-requests
+Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self'; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com; worker-src 'self' blob:; upgrade-insecure-requests
 Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
