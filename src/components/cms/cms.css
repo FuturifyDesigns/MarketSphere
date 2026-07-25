@@ -807,8 +807,9 @@
 .cms-editable-btn {
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 8px;
+  max-width: 100%;
 }
 
 .btn--cms-static {
@@ -819,15 +820,81 @@
   pointer-events: auto;
 }
 
+/* Keep button label contrast on every surface while editing */
+.btn--primary .cms-editable,
+.btn--primary .cms-editable--active,
+.btn--primary .cms-editable--editing {
+  color: var(--color-night, #14100c) !important;
+}
+
+.btn--secondary .cms-editable,
+.btn--secondary .cms-editable--active,
+.btn--secondary .cms-editable--editing {
+  color: var(--color-gold, #c9a24b) !important;
+}
+
+.btn--ghost .cms-editable,
+.btn--ghost .cms-editable--active,
+.btn--ghost .cms-editable--editing {
+  color: var(--text-primary, #14100c) !important;
+}
+
 .cms-editable-btn__href {
   display: grid;
   gap: 4px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 162, 75, 0.28);
+  background: #f7f3ea;
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.75);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c4a28;
 }
 
 .cms-editable-btn__href-value {
   display: block;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #14100c !important;
+  word-break: break-all;
+}
+
+.cms-editable-btn__href-value.cms-editable--active,
+.cms-editable-btn__href-value.cms-editable--editing {
+  color: #14100c !important;
+}
+
+.cms-editable-btn--empty .btn {
+  min-width: 9rem;
+  min-height: 2.75rem;
+}
+
+.cms-extra-section__body .section-label,
+.cms-extra-section__body .section-label.cms-editable {
+  color: #8a6a1f !important;
+}
+
+.cms-extra-section__body .display-lg,
+.cms-extra-section__body .display-lg.cms-editable {
+  color: #14100c !important;
+}
+
+.cms-extra-section__body .lead,
+.cms-extra-section__body .lead.cms-editable {
+  color: #2f2820 !important;
+}
+
+.cms-extra-section--cta .cms-extra-section__body {
+  text-align: center;
+  align-items: center;
+}
+
+.cms-extra-section--cta .cta-panel__actions {
+  width: 100%;
+  margin-top: 0.5rem;
 }
 
 .cms-editable-link {

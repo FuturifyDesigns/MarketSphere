@@ -110,6 +110,7 @@ export function CmsExtraSections({ contentKey }: CmsExtraSectionsProps) {
                     to={section.secondaryCtaHref || '/register'}
                     variant="secondary"
                     size="lg"
+                    emptyLabel="Secondary button"
                   />
                 ) : null}
               </div>

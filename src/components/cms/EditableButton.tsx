@@ -25,6 +25,7 @@ type EditableButtonProps = {
   size?: 'sm' | 'md' | 'lg'
   className?: string
   children?: ReactNode
+  emptyLabel?: string
 }
 
 export function EditableButton({
@@ -36,14 +37,19 @@ export function EditableButton({
   size = 'md',
   className = '',
   children,
+  emptyLabel = 'Button label',
 }: EditableButtonProps) {
   const canEditField = useSectionFieldEdit()
   const { getBlock } = useSiteContent()
   const block = getBlock<Record<string, unknown>>(contentKey)
+  const label = readPath(block, labelPath)
   const resolvedTo = hrefPath ? readPath(block, hrefPath) || to : to
+  const showEmpty = canEditField && !label.trim()
+
+  if (!canEditField && !label.trim()) return null
 
   return (
-    <span className="cms-editable-btn">
+    <span className={`cms-editable-btn${showEmpty ? ' cms-editable-btn--empty' : ''}`}>
       <Button
         to={resolvedTo}
         variant={variant}
@@ -59,13 +65,17 @@ export function EditableButton({
             : undefined
         }
       >
-        <EditableText contentKey={contentKey} path={labelPath} as="span" />
+        <EditableText contentKey={contentKey} path={labelPath} as="span">
+          {showEmpty ? emptyLabel : undefined}
+        </EditableText>
         {children}
       </Button>
       {canEditField && hrefPath ? (
         <label className="cms-editable-btn__href">
           <span>Link URL</span>
-          <EditableText contentKey={contentKey} path={hrefPath} as="span" className="cms-editable-btn__href-value" />
+          <EditableText contentKey={contentKey} path={hrefPath} as="span" className="cms-editable-btn__href-value">
+            {readPath(block, hrefPath) ? undefined : '/contact'}
+          </EditableText>
         </label>
       ) : null}
     </span>
