@@ -20,6 +20,7 @@ import { useSiteEdit } from '../../context/SiteEditContext'
 import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
 import { Button } from '../ui/Button'
+import { preserveScroll } from '../../lib/preserveScroll'
 import './ServicesShowcase.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -123,10 +124,12 @@ export function ServicesShowcase() {
       tone: 'danger',
     })
     if (!ok) return
-    void persistItems(
-      items.filter((item) => item.id !== id),
-      'Service card removed.',
-    )
+    await preserveScroll(async () => {
+      await persistItems(
+        items.filter((item) => item.id !== id),
+        'Service card removed.',
+      )
+    })
   }
 
   useEffect(() => {

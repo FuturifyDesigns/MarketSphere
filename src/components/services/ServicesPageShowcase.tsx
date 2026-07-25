@@ -7,6 +7,7 @@ import { useSiteContent } from '../../context/SiteContentContext'
 import { useSectionFieldEdit } from '../../context/SectionEditContext'
 import { useToast } from '../../context/ToastContext'
 import { useConfirm } from '../../context/ConfirmContext'
+import { preserveScroll } from '../../lib/preserveScroll'
 import type { MarketingService } from '../../lib/siteContentDefaults'
 import { EditableText } from '../cms/EditableText'
 import { EditableLink } from '../cms/EditableLink'
@@ -59,10 +60,12 @@ export function ServicesPageShowcase() {
       tone: 'danger',
     })
     if (!ok) return
-    void persistItems(
-      items.filter((row) => row.id !== id),
-      'Service card removed.',
-    )
+    await preserveScroll(async () => {
+      await persistItems(
+        items.filter((row) => row.id !== id),
+        'Service card removed.',
+      )
+    })
   }
 
   useEffect(() => {

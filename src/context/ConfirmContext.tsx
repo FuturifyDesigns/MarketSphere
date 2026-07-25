@@ -2,12 +2,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
+import { getPageScrollY, setPageScrollY } from '../lib/preserveScroll'
 import '../components/cms/cms.css'
 
 type ConfirmOptions = {
@@ -31,6 +34,8 @@ type PendingConfirm = ConfirmOptions & {
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<PendingConfirm | null>(null)
   const pendingRef = useRef<PendingConfirm | null>(null)
+  const scrollYRef = useRef(0)
+  const confirmBtnRef = useRef<HTMLButtonElement | null>(null)
 
   const close = useCallback((value: boolean) => {
     const current = pendingRef.current
@@ -47,6 +52,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       if (pendingRef.current) {
         pendingRef.current.resolve(false)
       }
+      scrollYRef.current = getPageScrollY()
       const next: PendingConfirm = {
         title: normalized.title ?? 'Please confirm',
         message: normalized.message,
@@ -59,6 +65,27 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       setPending(next)
     })
   }, [])
+
+  useEffect(() => {
+    if (!pending) return
+
+    const y = scrollYRef.current
+    lockBodyScroll()
+    setPageScrollY(y)
+
+    const frame = window.requestAnimationFrame(() => {
+      confirmBtnRef.current?.focus({ preventScroll: true })
+      setPageScrollY(y)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      unlockBodyScroll()
+      setPageScrollY(y)
+      requestAnimationFrame(() => setPageScrollY(y))
+      window.setTimeout(() => setPageScrollY(y), 0)
+    }
+  }, [pending])
 
   const value = useMemo(() => ({ confirm }), [confirm])
 
@@ -73,6 +100,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               aria-modal="true"
               aria-labelledby="cms-confirm-title"
               aria-describedby="cms-confirm-message"
+              data-lenis-prevent
             >
               <button
                 type="button"
@@ -96,10 +124,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                     {pending.cancelLabel}
                   </button>
                   <button
+                    ref={confirmBtnRef}
                     type="button"
                     className={`cms-confirm__btn cms-confirm__btn--${pending.tone === 'danger' ? 'danger' : 'primary'}`}
                     onClick={() => close(true)}
-                    autoFocus
                   >
                     {pending.confirmLabel}
                   </button>
