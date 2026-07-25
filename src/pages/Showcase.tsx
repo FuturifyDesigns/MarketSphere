@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   ArrowLeft,
   ArrowRight,
@@ -27,6 +30,21 @@ import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
 import { Button } from '../components/ui/Button'
 import './Showcase.css'
+
+gsap.registerPlugin(ScrollTrigger)
+
+const SHOWCASE_ASSET_BASE = `${import.meta.env.BASE_URL}showcase/`
+const COLUMN_COVERS: Record<string, string> = {
+  'real-estate': `${SHOWCASE_ASSET_BASE}real-estate.webp`,
+  'youth-empowerment': `${SHOWCASE_ASSET_BASE}youth-empowerment.webp`,
+  farming: `${SHOWCASE_ASSET_BASE}farming.webp`,
+  entrepreneurship: `${SHOWCASE_ASSET_BASE}entrepreneurship.webp`,
+  'academic-tuition': `${SHOWCASE_ASSET_BASE}academic-tuition.webp`,
+  'platform-marketing': `${SHOWCASE_ASSET_BASE}platform-marketing.webp`,
+  'music-education': `${SHOWCASE_ASSET_BASE}music-education.webp`,
+  'career-development': `${SHOWCASE_ASSET_BASE}career-development.webp`,
+  'it-services': `${SHOWCASE_ASSET_BASE}it-services.webp`,
+}
 
 const COLUMN_ICONS: Record<string, LucideIcon> = {
   building: Building2,
@@ -337,10 +355,15 @@ function ListingCard({
 }
 
 export function Showcase() {
+  const navigate = useNavigate()
+  const pageRef = useRef<HTMLDivElement | null>(null)
+  const curtainRef = useRef<HTMLDivElement | null>(null)
+  const transitionTimelineRef = useRef<gsap.core.Timeline | null>(null)
   const [columns, setColumns] = useState<ShowcaseColumn[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [openingSlug, setOpeningSlug] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -396,25 +419,180 @@ export function Showcase() {
     }
   }, [])
 
+  useEffect(() => {
+    if (loading || error || columns.length === 0 || !pageRef.current) return
+
+    const root = pageRef.current
+    const mm = gsap.matchMedia()
+
+    mm.add(
+      '(prefers-reduced-motion: no-preference)',
+      () => {
+        const heroTimeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
+        heroTimeline
+          .fromTo('[data-showcase-hero-copy]', { autoAlpha: 0, y: 34 }, { autoAlpha: 1, y: 0, duration: 0.85 })
+          .fromTo(
+            '[data-showcase-mosaic-card]',
+            { autoAlpha: 0, y: 44, rotation: (index) => (index - 1) * 4 },
+            { autoAlpha: 1, y: 0, rotation: 0, duration: 0.8, stagger: 0.1 },
+            '-=0.52',
+          )
+
+        gsap.utils.toArray<HTMLElement>('[data-showcase-column]').forEach((tile, index) => {
+          const direction = index % 2 === 0 ? -1 : 1
+          gsap.fromTo(
+            tile,
+            { autoAlpha: 0, y: 70, rotation: direction * 1.5 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              rotation: 0,
+              duration: 0.9,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: tile,
+                start: 'top 86%',
+                once: true,
+              },
+            },
+          )
+
+          gsap.fromTo(
+            tile,
+            { '--scroll-y': '-8px' },
+            {
+              '--scroll-y': '8px',
+              ease: 'none',
+              scrollTrigger: {
+                trigger: tile,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.7,
+              },
+            },
+          )
+        })
+
+        ScrollTrigger.refresh()
+      },
+      root,
+    )
+
+    mm.add(
+      '(prefers-reduced-motion: reduce)',
+      () => {
+        gsap.set('[data-showcase-hero-copy], [data-showcase-mosaic-card], [data-showcase-column]', {
+          autoAlpha: 1,
+          clearProps: 'transform',
+        })
+      },
+      root,
+    )
+
+    return () => {
+      transitionTimelineRef.current?.kill()
+      mm.revert()
+    }
+  }, [columns, error, loading])
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType === 'touch') return
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100
+    event.currentTarget.style.setProperty('--pointer-x', `${x}%`)
+    event.currentTarget.style.setProperty('--pointer-y', `${y}%`)
+    event.currentTarget.style.setProperty('--image-x', `${(x - 50) * -0.06}px`)
+    event.currentTarget.style.setProperty('--image-y', `${(y - 50) * -0.06}px`)
+  }
+
+  const handlePointerLeave = (event: ReactPointerEvent<HTMLAnchorElement>) => {
+    event.currentTarget.style.setProperty('--pointer-x', '50%')
+    event.currentTarget.style.setProperty('--pointer-y', '50%')
+    event.currentTarget.style.setProperty('--image-x', '0px')
+    event.currentTarget.style.setProperty('--image-y', '0px')
+  }
+
+  const openColumn = (
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    slug: string,
+  ) => {
+    event.preventDefault()
+    if (openingSlug) return
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !curtainRef.current) {
+      navigate(`/showcase/${slug}`)
+      return
+    }
+
+    setOpeningSlug(slug)
+    const card = event.currentTarget
+    const cover = card.querySelector('[data-showcase-cover]')
+    const curtain = curtainRef.current
+    const timeline = gsap.timeline({
+      onComplete: () => navigate(`/showcase/${slug}`),
+    })
+    transitionTimelineRef.current = timeline
+
+    timeline
+      .set(curtain, { display: 'grid', yPercent: 100 })
+      .to(card, { scale: 1.015, duration: 0.24, ease: 'power2.out' }, 0)
+      .to(cover, { scale: 1.09, duration: 0.45, ease: 'power2.inOut' }, 0)
+      .to(curtain, { yPercent: 0, duration: 0.52, ease: 'power4.inOut' }, 0.12)
+  }
+
   return (
-    <div className="page showcase-page">
+    <div ref={pageRef} className="page showcase-page showcase-hub">
       <section className="showcase-hero">
-        <div className="container showcase-hero__inner page-enter-hero">
-          <span className="section-label">Market Sphere Showcase</span>
-          <h1 className="display-xl">
-            Opportunities across
-            <br />
-            <em className="text-gold">every field we serve</em>
-          </h1>
-          <p className="lead showcase-hero__lead">
-            Browse live listings from Market Sphere Group — properties, projects, training, and
-            opportunities across Botswana. Contact us directly on any listing that interests you.
-          </p>
+        <div className="container showcase-hero__layout">
+          <div className="showcase-hero__inner" data-showcase-hero-copy>
+            <span className="showcase-hero__eyebrow">
+              <span className="showcase-hero__eyebrow-dot" />
+              Market Sphere Showcase
+            </span>
+            <h1 className="display-xl">
+              Find what moves
+              <br />
+              <em className="text-gold">you forward.</em>
+            </h1>
+            <p className="lead showcase-hero__lead">
+              Explore properties, programmes, projects and opportunities across Botswana — curated
+              by Market Sphere Group.
+            </p>
+            <a href="#showcase-columns" className="showcase-hero__explore">
+              Explore all fields <ArrowRight size={17} />
+            </a>
+          </div>
+
+          <div className="showcase-hero__mosaic" aria-hidden="true">
+            {[
+              COLUMN_COVERS['real-estate'],
+              COLUMN_COVERS['youth-empowerment'],
+              COLUMN_COVERS.farming,
+            ].map((cover, index) => (
+              <div
+                key={cover}
+                className={`showcase-hero__mosaic-card showcase-hero__mosaic-card--${index + 1}`}
+                data-showcase-mosaic-card
+              >
+                <img src={cover} alt="" />
+              </div>
+            ))}
+            <span className="showcase-hero__orbit" />
+            <span className="showcase-hero__mosaic-label">Across Botswana</span>
+          </div>
         </div>
       </section>
 
-      <section className="section showcase-columns-section">
+      <section id="showcase-columns" className="section showcase-columns-section">
         <div className="container">
+          <div className="showcase-section-heading">
+            <div>
+              <span className="section-label">Choose your field</span>
+              <h2>Explore the Showcase</h2>
+            </div>
+            <p>Hover to discover. Select a field to see its current listings and opportunities.</p>
+          </div>
           {loading ? (
             <p className="showcase-status">Loading showcase…</p>
           ) : error ? (
@@ -427,18 +605,40 @@ export function Showcase() {
                 <Link
                   key={column.id}
                   to={`/showcase/${column.slug}`}
-                  className="showcase-column-tile showcase-reveal is-visible"
-                  style={{ transitionDelay: `${Math.min(i, 8) * 55}ms` }}
+                  className={`showcase-column-tile${openingSlug === column.slug ? ' is-opening' : ''}`}
+                  data-showcase-column
+                  onPointerMove={handlePointerMove}
+                  onPointerLeave={handlePointerLeave}
+                  onClick={(event) => openColumn(event, column.slug)}
                 >
-                  <span className="showcase-column-tile__icon">
-                    <ColumnIcon name={column.icon} />
-                  </span>
-                  <div className="showcase-column-tile__copy">
-                    <h2>{column.title}</h2>
-                    {column.tagline ? <p>{column.tagline}</p> : null}
+                  <div className="showcase-column-tile__media">
+                    <img
+                      src={COLUMN_COVERS[column.slug]}
+                      alt={`${column.title} showcase`}
+                      loading={i < 2 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      data-showcase-cover
+                    />
+                    <span className="showcase-column-tile__shine" />
+                    <span className="showcase-column-tile__number">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <div className="showcase-column-tile__footer">
+                    <span className="showcase-column-tile__icon">
+                      <ColumnIcon name={column.icon} />
+                    </span>
+                    <div className="showcase-column-tile__copy">
+                      <h3>{column.title}</h3>
+                      {column.tagline ? <p>{column.tagline}</p> : null}
+                    </div>
                     <span className="showcase-column-tile__meta">
-                      {counts[column.id] || 0} live listing{(counts[column.id] || 0) === 1 ? '' : 's'}
-                      <ArrowRight size={14} aria-hidden className="showcase-column-tile__arrow" />
+                      <span>
+                        {counts[column.id] || 0} live listing{(counts[column.id] || 0) === 1 ? '' : 's'}
+                      </span>
+                      <span className="showcase-column-tile__arrow">
+                        <ArrowRight size={18} aria-hidden />
+                      </span>
                     </span>
                   </div>
                 </Link>
@@ -447,12 +647,16 @@ export function Showcase() {
           )}
         </div>
       </section>
+      <div ref={curtainRef} className="showcase-transition-curtain" aria-hidden="true">
+        <span>Entering the field</span>
+      </div>
     </div>
   )
 }
 
 export function ShowcaseColumnPage() {
   const { slug = '' } = useParams()
+  const pageRef = useRef<HTMLDivElement | null>(null)
   const [column, setColumn] = useState<ShowcaseColumn | null>(null)
   const [listings, setListings] = useState<ShowcaseListing[]>([])
   const [loading, setLoading] = useState(true)
@@ -538,6 +742,44 @@ export function ShowcaseColumnPage() {
   const featured = useMemo(() => listings.filter((l) => l.featured), [listings])
   const rest = useMemo(() => listings.filter((l) => !l.featured), [listings])
 
+  useEffect(() => {
+    if (loading || !column || !pageRef.current) return
+
+    const root = pageRef.current
+    const mm = gsap.matchMedia()
+    mm.add(
+      '(prefers-reduced-motion: no-preference)',
+      () => {
+        const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
+        timeline
+          .fromTo(
+            '[data-column-cover]',
+            { clipPath: 'inset(0 0 100% 0)', scale: 1.08 },
+            { clipPath: 'inset(0 0 0% 0)', scale: 1, duration: 1.05, ease: 'power4.inOut' },
+          )
+          .fromTo(
+            '[data-column-copy] > *',
+            { autoAlpha: 0, y: 24 },
+            { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.08 },
+            '-=0.58',
+          )
+
+        gsap.to('[data-column-cover] img', {
+          yPercent: 6,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.showcase-column-hero',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.8,
+          },
+        })
+      },
+      root,
+    )
+    return () => mm.revert()
+  }, [column, loading])
+
   if (loading) {
     return (
       <div className="page showcase-page">
@@ -559,27 +801,34 @@ export function ShowcaseColumnPage() {
   }
 
   return (
-    <div className="page showcase-page">
+    <div ref={pageRef} className="page showcase-page showcase-column-page">
       <section className="showcase-column-hero">
-        <div className="container showcase-column-hero__inner page-enter-hero">
-          <Link to="/showcase" className="showcase-back">
-            <ArrowLeft size={16} /> All columns
-          </Link>
-          <div className="showcase-column-hero__title-row">
+        <div className="showcase-column-hero__cover" data-column-cover>
+          <img src={COLUMN_COVERS[column.slug]} alt="" />
+          <span className="showcase-column-hero__cover-shade" />
+        </div>
+        <div className="container showcase-column-hero__layout">
+          <div className="showcase-column-hero__inner" data-column-copy>
+            <Link to="/showcase" className="showcase-back">
+              <ArrowLeft size={16} /> All fields
+            </Link>
             <span className="showcase-column-hero__icon">
               <ColumnIcon name={column.icon} />
             </span>
             <div>
-              <span className="section-label">Showcase</span>
+              <span className="section-label">Market Sphere Showcase</span>
               <h1 className="display-xl">{column.title}</h1>
             </div>
+            {column.tagline ? <p className="lead">{column.tagline}</p> : null}
+            {column.description ? <p className="showcase-column-hero__desc">{column.description}</p> : null}
+            <a href="#live-listings" className="showcase-column-hero__cta">
+              View live listings <ArrowRight size={16} />
+            </a>
           </div>
-          {column.tagline ? <p className="lead">{column.tagline}</p> : null}
-          {column.description ? <p className="showcase-column-hero__desc">{column.description}</p> : null}
         </div>
       </section>
 
-      <section className="section">
+      <section id="live-listings" className="section showcase-listings-section">
         <div className="container">
           {error ? (
             <p className="showcase-status showcase-status--error" role="alert">
