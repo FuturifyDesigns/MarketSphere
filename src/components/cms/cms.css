@@ -27,6 +27,12 @@
   pointer-events: auto;
 }
 
+.cms-section__controls--portal {
+  position: fixed;
+  z-index: 1300;
+  max-width: min(240px, calc(100vw - 24px));
+}
+
 .cms-section__edit {
   position: relative;
   top: auto;
@@ -48,6 +54,10 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   max-width: 100%;
   text-align: left;
+}
+
+.cms-section__edit--portal {
+  position: relative;
 }
 
 .cms-section__edit-main {

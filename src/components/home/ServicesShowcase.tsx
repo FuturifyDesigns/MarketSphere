@@ -94,6 +94,8 @@ export function ServicesShowcase() {
   const { showToast } = useToast()
   const { confirm } = useConfirm()
   const canEditField = editMode && isSectionActive('home-services-showcase')
+  // Kill pin/scrub animations whenever live editor is open — React must own the DOM.
+  const pauseAnimations = editMode
   const servicesBlock = getBlock<{ items: MarketingService[] }>('services')
   const items = servicesBlock.items || []
 
@@ -129,7 +131,7 @@ export function ServicesShowcase() {
 
   useEffect(() => {
     const root = rootRef.current
-    if (!root || !canEditField) return
+    if (!root || !pauseAnimations) return
 
     gsap.set(
       root.querySelectorAll(
@@ -143,11 +145,11 @@ export function ServicesShowcase() {
         clearProps: 'transform',
       },
     )
-  }, [canEditField, items.length])
+  }, [pauseAnimations, items.length])
 
   useEffect(() => {
     const root = rootRef.current
-    if (!root || items.length === 0 || canEditField) return
+    if (!root || items.length === 0 || pauseAnimations) return
 
     let ctx: gsap.Context | undefined
     let belowFoldCleanup: (() => void) | undefined
@@ -385,14 +387,14 @@ export function ServicesShowcase() {
       belowFoldCleanup?.()
       ctx?.revert()
     }
-  }, [items.length, canEditField])
+  }, [items.length, pauseAnimations])
 
   return (
     <EditableSection
       id="home-services-showcase"
       label="Services showcase"
       as="section"
-      className={`services-showcase${canEditField ? ' services-showcase--cms-editing' : ''}`}
+      className={`services-showcase${pauseAnimations ? ' services-showcase--cms-editing' : ''}`}
       ref={rootRef}
       aria-label="Our services"
     >
