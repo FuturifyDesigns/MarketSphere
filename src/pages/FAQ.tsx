@@ -10,6 +10,7 @@ import { useSiteEdit } from '../context/SiteEditContext'
 import type { FaqItem } from '../lib/siteContentDefaults'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
 import { useToast } from '../context/ToastContext'
+import { preserveScroll } from '../lib/preserveScroll'
 import './FAQ.css'
 
 type FaqBlock = {
@@ -43,7 +44,7 @@ export function FAQ() {
   const items = faq.items || []
   const categories = (faq.categories?.length ? faq.categories : ['All', 'Platform', 'Providers', 'Payments', 'Company']) as string[]
 
-  const [openQuestion, setOpenQuestion] = useState<string | null>(items[0]?.question ?? null)
+  const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null)
   const [activeCategory, setActiveCategory] = useState('All')
   const [query, setQuery] = useState('')
 
@@ -60,13 +61,13 @@ export function FAQ() {
     })
   }, [activeCategory, items, query])
 
-  const handleToggle = (question: string) => {
-    setOpenQuestion((current) => (current === question ? null : question))
+  const handleToggle = (id: string) => {
+    setOpenId((current) => (current === id ? null : id))
   }
 
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category)
-    setOpenQuestion(null)
+    setOpenId(null)
   }
 
   const updateItem = async (id: string, field: keyof FaqItem, value: string) => {
@@ -80,16 +81,20 @@ export function FAQ() {
   }
 
   const addItem = async () => {
+    const category =
+      activeCategory !== 'All' && categories.includes(activeCategory) ? activeCategory : 'Platform'
     const next: FaqItem = {
       id: `faq-${crypto.randomUUID()}`,
-      category: 'Platform',
+      category,
       question: 'New question',
       answer: 'Add your answer here.',
     }
     try {
       await updateField('faq', 'items', [...items, next])
-      setOpenQuestion(next.question)
-      showToast('FAQ item added.')
+      setQuery('')
+      setActiveCategory('All')
+      setOpenId(next.id)
+      showToast('FAQ item added — edit it below.')
     } catch {
       showToast('Could not add FAQ item.', 'error')
     }
@@ -97,7 +102,14 @@ export function FAQ() {
 
   const removeItem = async (id: string) => {
     try {
-      await updateField('faq', 'items', items.filter((item) => item.id !== id))
+      await preserveScroll(async () => {
+        await updateField(
+          'faq',
+          'items',
+          items.filter((item) => item.id !== id),
+        )
+      })
+      setOpenId(null)
       showToast('FAQ item removed.')
     } catch {
       showToast('Could not remove FAQ item.', 'error')
@@ -190,25 +202,39 @@ export function FAQ() {
 
           <div className="faq-main">
             <div className="faq-main__head page-reveal">
-              <h2 className="faq-main__title">
-                {activeCategory === 'All' ? 'All questions' : (CATEGORY_META[activeCategory]?.label ?? activeCategory)}
-              </h2>
-              <p className="faq-main__meta">
-                {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
-                {query ? ` for “${query}”` : ''}
-              </p>
+              <div className="faq-main__head-copy">
+                <h2 className="faq-main__title">
+                  {activeCategory === 'All' ? 'All questions' : (CATEGORY_META[activeCategory]?.label ?? activeCategory)}
+                </h2>
+                <p className="faq-main__meta">
+                  {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
+                  {query ? ` for “${query}”` : ''}
+                </p>
+              </div>
               {canEditFaqList ? (
-                <Button type="button" size="sm" variant="secondary" onClick={() => void addItem()}>
-                  Add FAQ item
+                <Button type="button" size="md" onClick={() => void addItem()}>
+                  Add new question
                 </Button>
               ) : null}
             </div>
+
+            {canEditFaqList ? (
+              <div className="faq-admin-bar">
+                <p>
+                  Click <strong>Edit</strong> on a question to change it, or add a new one above. Click section{' '}
+                  <strong>DONE</strong> when finished.
+                </p>
+                <Button type="button" size="sm" variant="secondary" onClick={() => void addItem()}>
+                  + Add question
+                </Button>
+              </div>
+            ) : null}
 
             <div className="faq-list">
               <AnimatePresence mode={canEditFaqList ? 'sync' : 'popLayout'}>
                 {filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
-                    const isOpen = openQuestion === item.question
+                    const isOpen = openId === item.id
                     const CategoryIcon = CATEGORY_META[item.category]?.icon ?? HelpCircle
 
                     return (
@@ -224,7 +250,7 @@ export function FAQ() {
                         <button
                           type="button"
                           className="faq-question"
-                          onClick={() => handleToggle(item.question)}
+                          onClick={() => handleToggle(item.id)}
                           aria-expanded={isOpen}
                         >
                           <span className="faq-question__badge">
@@ -244,28 +270,28 @@ export function FAQ() {
                               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                             >
                               {canEditFaqList ? (
-                                <div className="cms-editable cms-editable--active" style={{ padding: '8px 0' }}>
-                                  <label style={{ display: 'block', marginBottom: 8 }}>
-                                    <small>Question</small>
+                                <div className="faq-edit-form">
+                                  <label className="faq-edit-form__field">
+                                    <span>Question</span>
                                     <input
-                                      className="cms-editable__input"
+                                      className="faq-edit-form__input"
                                       value={item.question}
                                       onChange={(e) => void updateItem(item.id, 'question', e.target.value)}
                                     />
                                   </label>
-                                  <label style={{ display: 'block', marginBottom: 8 }}>
-                                    <small>Answer</small>
+                                  <label className="faq-edit-form__field">
+                                    <span>Answer</span>
                                     <textarea
-                                      className="cms-editable__input"
+                                      className="faq-edit-form__input"
                                       rows={4}
                                       value={item.answer}
                                       onChange={(e) => void updateItem(item.id, 'answer', e.target.value)}
                                     />
                                   </label>
-                                  <label style={{ display: 'block', marginBottom: 8 }}>
-                                    <small>Category</small>
+                                  <label className="faq-edit-form__field">
+                                    <span>Category</span>
                                     <select
-                                      className="cms-editable__input"
+                                      className="faq-edit-form__input"
                                       value={item.category}
                                       onChange={(e) => void updateItem(item.id, 'category', e.target.value)}
                                     >
@@ -276,10 +302,10 @@ export function FAQ() {
                                   </label>
                                   <button
                                     type="button"
-                                    className="cms-editable__cancel"
+                                    className="faq-edit-form__remove"
                                     onClick={() => void removeItem(item.id)}
                                   >
-                                    Remove item
+                                    Remove question
                                   </button>
                                 </div>
                               ) : (
@@ -293,7 +319,7 @@ export function FAQ() {
                             type="button"
                             className="cms-editable__trigger"
                             style={{ position: 'absolute', top: 12, right: 12 }}
-                            onClick={() => setOpenQuestion(item.question)}
+                            onClick={() => setOpenId(item.id)}
                           >
                             <Pencil size={12} />
                             Edit

@@ -201,11 +201,18 @@
 
 .faq-main__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
+}
+
+.faq-main__head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
 .faq-main__title {
@@ -217,6 +224,87 @@
 .faq-main__meta {
   font-size: 0.8125rem;
   color: var(--text-secondary);
+}
+
+.faq-admin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 162, 75, 0.35);
+  background: color-mix(in srgb, var(--color-gold) 8%, var(--card-bg));
+}
+
+.faq-admin-bar p {
+  margin: 0;
+  max-width: 42ch;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #2f2820;
+}
+
+.faq-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.faq-edit-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5c4a28;
+}
+
+.faq-edit-form__input {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1.5px solid rgba(201, 162, 75, 0.45);
+  border-radius: 10px;
+  background: #fff;
+  color: #14100c;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.faq-edit-form__input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.2);
+}
+
+.faq-edit-form__remove {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 60, 50, 0.45);
+  background: rgba(120, 32, 24, 0.92);
+  color: #ffe4de;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.faq-edit-form__remove:hover {
+  background: rgba(150, 40, 30, 0.96);
 }
 
 .faq-list {
