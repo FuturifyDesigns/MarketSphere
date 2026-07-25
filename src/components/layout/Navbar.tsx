@@ -45,10 +45,16 @@ const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/about', label: 'About' },
   { to: '/services', label: 'Services' },
+  { to: '/showcase', label: 'Showcase' },
   { to: '/browse', label: 'Providers' },
   { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Contact' },
 ]
+
+function navLinkActive(pathname: string, to: string) {
+  if (to === '/') return pathname === '/'
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
@@ -132,7 +138,7 @@ export function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`navbar__link ${location.pathname === link.to ? 'navbar__link--active' : ''}`}
+                className={`navbar__link ${navLinkActive(location.pathname, link.to) ? 'navbar__link--active' : ''}`}
                 onClick={() => setOpen(false)}
                 onMouseEnter={link.to === '/services' ? () => void preloadServiceVideos() : undefined}
                 onFocus={link.to === '/services' ? () => void preloadServiceVideos() : undefined}

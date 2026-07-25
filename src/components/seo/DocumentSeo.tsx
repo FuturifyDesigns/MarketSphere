@@ -24,6 +24,11 @@ const PAGES: Record<string, PageSeo> = {
     description:
       'Explore Market Sphere Group services: academic tuition, real estate, youth empowerment, entrepreneurship, and platform marketing across Botswana.',
   },
+  '/showcase': {
+    title: 'Showcase | Market Sphere Group',
+    description:
+      'Browse Market Sphere Group showcase listings — properties for sale and rent, youth projects, farming, entrepreneurship, and more across Botswana.',
+  },
   '/browse': {
     title: 'Browse Providers | Market Sphere Group',
     description:
@@ -80,10 +85,17 @@ export function DocumentSeo() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    const seo = PAGES[pathname] ?? {
-      title: `${pathname.replace(/^\//, '').replace(/-/g, ' ') || 'Page'} | Market Sphere Group`,
-      description: DEFAULT.description,
-    }
+    const showcaseColumn = pathname.startsWith('/showcase/')
+    const seo = PAGES[pathname] ?? (showcaseColumn
+      ? {
+          title: 'Showcase Listing | Market Sphere Group',
+          description:
+            'View Market Sphere Group showcase opportunities and contact the team for more details.',
+        }
+      : {
+          title: `${pathname.replace(/^\//, '').replace(/-/g, ' ') || 'Page'} | Market Sphere Group`,
+          description: DEFAULT.description,
+        })
 
     document.title = seo.title
     upsertMeta('name', 'description', seo.description)

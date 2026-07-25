@@ -113,3 +113,39 @@ export interface ContactMessage {
   status: ContactMessageStatus
   created_at: string
 }
+
+export type ShowcaseDealType = 'sale' | 'rent' | 'opportunity' | 'project' | 'service' | 'other'
+export type ShowcaseListingStatus = 'draft' | 'published' | 'archived'
+
+export interface ShowcaseColumn {
+  id: string
+  slug: string
+  title: string
+  tagline: string | null
+  description: string | null
+  icon: string | null
+  sort_order: number
+  active: boolean
+  created_at: string
+  updated_at: string
+  listing_count?: number
+}
+
+export interface ShowcaseListing {
+  id: string
+  column_id: string
+  title: string
+  summary: string | null
+  description: string | null
+  location: string | null
+  price_label: string | null
+  deal_type: ShowcaseDealType
+  image_urls: string[]
+  status: ShowcaseListingStatus
+  featured: boolean
+  sort_order: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  showcase_columns?: Pick<ShowcaseColumn, 'id' | 'slug' | 'title' | 'icon'> | null
+}
