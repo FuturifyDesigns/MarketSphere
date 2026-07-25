@@ -38,7 +38,7 @@ function readOAuthParams() {
 }
 
 function clearOAuthParamsFromUrl() {
-  window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}#/auth/callback`)
+  window.history.replaceState({}, document.title, `${window.location.origin}/auth/callback`)
 }
 
 async function waitForProfile(userId: string, attempts = 8): Promise<Profile | null> {

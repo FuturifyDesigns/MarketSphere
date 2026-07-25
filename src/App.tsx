@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CookieConsentProvider } from './context/CookieConsentContext'
 import { NotificationProvider } from './context/NotificationContext'
@@ -98,7 +98,7 @@ export default function App() {
       <ToastProvider>
         <CookieConsentProvider>
           <SiteContentProvider>
-            <HashRouter>
+            <BrowserRouter>
               <SiteEditProvider>
                 <CmsTextEditorProvider>
                 <SiteIntro />
@@ -197,7 +197,7 @@ export default function App() {
                 </NotificationProvider>
                 </CmsTextEditorProvider>
               </SiteEditProvider>
-            </HashRouter>
+            </BrowserRouter>
           </SiteContentProvider>
         </CookieConsentProvider>
       </ToastProvider>

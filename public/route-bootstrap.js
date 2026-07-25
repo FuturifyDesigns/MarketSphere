@@ -1,16 +1,30 @@
 /**
- * Path → hash bootstrap for SPA deep links on static hosts.
+ * Legacy hash-route migration.
+ *
+ * The app used a hash router (/#/about); it now uses real paths (/about).
+ * Old bookmarks, shared links and search results still point at /#/… so
+ * rewrite them to the real path before React boots.
+ *
+ * Supabase implicit-flow responses arrive as #access_token=… — those do not
+ * start with "#/" and are deliberately left untouched.
+ *
  * External file so CSP can allow script-src 'self' without 'unsafe-inline'.
- * Preserves ?code=&state= query params (required for OAuth callbacks).
  */
 ;(function () {
-  var path = window.location.pathname
-  if (path === '/' || /\/(index|404)\.html\/?$/.test(path)) return
-  if (window.location.hash && window.location.hash.length > 1) return
-  window.location.replace(
-    '/#/' +
-      path.replace(/^\/+/, '').replace(/\/$/, '') +
-      window.location.search +
-      window.location.hash,
-  )
+  var hash = window.location.hash
+  if (!hash || hash.charAt(1) !== '/') return
+
+  var raw = hash.slice(1)
+  var queryAt = raw.indexOf('?')
+  var path = queryAt === -1 ? raw : raw.slice(0, queryAt)
+  var hashQuery = queryAt === -1 ? '' : raw.slice(queryAt + 1)
+  var search = window.location.search.replace(/^\?/, '')
+
+  var merged = [search, hashQuery]
+    .filter(function (part) {
+      return part
+    })
+    .join('&')
+
+  window.location.replace(path + (merged ? '?' + merged : ''))
 })()
