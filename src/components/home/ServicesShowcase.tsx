@@ -476,18 +476,6 @@ export function ServicesShowcase() {
                           allowClear={Boolean(service.image)}
                           clearLabel="Remove photo"
                         />
-                        <div className="services-showcase__media-tools-row">
-                          <EditableAsset
-                            contentKey="services"
-                            path={`items.${i}.video`}
-                            value={service.video || ''}
-                            uploadFolder="services"
-                            accept="video/mp4,video/webm"
-                            label="Upload video"
-                            allowClear={Boolean(service.video)}
-                            clearLabel="Remove video"
-                          />
-                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -558,18 +546,6 @@ export function ServicesShowcase() {
                           allowClear={Boolean(service.image)}
                           clearLabel="Remove photo"
                         />
-                        <div className="services-showcase__media-tools-row">
-                          <EditableAsset
-                            contentKey="services"
-                            path={`items.${i}.video`}
-                            value={service.video || ''}
-                            uploadFolder="services"
-                            accept="video/mp4,video/webm"
-                            label="Upload video"
-                            allowClear={Boolean(service.video)}
-                            clearLabel="Remove video"
-                          />
-                        </div>
                       </div>
                     ) : null}
                   </div>

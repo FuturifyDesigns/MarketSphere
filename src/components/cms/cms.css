@@ -919,8 +919,8 @@ html.cms-editing .svc-page__media-tools {
 .svc-page--cms-editing .svc-page__media-tools {
   position: relative;
   inset: auto;
-  min-height: 11rem;
-  border-radius: inherit;
+  min-height: 0;
+  border-radius: var(--radius-md);
 }
 
 .services-showcase__visual--editing,

@@ -407,11 +407,47 @@
   transform: none !important;
 }
 
+.svc-page--cms-editing .svc-page__copy {
+  color: #14100c;
+  background: #faf8f4;
+}
+
+.svc-page--cms-editing .svc-page__index {
+  color: #8a6a1f !important;
+}
+
+.svc-page--cms-editing .svc-page__tagline,
+.svc-page--cms-editing .svc-page__tagline.cms-editable {
+  color: #5c4a28 !important;
+}
+
+.svc-page--cms-editing .svc-page__title,
+.svc-page--cms-editing .svc-page__title.cms-editable {
+  color: #14100c !important;
+}
+
+.svc-page--cms-editing .svc-page__desc,
+.svc-page--cms-editing .svc-page__desc.cms-editable {
+  color: #2f2820 !important;
+}
+
+.svc-page--cms-editing .svc-page__cta,
+.svc-page--cms-editing .svc-page__cta.cms-editable-link,
+.svc-page--cms-editing .svc-page__cta .cms-editable {
+  color: #5c4a1c !important;
+}
+
 .svc-page--cms-editing .svc-page__media-tools {
+  position: relative;
+  inset: auto;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 0.75rem;
+  min-height: 0;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: rgba(18, 16, 12, 0.94);
 }
 
 @media (max-width: 900px) {
