@@ -123,6 +123,14 @@ export const DEFAULT_SITE_CONTENT: Record<SiteContentKey, unknown> = {
         'Growing provider network',
       ]),
     },
+    showcaseListingsSection: {
+      eyebrow: 'From Our Showcase',
+      title: 'Featured listings',
+      titleEmphasis: 'listings',
+      lead: 'Explore opportunities across every Showcase column — property, services, and more.',
+      cta: 'Browse all Showcase',
+      footer: 'New listings are added regularly. Open Showcase to see every column.',
+    },
     vision: {
       eyebrow: 'Our Vision',
       title: COMPANY.mission,

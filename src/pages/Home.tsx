@@ -9,6 +9,7 @@ import { ServicesShowcase } from '../components/home/ServicesShowcase'
 import { HeroVideo } from '../components/hero/HeroVideo'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import { ShowcaseCarousel } from '../components/ui/ShowcaseCarousel'
+import { HomeShowcaseListingCard } from '../components/home/HomeShowcaseListingCard'
 import { TestimonialsShowcase } from '../components/home/TestimonialsShowcase'
 import { TestimonialSubmitForm } from '../components/home/TestimonialSubmitForm'
 import { Button } from '../components/ui/Button'
@@ -31,7 +32,7 @@ import { markHomeSectionsReady } from '../lib/homeSectionsReady'
 import { isServicesShowcaseReady, onServicesShowcaseReady } from '../lib/servicesShowcaseReady'
 import { initHomeSectionReveals } from '../animations/homeSectionReveal'
 import { initBelowFoldSections } from '../animations/belowFoldReveal'
-import type { Provider, Testimonial } from '../lib/types'
+import type { Provider, ShowcaseListing, Testimonial } from '../lib/types'
 import './Home.css'
 import '../components/ui/ShowcaseCarousel.css'
 
@@ -69,6 +70,14 @@ type HomeBlock = {
     footer: string
     trustBadges: CmsStringItem[]
   }
+  showcaseListingsSection: {
+    eyebrow: string
+    title: string
+    titleEmphasis: string
+    lead: string
+    cta: string
+    footer: string
+  }
   vision: {
     eyebrow: string
     title: string
@@ -102,6 +111,7 @@ export function Home() {
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const [providers, setProviders] = useState<Provider[]>([])
+  const [showcaseListings, setShowcaseListings] = useState<ShowcaseListing[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
   useEffect(() => {
@@ -129,6 +139,30 @@ export function Home() {
       }
     }
 
+    async function loadShowcaseListings() {
+      try {
+        const { data, error } = await supabase
+          .from('showcase_listings')
+          .select('*, showcase_columns(id, slug, title, icon)')
+          .eq('status', 'published')
+          .order('featured', { ascending: false })
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false })
+          .limit(20)
+
+        if (cancelled) return
+        if (error) {
+          console.error('[home] showcase listings', error)
+          setShowcaseListings([])
+          return
+        }
+        setShowcaseListings((data || []) as ShowcaseListing[])
+      } catch (error) {
+        console.error('[home] showcase listings threw', error)
+        if (!cancelled) setShowcaseListings([])
+      }
+    }
+
     async function loadTestimonials() {
       try {
         const { data, error } = await supabase
@@ -152,6 +186,7 @@ export function Home() {
     }
 
     void loadFeaturedProviders()
+    void loadShowcaseListings()
     void loadTestimonials()
 
     const channel = supabase
@@ -161,6 +196,13 @@ export function Home() {
         { event: '*', schema: 'public', table: 'testimonials' },
         () => {
           if (!cancelled) void loadTestimonials()
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'showcase_listings' },
+        () => {
+          if (!cancelled) void loadShowcaseListings()
         },
       )
       .subscribe()
@@ -473,6 +515,69 @@ export function Home() {
       </EditableSection>
 
       <ServicesShowcase />
+
+      {/* Showcase listings from any column */}
+      <EditableSection
+        id="home-showcase-listings"
+        label="Showcase listings carousel"
+        className="section section--showcase-listings home-section"
+      >
+        <div className="container">
+          <header className="home-section__header section-header section-header--center">
+            <EditableText
+              contentKey="home"
+              path="showcaseListingsSection.eyebrow"
+              as="span"
+              className="section-label home-section__label"
+            />
+            <h2 className="display-lg home-section__title">
+              <span className="home-section__title-word">
+                Featured{' '}
+                <em className="text-gold">
+                  <EditableText contentKey="home" path="showcaseListingsSection.titleEmphasis" as="span" />
+                </em>
+              </span>
+            </h2>
+            <EditableText
+              contentKey="home"
+              path="showcaseListingsSection.lead"
+              as="p"
+              className="home-section__lead"
+              multiline
+            />
+          </header>
+
+          <div className="home-showcase-listings-stage">
+            <div className="home-showcase-listings-stage__glow" aria-hidden="true" />
+            {showcaseListings.length > 0 ? (
+              <ShowcaseCarousel
+                className="home-showcase-listings-carousel showcase-carousel--wide"
+                items={showcaseListings}
+                getKey={(listing) => listing.id}
+                ariaLabel="Showcase listings"
+                autoplayMs={4200}
+                renderItem={(listing) => <HomeShowcaseListingCard listing={listing} />}
+              />
+            ) : (
+              <div className="empty-state bento-card home-section__item home-showcase-listings-empty">
+                <p>
+                  Showcase listings coming soon. Visit{' '}
+                  <Link to="/showcase">Showcase</Link> to explore our columns.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="section-cta home-section__footer home-showcase-listings-footer">
+            <p className="home-showcase-listings-footer__text">
+              <EditableText contentKey="home" path="showcaseListingsSection.footer" as="span" multiline />
+            </p>
+            <EditableButton contentKey="home" labelPath="showcaseListingsSection.cta" to="/showcase" size="lg">
+              <ArrowRight size={16} aria-hidden="true" />
+            </EditableButton>
+          </div>
+        </div>
+      </EditableSection>
 
       {/* Providers */}
       <EditableSection id="home-providers" label="Featured providers" className="section section--providers home-section">

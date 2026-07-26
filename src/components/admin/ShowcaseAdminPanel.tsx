@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { resolveCurrentLocationLabel } from '../../lib/geolocation'
 import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
+import { UPLOAD_LIMITS } from '../../lib/imageUpload'
 import { SHOWCASE_DEAL_LABELS } from '../../lib/showcase'
 import { uploadShowcaseImage } from '../../lib/showcaseUpload'
 import { supabase } from '../../lib/supabase'
@@ -25,7 +26,7 @@ import { Textarea } from '../ui/Textarea'
 
 const DEAL_TYPES = Object.keys(SHOWCASE_DEAL_LABELS) as ShowcaseDealType[]
 const STATUSES: ShowcaseListingStatus[] = ['draft', 'published', 'archived']
-const MAX_IMAGES = 6
+const MAX_IMAGES = UPLOAD_LIMITS.showcase.maxCount
 
 type ListingForm = {
   column_id: string
@@ -656,7 +657,10 @@ export function ShowcaseAdminPanel() {
                   {errors.images}
                 </span>
               ) : (
-                <span className="input-hint">Crop and rotate before upload. You can re-crop existing photos.</span>
+                <span className="input-hint">
+                  Crop before upload · up to {MAX_IMAGES} photos · compressed for free-tier storage (~
+                  {Math.round(UPLOAD_LIMITS.showcase.maxBytes / 1000)}KB each).
+                </span>
               )}
             </div>
 
@@ -722,8 +726,8 @@ export function ShowcaseAdminPanel() {
         file={cropFile}
         open={cropOpen}
         title={editingImageUrl ? 'Recrop listing photo' : 'Crop listing photo'}
-        outputWidth={1600}
-        outputHeight={1000}
+        outputWidth={UPLOAD_LIMITS.showcase.maxWidth}
+        outputHeight={Math.round(UPLOAD_LIMITS.showcase.maxWidth * 0.625)}
         aspectRatio={16 / 10}
         onClose={() => {
           setCropOpen(false)
