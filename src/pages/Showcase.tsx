@@ -1064,74 +1064,76 @@ export function ShowcaseListingPage() {
   return (
     <div className="page showcase-page showcase-listing-page">
       <section className="section showcase-listing-detail">
-        <div className="container showcase-listing-detail__layout">
-          <div className="showcase-listing-detail__gallery">
-            <Link to={`/showcase/${column.slug}`} className="showcase-back">
-              <ArrowLeft size={16} />{' '}
-              <EditableText contentKey="showcase" path="listing.backLabel" as="span" />
-            </Link>
-            <EditableText
-              contentKey="showcase"
-              path="listing.galleryLabel"
-              as="span"
-              className="section-label"
-            />
-            <ShowcaseGallery
-              images={listing.image_urls}
-              title={listing.title}
-              onZoom={(i) => setLightbox(i)}
-            />
-          </div>
-
-          <div className="showcase-listing-detail__copy">
-            <EditableText
-              contentKey="showcase"
-              path="listing.detailsEyebrow"
-              as="span"
-              className="section-label"
-            />
-            <p className="showcase-listing-detail__column">{column.title}</p>
-            <h1 className="display-xl">{listing.title}</h1>
-            <div className="showcase-listing-detail__meta">
-              {listing.featured ? (
-                <span className="showcase-card__featured-badge showcase-card__featured-badge--inline">
-                  Featured
-                </span>
-              ) : null}
-              <p className="showcase-card__deal showcase-listing-detail__deal">
-                {SHOWCASE_DEAL_LABELS[listing.deal_type]}
-              </p>
-              <span
-                className={`showcase-card__availability showcase-card__availability--inline${listing.available === false ? ' showcase-card__availability--closed' : ''}`}
-              >
-                {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
-              </span>
+        <div className="container">
+          <Link to={`/showcase/${column.slug}`} className="showcase-back showcase-listing-detail__back">
+            <ArrowLeft size={16} aria-hidden />{' '}
+            <EditableText contentKey="showcase" path="listing.backLabel" as="span" />
+          </Link>
+          <div className="showcase-listing-detail__layout">
+            <div className="showcase-listing-detail__gallery">
+              <EditableText
+                contentKey="showcase"
+                path="listing.galleryLabel"
+                as="span"
+                className="section-label"
+              />
+              <ShowcaseGallery
+                images={listing.image_urls}
+                title={listing.title}
+                onZoom={(i) => setLightbox(i)}
+              />
             </div>
-            {listing.location ? (
-              <p className="showcase-card__location">
-                <MapPin size={16} aria-hidden /> {listing.location}
-              </p>
-            ) : null}
-            {listing.price_label ? <p className="showcase-card__price">{listing.price_label}</p> : null}
-            {listing.summary ? <p className="lead">{listing.summary}</p> : null}
-            {listing.description ? (
-              <p className="showcase-listing-detail__description">{listing.description}</p>
-            ) : null}
-            <ShowcaseOwnerContacts listing={listing} />
-            <div className="showcase-card__actions showcase-listing-detail__actions">
-              <a className="btn btn--primary btn--md" href={mailto}>
-                <Mail size={16} />{' '}
-                <EditableText contentKey="showcase" path="listing.contactLabel" as="span" />
-              </a>
-              <a
-                className="btn btn--secondary btn--md"
-                href={whatsapp}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Phone size={16} />{' '}
-                <EditableText contentKey="showcase" path="listing.whatsappLabel" as="span" />
-              </a>
+
+            <div className="showcase-listing-detail__copy">
+              <EditableText
+                contentKey="showcase"
+                path="listing.detailsEyebrow"
+                as="span"
+                className="section-label"
+              />
+              <p className="showcase-listing-detail__column">{column.title}</p>
+              <h1 className="display-xl">{listing.title}</h1>
+              <div className="showcase-listing-detail__meta">
+                {listing.featured ? (
+                  <span className="showcase-card__featured-badge showcase-card__featured-badge--inline">
+                    Featured
+                  </span>
+                ) : null}
+                <p className="showcase-card__deal showcase-listing-detail__deal">
+                  {SHOWCASE_DEAL_LABELS[listing.deal_type]}
+                </p>
+                <span
+                  className={`showcase-card__availability showcase-card__availability--inline${listing.available === false ? ' showcase-card__availability--closed' : ''}`}
+                >
+                  {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+                </span>
+              </div>
+              {listing.location ? (
+                <p className="showcase-card__location">
+                  <MapPin size={16} aria-hidden /> {listing.location}
+                </p>
+              ) : null}
+              {listing.price_label ? <p className="showcase-card__price">{listing.price_label}</p> : null}
+              {listing.summary ? <p className="lead">{listing.summary}</p> : null}
+              {listing.description ? (
+                <p className="showcase-listing-detail__description">{listing.description}</p>
+              ) : null}
+              <ShowcaseOwnerContacts listing={listing} />
+              <div className="showcase-card__actions showcase-listing-detail__actions">
+                <a className="btn btn--primary btn--md" href={mailto}>
+                  <Mail size={16} />{' '}
+                  <EditableText contentKey="showcase" path="listing.contactLabel" as="span" />
+                </a>
+                <a
+                  className="btn btn--secondary btn--md"
+                  href={whatsapp}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Phone size={16} />{' '}
+                  <EditableText contentKey="showcase" path="listing.whatsappLabel" as="span" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
