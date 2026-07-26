@@ -15,6 +15,8 @@ import {
   validateDescription,
   validateListingSummary,
   validateListingTitle,
+  validateOptionalEmail,
+  validatePhone,
   validatePriceLabel,
   validateRequired,
   validateRequiredLocation,
@@ -40,10 +42,23 @@ type ListingForm = {
   available: boolean
   featured: boolean
   sort_order: number
+  owner_name: string
+  owner_phone: string
+  owner_email: string
   image_urls: string[]
 }
 
-type ListingField = 'column_id' | 'title' | 'summary' | 'description' | 'location' | 'price_label' | 'images'
+type ListingField =
+  | 'column_id'
+  | 'title'
+  | 'summary'
+  | 'description'
+  | 'location'
+  | 'price_label'
+  | 'images'
+  | 'owner_name'
+  | 'owner_phone'
+  | 'owner_email'
 
 const emptyForm = (columnId = ''): ListingForm => ({
   column_id: columnId,
@@ -57,6 +72,9 @@ const emptyForm = (columnId = ''): ListingForm => ({
   available: true,
   featured: false,
   sort_order: 0,
+  owner_name: '',
+  owner_phone: '',
+  owner_email: '',
   image_urls: [],
 })
 
@@ -74,6 +92,14 @@ function validateListingForm(form: ListingForm): FieldErrors<ListingField> {
   const description = validateDescription(form.description, false, 20)
   if (description) next.description = description
   if (form.image_urls.length < 1) next.images = 'Add at least one photo.'
+  if (form.owner_name.trim()) {
+    const ownerName = validateRequired(form.owner_name, 'Owner name', 2, 100)
+    if (ownerName) next.owner_name = ownerName
+  }
+  const ownerPhone = validatePhone(form.owner_phone, true)
+  if (ownerPhone) next.owner_phone = ownerPhone
+  const ownerEmail = validateOptionalEmail(form.owner_email)
+  if (ownerEmail) next.owner_email = ownerEmail
   return next
 }
 
@@ -175,6 +201,9 @@ export function ShowcaseAdminPanel() {
       available: listing.available !== false,
       featured: listing.featured,
       sort_order: listing.sort_order,
+      owner_name: listing.owner_name || '',
+      owner_phone: listing.owner_phone || '',
+      owner_email: listing.owner_email || '',
       image_urls: listing.image_urls || [],
     })
   }
@@ -344,6 +373,9 @@ export function ShowcaseAdminPanel() {
       available: form.available,
       featured: form.featured,
       sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
+      owner_name: form.owner_name.trim() || null,
+      owner_phone: form.owner_phone.trim() || null,
+      owner_email: form.owner_email.trim() || null,
       image_urls: form.image_urls,
       updated_at: new Date().toISOString(),
       ...(editingId ? {} : { created_by: user?.id || null }),
@@ -504,6 +536,9 @@ export function ShowcaseAdminPanel() {
                     {listing.showcase_columns?.title || 'Column'}
                     {listing.location ? ` · ${listing.location}` : ''}
                     {listing.price_label ? ` · ${listing.price_label}` : ''}
+                    {listing.owner_name || listing.owner_phone
+                      ? ` · Owner: ${listing.owner_name || listing.owner_phone}`
+                      : ''}
                   </p>
                   <div className="admin-card__badges">
                     <span className="status-badge">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
@@ -709,6 +744,32 @@ export function ShowcaseAdminPanel() {
               />
               <span>Featured badge on column page</span>
             </label>
+
+            <p className="admin-dashboard__hint" style={{ marginTop: '0.5rem' }}>
+              Owner contacts (optional) — shown on the public listing card so buyers can reach the owner directly.
+            </p>
+            <Input
+              label="Owner name"
+              value={form.owner_name}
+              onChange={(e) => patchForm('owner_name', e.target.value)}
+              error={errors.owner_name}
+              hint="Person or business that owns this listing"
+            />
+            <Input
+              label="Owner phone"
+              value={form.owner_phone}
+              onChange={(e) => patchForm('owner_phone', e.target.value)}
+              error={errors.owner_phone}
+              hint={FIELD_HINTS.contactPhone}
+            />
+            <Input
+              label="Owner email"
+              type="email"
+              value={form.owner_email}
+              onChange={(e) => patchForm('owner_email', e.target.value)}
+              error={errors.owner_email}
+              hint="Optional email for direct enquiries"
+            />
 
             <div className={`input-group ${errors.images ? 'input-group--error' : ''}`}>
               <label>Photos ({form.image_urls.length}/{MAX_IMAGES})</label>

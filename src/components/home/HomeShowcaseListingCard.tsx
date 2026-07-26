@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel } from '../../lib/showcase'
 import type { ShowcaseListing } from '../../lib/types'
+import { ShowcaseOwnerContacts } from '../showcase/ShowcaseOwnerContacts'
 import './HomeShowcaseListingCard.css'
 
 const PHOTO_DWELL_MS = 2800
@@ -214,6 +215,7 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
           <p className="home-showcase-listing-card__price">{listing.price_label}</p>
         ) : null}
         {listing.summary ? <p className="home-showcase-listing-card__summary">{listing.summary}</p> : null}
+        <ShowcaseOwnerContacts listing={listing} compact />
         <Link to={detailPath} className="home-showcase-listing-card__more">
           View listing
         </Link>

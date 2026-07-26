@@ -144,6 +144,9 @@ export interface ShowcaseListing {
   status: ShowcaseListingStatus
   available: boolean
   featured: boolean
+  owner_name: string | null
+  owner_phone: string | null
+  owner_email: string | null
   sort_order: number
   created_by: string | null
   created_at: string

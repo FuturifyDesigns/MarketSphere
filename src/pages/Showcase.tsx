@@ -29,6 +29,7 @@ import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto,
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
+import { ShowcaseOwnerContacts } from '../components/showcase/ShowcaseOwnerContacts'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
@@ -346,6 +347,7 @@ function ListingCard({
         {listing.summary ? <p className="showcase-card__summary">{listing.summary}</p> : null}
         <span className="showcase-card__more">View full details</span>
       </Link>
+      <ShowcaseOwnerContacts listing={listing} />
       <div className="showcase-card__actions">
         <a className="btn btn--primary btn--sm" href={mailto}>
           <Mail size={14} /> Contact Market Sphere
@@ -1115,6 +1117,7 @@ export function ShowcaseListingPage() {
             {listing.description ? (
               <p className="showcase-listing-detail__description">{listing.description}</p>
             ) : null}
+            <ShowcaseOwnerContacts listing={listing} />
             <div className="showcase-card__actions showcase-listing-detail__actions">
               <a className="btn btn--primary btn--md" href={mailto}>
                 <Mail size={16} />{' '}
