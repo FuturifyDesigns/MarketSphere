@@ -198,15 +198,65 @@ export function ShowcaseAdminPanel() {
     }
   }
 
-  const handleFilePick = (files: FileList | null) => {
+  const handleFilePick = async (files: FileList | null) => {
     if (!files?.length) return
     const remaining = MAX_IMAGES - form.image_urls.length
     if (remaining <= 0) {
       showToast(`You can upload up to ${MAX_IMAGES} photos per listing.`, 'error')
       return
     }
-    openCropForFile(files[0])
+
+    const selected = Array.from(files).slice(0, remaining)
     if (fileRef.current) fileRef.current.value = ''
+
+    // One file: open crop editor. Multiple: batch-upload (re-crop later if needed).
+    if (selected.length === 1) {
+      openCropForFile(selected[0])
+      if (files.length > remaining) {
+        showToast(`Only ${remaining} photo slot${remaining === 1 ? '' : 's'} left — extra files were skipped.`, 'error')
+      }
+      return
+    }
+
+    setUploading(true)
+    const uploaded: string[] = []
+    let failed = 0
+    try {
+      for (const file of selected) {
+        try {
+          assertImageFile(file)
+          uploaded.push(await uploadShowcaseImage(file, editingId || 'draft'))
+        } catch {
+          failed += 1
+        }
+      }
+
+      if (uploaded.length) {
+        setForm((prev) => ({
+          ...prev,
+          image_urls: [...prev.image_urls, ...uploaded].slice(0, MAX_IMAGES),
+        }))
+        setErrors((prev) => {
+          if (!prev.images) return prev
+          const next = { ...prev }
+          delete next.images
+          return next
+        })
+        showToast(
+          failed
+            ? `Added ${uploaded.length} photo${uploaded.length === 1 ? '' : 's'}; ${failed} failed.`
+            : `Added ${uploaded.length} photos.`,
+        )
+      } else {
+        showToast('Could not upload the selected photos.', 'error')
+      }
+
+      if (files.length > remaining) {
+        showToast(`Only ${remaining} photo slots left — extra files were skipped.`, 'error')
+      }
+    } finally {
+      setUploading(false)
+    }
   }
 
   const openExistingCrop = async (url: string) => {
@@ -639,8 +689,9 @@ export function ShowcaseAdminPanel() {
                 ref={fileRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
                 hidden
-                onChange={(e) => handleFilePick(e.target.files)}
+                onChange={(e) => void handleFilePick(e.target.files)}
               />
               <Button
                 type="button"
@@ -650,7 +701,7 @@ export function ShowcaseAdminPanel() {
                 onClick={() => fileRef.current?.click()}
               >
                 <ImagePlus size={14} />{' '}
-                {uploading ? 'Uploading…' : loadingCrop ? 'Opening editor…' : 'Add photo (crop)'}
+                {uploading ? 'Uploading…' : loadingCrop ? 'Opening editor…' : 'Add photos'}
               </Button>
               {errors.images ? (
                 <span className="input-error" role="alert">
@@ -658,8 +709,8 @@ export function ShowcaseAdminPanel() {
                 </span>
               ) : (
                 <span className="input-hint">
-                  Crop before upload · up to {MAX_IMAGES} photos · compressed for free-tier storage (~
-                  {Math.round(UPLOAD_LIMITS.showcase.maxBytes / 1000)}KB each).
+                  Select one photo to crop, or multiple to upload together · up to {MAX_IMAGES} · ~
+                  {Math.round(UPLOAD_LIMITS.showcase.maxBytes / 1000)}KB each after compression.
                 </span>
               )}
             </div>
