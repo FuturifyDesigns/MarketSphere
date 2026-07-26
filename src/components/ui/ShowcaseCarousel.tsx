@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useSlideshowAutoplay } from '../../hooks/useSlideshowAutoplay'
@@ -6,10 +6,11 @@ import './ShowcaseCarousel.css'
 
 interface ShowcaseCarouselProps<T> {
   items: T[]
-  renderItem: (item: T) => ReactNode
+  renderItem: (item: T, helpers: { advance: () => void; isActive: boolean }) => ReactNode
   getKey: (item: T) => string
   ariaLabel: string
-  autoplayMs?: number
+  /** Pass `false` to disable card autoplay (e.g. advance from nested photo slideshow). */
+  autoplayMs?: number | false
   className?: string
 }
 
@@ -43,8 +44,9 @@ export function ShowcaseCarousel<T>({
   const slideRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
   const mobileMotion = useMobileCarouselMotion()
-  const { rootProps, bump } = useSlideshowAutoplay(items.length, setIndex, {
-    intervalMs: autoplayMs,
+  const autoplayEnabled = typeof autoplayMs === 'number' && autoplayMs > 0
+  const { rootProps, bump } = useSlideshowAutoplay(autoplayEnabled ? items.length : 0, setIndex, {
+    intervalMs: autoplayEnabled ? autoplayMs : 60_000,
     resumeAfterMs: 4000,
   })
 
@@ -76,20 +78,23 @@ export function ShowcaseCarousel<T>({
     return () => ro?.disconnect()
   }, [safeIndex, currentItem, items.length])
 
-  if (items.length === 0) return null
-
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     setIndex((current) => (current - 1 + items.length) % items.length)
     bump()
-  }
-  const goNext = () => {
+  }, [bump, items.length])
+
+  const goNext = useCallback(() => {
     setIndex((current) => (current + 1) % items.length)
     bump()
-  }
-  const goTo = (dotIndex: number) => {
-    setIndex(dotIndex)
-    bump()
-  }
+  }, [bump, items.length])
+
+  const goTo = useCallback(
+    (dotIndex: number) => {
+      setIndex(dotIndex)
+      bump()
+    },
+    [bump],
+  )
 
   const onTouchStart = (event: TouchEvent) => {
     touchStartX.current = event.changedTouches[0]?.clientX ?? null
@@ -118,6 +123,8 @@ export function ShowcaseCarousel<T>({
         exit: { opacity: 0, x: -28 },
       }
 
+  if (items.length === 0 || !currentItem) return null
+
   return (
     <div className={`showcase-carousel ${className}`.trim()} {...rootProps}>
       <div className="showcase-carousel__row">
@@ -145,7 +152,7 @@ export function ShowcaseCarousel<T>({
               exit={slideVariants.exit}
               transition={{ duration: mobileMotion ? 0.22 : 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
-              {renderItem(currentItem)}
+              {renderItem(currentItem, { advance: goNext, isActive: true })}
             </motion.div>
           </AnimatePresence>
         </div>

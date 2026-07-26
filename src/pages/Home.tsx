@@ -555,8 +555,10 @@ export function Home() {
                 items={showcaseListings}
                 getKey={(listing) => listing.id}
                 ariaLabel="Showcase listings"
-                autoplayMs={4200}
-                renderItem={(listing) => <HomeShowcaseListingCard listing={listing} />}
+                autoplayMs={false}
+                renderItem={(listing, { advance }) => (
+                  <HomeShowcaseListingCard listing={listing} onPhotosCycleComplete={advance} />
+                )}
               />
             ) : (
               <div className="empty-state bento-card home-section__item home-showcase-listings-empty">
