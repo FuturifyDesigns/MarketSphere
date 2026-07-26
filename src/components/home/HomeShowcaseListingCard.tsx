@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type TouchEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
-import { SHOWCASE_DEAL_LABELS } from '../../lib/showcase'
+import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel } from '../../lib/showcase'
 import type { ShowcaseListing } from '../../lib/types'
 import './HomeShowcaseListingCard.css'
 
@@ -154,6 +154,11 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
         )}
 
         <span className="home-showcase-listing-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
+        <span
+          className={`home-showcase-listing-card__availability${listing.available === false ? ' is-closed' : ''}`}
+        >
+          {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+        </span>
         {column?.title ? (
           <span className="home-showcase-listing-card__column">{column.title}</span>
         ) : null}

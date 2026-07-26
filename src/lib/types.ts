@@ -142,6 +142,7 @@ export interface ShowcaseListing {
   deal_type: ShowcaseDealType
   image_urls: string[]
   status: ShowcaseListingStatus
+  available: boolean
   featured: boolean
   sort_order: number
   created_by: string | null

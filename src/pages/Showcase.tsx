@@ -25,7 +25,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
-import { SHOWCASE_DEAL_LABELS, showcaseContactMailto, showcaseWhatsAppLink } from '../lib/showcase'
+import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto, showcaseWhatsAppLink } from '../lib/showcase'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
@@ -328,6 +328,11 @@ function ListingCard({
           onZoom={(i) => setLightbox(i)}
         />
         <span className="showcase-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
+        <span
+          className={`showcase-card__availability${listing.available === false ? ' showcase-card__availability--closed' : ''}`}
+        >
+          {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+        </span>
         {listing.featured ? <span className="showcase-card__featured-badge">Featured</span> : null}
       </div>
       <Link to={detailPath} className="showcase-card__body showcase-card__body-link">
@@ -1094,6 +1099,11 @@ export function ShowcaseListingPage() {
               <p className="showcase-card__deal showcase-listing-detail__deal">
                 {SHOWCASE_DEAL_LABELS[listing.deal_type]}
               </p>
+              <span
+                className={`showcase-card__availability showcase-card__availability--inline${listing.available === false ? ' showcase-card__availability--closed' : ''}`}
+              >
+                {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+              </span>
             </div>
             {listing.location ? (
               <p className="showcase-card__location">

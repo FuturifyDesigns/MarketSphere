@@ -754,6 +754,30 @@
   color: #f5efe4;
 }
 
+.showcase-card__availability {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 2.55rem;
+  z-index: 2;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, #1f7a4d 88%, #0b1f33);
+  color: #fff;
+}
+
+.showcase-card__availability--closed {
+  background: color-mix(in srgb, #8b3a2f 88%, #1a1510);
+}
+
+.showcase-card__availability--inline {
+  position: static;
+  display: inline-flex;
+  width: fit-content;
+}
+
 .showcase-card__body {
   display: flex;
   flex-direction: column;

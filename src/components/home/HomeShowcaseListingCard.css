@@ -55,7 +55,8 @@
 
 .home-showcase-listing-card__deal,
 .home-showcase-listing-card__column,
-.home-showcase-listing-card__count {
+.home-showcase-listing-card__count,
+.home-showcase-listing-card__availability {
   position: absolute;
   z-index: 2;
   padding: 0.35rem 0.65rem;
@@ -72,6 +73,17 @@
   left: 0.85rem;
   background: color-mix(in srgb, var(--color-navy, #0b1f33) 78%, transparent);
   color: #fff;
+}
+
+.home-showcase-listing-card__availability {
+  top: 2.85rem;
+  left: 0.85rem;
+  background: color-mix(in srgb, #1f7a4d 88%, transparent);
+  color: #fff;
+}
+
+.home-showcase-listing-card__availability.is-closed {
+  background: color-mix(in srgb, #8b3a2f 88%, transparent);
 }
 
 .home-showcase-listing-card__column {

@@ -9,6 +9,24 @@ export const SHOWCASE_DEAL_LABELS: Record<ShowcaseDealType, string> = {
   other: 'Listing',
 }
 
+/** Positive / negative availability wording based on deal type. */
+export const SHOWCASE_AVAILABILITY_LABELS: Record<
+  ShowcaseDealType,
+  { available: string; unavailable: string }
+> = {
+  sale: { available: 'Available', unavailable: 'Sold' },
+  rent: { available: 'Available', unavailable: 'Rented' },
+  opportunity: { available: 'Open', unavailable: 'Closed' },
+  project: { available: 'Open', unavailable: 'Completed' },
+  service: { available: 'Available', unavailable: 'Unavailable' },
+  other: { available: 'Available', unavailable: 'Unavailable' },
+}
+
+export function showcaseAvailabilityLabel(dealType: ShowcaseDealType, available: boolean) {
+  const labels = SHOWCASE_AVAILABILITY_LABELS[dealType] || SHOWCASE_AVAILABILITY_LABELS.other
+  return available ? labels.available : labels.unavailable
+}
+
 export function showcaseContactMailto(title: string, columnTitle?: string) {
   const subject = encodeURIComponent(
     columnTitle ? `Showcase enquiry: ${title} (${columnTitle})` : `Showcase enquiry: ${title}`,

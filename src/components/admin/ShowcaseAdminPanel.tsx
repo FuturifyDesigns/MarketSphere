@@ -5,7 +5,7 @@ import { useToast } from '../../context/ToastContext'
 import { resolveCurrentLocationLabel } from '../../lib/geolocation'
 import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { UPLOAD_LIMITS } from '../../lib/imageUpload'
-import { SHOWCASE_DEAL_LABELS } from '../../lib/showcase'
+import { SHOWCASE_AVAILABILITY_LABELS, SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel } from '../../lib/showcase'
 import { uploadShowcaseImage } from '../../lib/showcaseUpload'
 import { supabase } from '../../lib/supabase'
 import type { ShowcaseColumn, ShowcaseDealType, ShowcaseListing, ShowcaseListingStatus } from '../../lib/types'
@@ -37,6 +37,7 @@ type ListingForm = {
   price_label: string
   deal_type: ShowcaseDealType
   status: ShowcaseListingStatus
+  available: boolean
   featured: boolean
   sort_order: number
   image_urls: string[]
@@ -53,6 +54,7 @@ const emptyForm = (columnId = ''): ListingForm => ({
   price_label: '',
   deal_type: 'sale',
   status: 'published',
+  available: true,
   featured: false,
   sort_order: 0,
   image_urls: [],
@@ -170,6 +172,7 @@ export function ShowcaseAdminPanel() {
       price_label: listing.price_label || '',
       deal_type: listing.deal_type,
       status: listing.status,
+      available: listing.available !== false,
       featured: listing.featured,
       sort_order: listing.sort_order,
       image_urls: listing.image_urls || [],
@@ -338,6 +341,7 @@ export function ShowcaseAdminPanel() {
       price_label: form.price_label.trim() || null,
       deal_type: form.deal_type,
       status: form.status,
+      available: form.available,
       featured: form.featured,
       sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
       image_urls: form.image_urls,
@@ -371,6 +375,22 @@ export function ShowcaseAdminPanel() {
       return
     }
     showToast(`Listing marked ${status}.`)
+    void load()
+  }
+
+  const setAvailable = async (listing: ShowcaseListing, available: boolean) => {
+    const { error } = await supabase
+      .from('showcase_listings')
+      .update({ available, updated_at: new Date().toISOString() })
+      .eq('id', listing.id)
+    if (error) {
+      showToast(error.message || 'Could not update availability.', 'error')
+      return
+    }
+    showToast(`Marked ${showcaseAvailabilityLabel(listing.deal_type, available).toLowerCase()}.`)
+    if (editingId === listing.id) {
+      setForm((prev) => ({ ...prev, available }))
+    }
     void load()
   }
 
@@ -492,6 +512,11 @@ export function ShowcaseAdminPanel() {
                     >
                       {listing.status}
                     </span>
+                    <span
+                      className={`status-badge status-badge--${listing.available !== false ? 'approved' : 'rejected'}`}
+                    >
+                      {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+                    </span>
                     {listing.featured ? <span className="status-badge">Featured</span> : null}
                   </div>
                 </div>
@@ -499,6 +524,19 @@ export function ShowcaseAdminPanel() {
                   <Button size="sm" variant="secondary" onClick={() => startEdit(listing)}>
                     Edit
                   </Button>
+                  {listing.available !== false ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void setAvailable(listing, false)}
+                    >
+                      Mark {SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].unavailable}
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="ghost" onClick={() => void setAvailable(listing, true)}>
+                      Mark {SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].available}
+                    </Button>
+                  )}
                   {listing.status !== 'published' ? (
                     <Button size="sm" onClick={() => void setStatus(listing.id, 'published')}>
                       Publish
@@ -608,6 +646,25 @@ export function ShowcaseAdminPanel() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="input-group">
+              <label htmlFor="showcase-availability">Availability</label>
+              <select
+                id="showcase-availability"
+                value={form.available ? 'available' : 'unavailable'}
+                onChange={(e) => patchForm('available', e.target.value === 'available')}
+              >
+                <option value="available">
+                  {SHOWCASE_AVAILABILITY_LABELS[form.deal_type].available}
+                </option>
+                <option value="unavailable">
+                  {SHOWCASE_AVAILABILITY_LABELS[form.deal_type].unavailable}
+                </option>
+              </select>
+              <span className="input-hint">
+                Labels change with deal type (e.g. Available/Sold for sale, Available/Rented for rent).
+              </span>
             </div>
 
             <div className="input-group">
