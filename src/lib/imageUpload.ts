@@ -6,8 +6,8 @@ export const UPLOAD_LIMITS = {
   cover: { maxWidth: 1920, maxHeight: 1080, maxBytes: 900_000, quality: 0.9 },
   gallery: { maxWidth: 1920, maxHeight: 1440, maxBytes: 900_000, quality: 0.9, maxCount: 6 },
   site: { maxWidth: 1920, maxHeight: 1920, maxBytes: 900_000, quality: 0.88 },
-  /** Showcase listings — sized for Supabase free-tier storage/bandwidth (≤20 photos). */
-  showcase: { maxWidth: 1280, maxHeight: 960, maxBytes: 350_000, quality: 0.8, maxCount: 20 },
+  /** Showcase listings — high quality, still capped for free-tier (≤20 photos). */
+  showcase: { maxWidth: 1920, maxHeight: 1440, maxBytes: 850_000, quality: 0.9, maxCount: 20 },
 } as const
 
 const ACCEPTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
