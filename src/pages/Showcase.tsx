@@ -306,8 +306,13 @@ function ListingCard({
   const { ref, shown } = useReveal<HTMLElement>()
   const [lightbox, setLightbox] = useState<number | null>(null)
   const detailPath = `/showcase/${columnSlug}/${listing.id}`
-  const mailto = showcaseContactMailto(listing.title, columnTitle)
-  const whatsapp = showcaseWhatsAppLink(COMPANY.phones[0], listing.title)
+  const enquiryListing = {
+    ...listing,
+    columnTitle,
+    columnSlug,
+  }
+  const mailto = showcaseContactMailto(enquiryListing)
+  const whatsapp = showcaseWhatsAppLink(COMPANY.phones[0], enquiryListing)
 
   return (
     <article
@@ -347,7 +352,13 @@ function ListingCard({
         {listing.summary ? <p className="showcase-card__summary">{listing.summary}</p> : null}
         <span className="showcase-card__more">View full details</span>
       </Link>
-      <ShowcaseOwnerContacts listing={listing} />
+      <ShowcaseOwnerContacts
+        listing={{
+          ...listing,
+          columnTitle,
+          columnSlug,
+        }}
+      />
       <div className="showcase-card__actions">
         <a className="btn btn--primary btn--sm" href={mailto}>
           <Mail size={14} /> Contact Market Sphere
@@ -1058,8 +1069,13 @@ export function ShowcaseListingPage() {
     )
   }
 
-  const mailto = showcaseContactMailto(listing.title, column.title)
-  const whatsapp = showcaseWhatsAppLink(COMPANY.phones[0], listing.title)
+  const enquiryListing = {
+    ...listing,
+    columnTitle: column.title,
+    columnSlug: column.slug,
+  }
+  const mailto = showcaseContactMailto(enquiryListing)
+  const whatsapp = showcaseWhatsAppLink(COMPANY.phones[0], enquiryListing)
 
   return (
     <div className="page showcase-page showcase-listing-page">
@@ -1118,7 +1134,7 @@ export function ShowcaseListingPage() {
               {listing.description ? (
                 <p className="showcase-listing-detail__description">{listing.description}</p>
               ) : null}
-              <ShowcaseOwnerContacts listing={listing} />
+              <ShowcaseOwnerContacts listing={enquiryListing} />
               <div className="showcase-card__actions showcase-listing-detail__actions">
                 <a className="btn btn--primary btn--md" href={mailto}>
                   <Mail size={16} />{' '}

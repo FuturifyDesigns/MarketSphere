@@ -4,12 +4,14 @@ import {
   showcaseOwnerMailto,
   showcaseOwnerTel,
   showcaseOwnerWhatsApp,
+  type ShowcaseEnquiryListing,
 } from '../../lib/showcase'
 import type { ShowcaseListing } from '../../lib/types'
 import './ShowcaseOwnerContacts.css'
 
 type Props = {
-  listing: Pick<ShowcaseListing, 'title' | 'owner_name' | 'owner_phone' | 'owner_email'>
+  listing: ShowcaseEnquiryListing &
+    Pick<ShowcaseListing, 'owner_name' | 'owner_phone' | 'owner_email'>
   compact?: boolean
 }
 
@@ -34,7 +36,7 @@ export function ShowcaseOwnerContacts({ listing, compact = false }: Props) {
             </a>
             <a
               className="showcase-owner__link showcase-owner__link--wa"
-              href={showcaseOwnerWhatsApp(phone, listing.title)}
+              href={showcaseOwnerWhatsApp(phone, listing)}
               target="_blank"
               rel="noreferrer"
             >
@@ -43,7 +45,7 @@ export function ShowcaseOwnerContacts({ listing, compact = false }: Props) {
           </>
         ) : null}
         {email ? (
-          <a className="showcase-owner__link" href={showcaseOwnerMailto(email, listing.title)}>
+          <a className="showcase-owner__link" href={showcaseOwnerMailto(email, listing)}>
             <Mail size={14} aria-hidden /> {email}
           </a>
         ) : null}

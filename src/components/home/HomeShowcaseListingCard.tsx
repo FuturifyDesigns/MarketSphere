@@ -232,7 +232,14 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
           <p className="home-showcase-listing-card__price">{listing.price_label}</p>
         ) : null}
         {listing.summary ? <p className="home-showcase-listing-card__summary">{listing.summary}</p> : null}
-        <ShowcaseOwnerContacts listing={listing} compact />
+        <ShowcaseOwnerContacts
+          listing={{
+            ...listing,
+            columnTitle: column?.title,
+            columnSlug: column?.slug,
+          }}
+          compact
+        />
         <Link to={detailPath} className="home-showcase-listing-card__more">
           View listing
         </Link>
