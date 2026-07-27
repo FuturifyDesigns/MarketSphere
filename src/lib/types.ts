@@ -114,7 +114,14 @@ export interface ContactMessage {
   created_at: string
 }
 
-export type ShowcaseDealType = 'sale' | 'rent' | 'opportunity' | 'project' | 'service' | 'other'
+export type ShowcaseDealType =
+  | 'sale'
+  | 'rent'
+  | 'sale_rent'
+  | 'opportunity'
+  | 'project'
+  | 'service'
+  | 'other'
 export type ShowcaseListingStatus = 'draft' | 'published' | 'archived'
 
 export interface ShowcaseColumn {

@@ -23,7 +23,7 @@ create table if not exists public.showcase_listings (
   location text,
   price_label text,
   deal_type text not null default 'other'
-    check (deal_type in ('sale', 'rent', 'opportunity', 'project', 'service', 'other')),
+    check (deal_type in ('sale', 'rent', 'sale_rent', 'opportunity', 'project', 'service', 'other')),
   image_urls text[] not null default '{}',
   status text not null default 'draft'
     check (status in ('draft', 'published', 'archived')),

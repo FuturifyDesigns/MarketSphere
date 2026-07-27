@@ -3,6 +3,7 @@ import type { ShowcaseDealType } from './types'
 export const SHOWCASE_DEAL_LABELS: Record<ShowcaseDealType, string> = {
   sale: 'For sale',
   rent: 'For rent',
+  sale_rent: 'For sale & rent',
   opportunity: 'Opportunity',
   project: 'Project',
   service: 'Service',
@@ -16,6 +17,7 @@ export const SHOWCASE_AVAILABILITY_LABELS: Record<
 > = {
   sale: { available: 'Available', unavailable: 'Sold' },
   rent: { available: 'Available', unavailable: 'Rented' },
+  sale_rent: { available: 'Available', unavailable: 'Unavailable' },
   opportunity: { available: 'Open', unavailable: 'Closed' },
   project: { available: 'Open', unavailable: 'Completed' },
   service: { available: 'Available', unavailable: 'Unavailable' },
