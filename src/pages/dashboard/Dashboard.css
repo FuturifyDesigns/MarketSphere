@@ -972,6 +972,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 1.25rem;
+  align-items: start;
 }
 
 .admin-dashboard__stack {
@@ -1202,17 +1203,24 @@
   }
 }
 
+.showcase-admin-form-panel {
+  width: 100%;
+  max-width: 52rem;
+}
+
 .showcase-admin-list-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  width: 100%;
 }
 
 .showcase-admin-list__toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 0.9fr);
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
 .showcase-admin-list__toolbar select,
@@ -1250,7 +1258,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  max-height: min(62vh, 36rem);
+  max-height: min(42vh, 28rem);
   overflow: auto;
   padding-right: 0.15rem;
 }
@@ -1370,6 +1378,7 @@
   margin-top: 0.75rem;
   font-size: 0.8125rem;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 @media (max-width: 960px) {

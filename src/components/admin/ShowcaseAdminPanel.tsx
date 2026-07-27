@@ -528,7 +528,7 @@ export function ShowcaseAdminPanel() {
 
   return (
     <div className="admin-dashboard__stack">
-      <div className="admin-dashboard__split">
+      <div className="showcase-admin-layout">
         <section className="dashboard-panel admin-dashboard__panel showcase-admin-list-panel">
           <div className="dashboard-panel__header">
             <h2>
@@ -578,9 +578,10 @@ export function ShowcaseAdminPanel() {
 
           <div className="showcase-admin-list">
             {pagedListings.map((listing) => {
+              const dealType = listing.deal_type in SHOWCASE_DEAL_LABELS ? listing.deal_type : 'other'
               const available = listing.available !== false
-              const unavailableLabel = SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].unavailable
-              const availableLabel = SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].available
+              const unavailableLabel = SHOWCASE_AVAILABILITY_LABELS[dealType].unavailable
+              const availableLabel = SHOWCASE_AVAILABILITY_LABELS[dealType].available
               return (
                 <article
                   key={listing.id}
@@ -663,14 +664,14 @@ export function ShowcaseAdminPanel() {
                       {listing.price_label ? ` · ${listing.price_label}` : ''}
                     </p>
                     <div className="showcase-admin-row__badges">
-                      <span className="status-badge">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
+                      <span className="status-badge">{SHOWCASE_DEAL_LABELS[dealType]}</span>
                       <span
                         className={`status-badge status-badge--${listing.status === 'published' ? 'approved' : listing.status === 'draft' ? 'pending' : 'rejected'}`}
                       >
                         {listing.status}
                       </span>
                       <span className={`status-badge status-badge--${available ? 'approved' : 'rejected'}`}>
-                        {showcaseAvailabilityLabel(listing.deal_type, available)}
+                        {showcaseAvailabilityLabel(dealType, available)}
                       </span>
                       {listing.featured ? <span className="status-badge">Featured</span> : null}
                     </div>
@@ -712,7 +713,7 @@ export function ShowcaseAdminPanel() {
           ) : null}
         </section>
 
-        <section className="dashboard-panel admin-dashboard__panel">
+        <section className="dashboard-panel admin-dashboard__panel showcase-admin-form-panel">
           <div className="dashboard-panel__header">
             <h2>{editingId ? 'Edit listing' : 'Add listing'}</h2>
           </div>
