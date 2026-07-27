@@ -40,6 +40,7 @@ export function ShowcaseCarousel<T>({
 }: ShowcaseCarouselProps<T>) {
   const [index, setIndex] = useState(0)
   const [viewportHeight, setViewportHeight] = useState<number | undefined>()
+  const [soloCycle, setSoloCycle] = useState(0)
   const maxHeightRef = useRef(0)
   const slideRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
@@ -52,6 +53,7 @@ export function ShowcaseCarousel<T>({
 
   useEffect(() => {
     setIndex(0)
+    setSoloCycle(0)
     maxHeightRef.current = 0
     setViewportHeight(undefined)
   }, [items.length])
@@ -76,7 +78,7 @@ export function ShowcaseCarousel<T>({
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
     ro?.observe(slide)
     return () => ro?.disconnect()
-  }, [safeIndex, currentItem, items.length])
+  }, [safeIndex, currentItem, items.length, soloCycle])
 
   const goPrev = useCallback(() => {
     setIndex((current) => (current - 1 + items.length) % items.length)
@@ -84,6 +86,12 @@ export function ShowcaseCarousel<T>({
   }, [bump, items.length])
 
   const goNext = useCallback(() => {
+    if (items.length <= 1) {
+      // Force the single card to remount so its photo cycle restarts.
+      setSoloCycle((cycle) => cycle + 1)
+      bump()
+      return
+    }
     setIndex((current) => (current + 1) % items.length)
     bump()
   }, [bump, items.length])
@@ -145,7 +153,7 @@ export function ShowcaseCarousel<T>({
           <AnimatePresence mode="sync" initial={false}>
             <motion.div
               ref={slideRef}
-              key={getKey(currentItem)}
+              key={`${getKey(currentItem)}-${soloCycle}`}
               className="showcase-carousel__slide"
               initial={slideVariants.initial}
               animate={slideVariants.animate}

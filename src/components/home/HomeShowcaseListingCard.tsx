@@ -20,80 +20,99 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
   const images = listing.image_urls || []
   const detailPath = columnSlug ? `/showcase/${columnSlug}/${listing.id}` : '/showcase'
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
-  const resumeAtRef = useRef(0)
-  const completedRef = useRef(false)
   const onCompleteRef = useRef(onPhotosCycleComplete)
+  const indexRef = useRef(0)
   onCompleteRef.current = onPhotosCycleComplete
 
   useEffect(() => {
+    indexRef.current = 0
     setIndex(0)
-    completedRef.current = false
-    resumeAtRef.current = 0
-  }, [listing.id, images.length])
 
-  useEffect(() => {
-    if (completedRef.current) return
-    if (paused) return
-    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      const t = window.setTimeout(() => {
-        if (completedRef.current) return
-        completedRef.current = true
-        onCompleteRef.current?.()
-      }, 1200)
-      return () => window.clearTimeout(t)
+    const reduceMotion =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+    let cancelled = false
+    let timer: number | undefined
+
+    const clear = () => {
+      if (timer !== undefined) {
+        window.clearTimeout(timer)
+        timer = undefined
+      }
     }
 
-    const delay = Math.max(PHOTO_DWELL_MS, resumeAtRef.current - Date.now())
-    const timer = window.setTimeout(() => {
-      if (completedRef.current) return
-
-      if (images.length <= 1) {
-        completedRef.current = true
-        onCompleteRef.current?.()
-        return
-      }
-
-      if (index < images.length - 1) {
-        setIndex((current) => current + 1)
-        return
-      }
-
-      completedRef.current = true
+    const finishAndAdvance = () => {
+      if (cancelled) return
       onCompleteRef.current?.()
-    }, delay)
+    }
 
-    return () => window.clearTimeout(timer)
-  }, [images.length, index, paused])
+    const dwell = reduceMotion ? 1200 : PHOTO_DWELL_MS
+
+    const scheduleFrom = (photoIndex: number) => {
+      clear()
+      timer = window.setTimeout(() => {
+        if (cancelled) return
+
+        const count = images.length
+
+        // No / single photo: dwell once, then next listing card.
+        if (count <= 1) {
+          finishAndAdvance()
+          return
+        }
+
+        // More photos left in this listing.
+        if (photoIndex < count - 1) {
+          const next = photoIndex + 1
+          indexRef.current = next
+          setIndex(next)
+          scheduleFrom(next)
+          return
+        }
+
+        // Last photo has been shown for a full dwell — go to next card.
+        finishAndAdvance()
+      }, dwell)
+    }
+
+    scheduleFrom(0)
+
+    return () => {
+      cancelled = true
+      clear()
+    }
+  }, [listing.id, images.length])
 
   const safeIndex = images.length ? Math.min(index, images.length - 1) : 0
-
-  const bumpManual = () => {
-    resumeAtRef.current = Date.now() + 3500
-  }
 
   const goPrev = (event: MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
     if (images.length <= 1) return
-    setIndex((current) => (current - 1 + images.length) % images.length)
-    bumpManual()
+    setIndex((current) => {
+      const next = (current - 1 + images.length) % images.length
+      indexRef.current = next
+      return next
+    })
   }
 
   const goNext = (event: MouseEvent) => {
     event.preventDefault()
     event.stopPropagation()
     if (images.length <= 1) return
-    setIndex((current) => (current + 1) % images.length)
-    bumpManual()
+    setIndex((current) => {
+      const next = (current + 1) % images.length
+      indexRef.current = next
+      return next
+    })
   }
 
   const goTo = (event: MouseEvent, next: number) => {
     event.preventDefault()
     event.stopPropagation()
+    indexRef.current = next
     setIndex(next)
-    bumpManual()
   }
 
   const onTouchStart = (event: TouchEvent) => {
@@ -109,22 +128,20 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
     const end = event.changedTouches[0]?.clientX ?? start
     const delta = end - start
     if (Math.abs(delta) < 40) return
-    if (delta < 0) setIndex((current) => (current + 1) % images.length)
-    else setIndex((current) => (current - 1 + images.length) % images.length)
-    bumpManual()
+    setIndex((current) => {
+      const next =
+        delta < 0
+          ? (current + 1) % images.length
+          : (current - 1 + images.length) % images.length
+      indexRef.current = next
+      return next
+    })
   }
-
-  const canHoverPause =
-    typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
 
   return (
     <article className="home-showcase-listing-card">
       <div
         className="home-showcase-listing-card__media"
-        onMouseEnter={() => {
-          if (canHoverPause) setPaused(true)
-        }}
-        onMouseLeave={() => setPaused(false)}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -135,7 +152,7 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
           >
             {images.map((url, i) => (
               <Link
-                key={url}
+                key={`${url}-${i}`}
                 to={detailPath}
                 className="home-showcase-listing-card__slide"
                 tabIndex={i === safeIndex ? 0 : -1}
@@ -185,7 +202,7 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
             <div className="home-showcase-listing-card__dots" role="tablist" aria-label="Listing photos">
               {images.map((url, i) => (
                 <button
-                  key={url}
+                  key={`${url}-dot-${i}`}
                   type="button"
                   role="tab"
                   className={`home-showcase-listing-card__dot${i === safeIndex ? ' is-active' : ''}`}
