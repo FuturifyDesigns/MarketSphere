@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Crop, ImagePlus, LocateFixed, Store, Trash2 } from 'lucide-react'
+import { Archive, CheckCircle2, ChevronLeft, ChevronRight, Crop, EyeOff, ImagePlus, LocateFixed, Pencil, Search, Store, Trash2, Upload } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { resolveCurrentLocationLabel } from '../../lib/geolocation'
@@ -29,6 +29,7 @@ import { Textarea } from '../ui/Textarea'
 const DEAL_TYPES = Object.keys(SHOWCASE_DEAL_LABELS) as ShowcaseDealType[]
 const STATUSES: ShowcaseListingStatus[] = ['draft', 'published', 'archived']
 const MAX_IMAGES = UPLOAD_LIMITS.showcase.maxCount
+const LIST_PAGE_SIZE = 8
 
 type ListingForm = {
   column_id: string
@@ -109,6 +110,9 @@ export function ShowcaseAdminPanel() {
   const [columns, setColumns] = useState<ShowcaseColumn[]>([])
   const [listings, setListings] = useState<ShowcaseListing[]>([])
   const [filterColumn, setFilterColumn] = useState('')
+  const [filterStatus, setFilterStatus] = useState<'all' | ShowcaseListingStatus>('all')
+  const [listSearch, setListSearch] = useState('')
+  const [listPage, setListPage] = useState(1)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<ListingForm>(emptyForm())
   const [errors, setErrors] = useState<FieldErrors<ListingField>>({})
@@ -176,9 +180,41 @@ export function ShowcaseAdminPanel() {
   }, [load])
 
   const filtered = useMemo(() => {
-    if (!filterColumn) return listings
-    return listings.filter((item) => item.column_id === filterColumn)
-  }, [listings, filterColumn])
+    const query = listSearch.trim().toLowerCase()
+    return listings.filter((item) => {
+      if (filterColumn && item.column_id !== filterColumn) return false
+      if (filterStatus !== 'all' && item.status !== filterStatus) return false
+      if (!query) return true
+      const haystack = [
+        item.title,
+        item.location,
+        item.price_label,
+        item.owner_name,
+        item.owner_phone,
+        item.showcase_columns?.title,
+        SHOWCASE_DEAL_LABELS[item.deal_type],
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [listings, filterColumn, filterStatus, listSearch])
+
+  const listPageCount = Math.max(1, Math.ceil(filtered.length / LIST_PAGE_SIZE))
+  const safeListPage = Math.min(listPage, listPageCount)
+  const pagedListings = useMemo(() => {
+    const start = (safeListPage - 1) * LIST_PAGE_SIZE
+    return filtered.slice(start, start + LIST_PAGE_SIZE)
+  }, [filtered, safeListPage])
+
+  useEffect(() => {
+    setListPage(1)
+  }, [filterColumn, filterStatus, listSearch])
+
+  useEffect(() => {
+    if (listPage > listPageCount) setListPage(listPageCount)
+  }, [listPage, listPageCount])
 
   const resetForm = (columnId?: string) => {
     setEditingId(null)
@@ -493,7 +529,7 @@ export function ShowcaseAdminPanel() {
   return (
     <div className="admin-dashboard__stack">
       <div className="admin-dashboard__split">
-        <section className="dashboard-panel admin-dashboard__panel">
+        <section className="dashboard-panel admin-dashboard__panel showcase-admin-list-panel">
           <div className="dashboard-panel__header">
             <h2>
               <Store size={20} /> Showcase listings
@@ -501,99 +537,179 @@ export function ShowcaseAdminPanel() {
             <span className="admin-dashboard__count">{filtered.length} shown</span>
           </div>
 
-          <div className="dashboard-form dashboard-form--flush" style={{ marginBottom: '1rem' }}>
-            <div className="input-group">
-              <label htmlFor="showcase-filter-column">Filter by column</label>
-              <select
-                id="showcase-filter-column"
-                value={filterColumn}
-                onChange={(e) => setFilterColumn(e.target.value)}
-              >
-                <option value="">All columns</option>
-                {columns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="showcase-admin-list__toolbar">
+            <label className="showcase-admin-list__search">
+              <Search size={15} aria-hidden />
+              <input
+                type="search"
+                value={listSearch}
+                onChange={(e) => setListSearch(e.target.value)}
+                placeholder="Search title, location, owner…"
+                aria-label="Search listings"
+              />
+            </label>
+            <select
+              id="showcase-filter-column"
+              value={filterColumn}
+              onChange={(e) => setFilterColumn(e.target.value)}
+              aria-label="Filter by column"
+            >
+              <option value="">All columns</option>
+              {columns.map((column) => (
+                <option key={column.id} value={column.id}>
+                  {column.title}
+                </option>
+              ))}
+            </select>
+            <select
+              id="showcase-filter-status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | ShowcaseListingStatus)}
+              aria-label="Filter by status"
+            >
+              <option value="all">All statuses</option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="admin-card-list">
-            {filtered.map((listing) => (
-              <article key={listing.id} className="admin-card admin-card--stacked">
-                <div>
+          <div className="showcase-admin-list">
+            {pagedListings.map((listing) => {
+              const available = listing.available !== false
+              const unavailableLabel = SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].unavailable
+              const availableLabel = SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].available
+              return (
+                <article
+                  key={listing.id}
+                  className={`showcase-admin-row${editingId === listing.id ? ' is-editing' : ''}`}
+                >
                   {listing.image_urls[0] ? (
-                    <img
-                      src={listing.image_urls[0]}
-                      alt=""
-                      className="admin-card__avatar"
-                      style={{ width: 64, height: 48, borderRadius: 8, objectFit: 'cover' }}
-                    />
-                  ) : null}
-                  <strong>{listing.title}</strong>
-                  <p className="admin-card__meta">
-                    {listing.showcase_columns?.title || 'Column'}
-                    {listing.location ? ` · ${listing.location}` : ''}
-                    {listing.price_label ? ` · ${listing.price_label}` : ''}
-                    {listing.owner_name || listing.owner_phone
-                      ? ` · Owner: ${listing.owner_name || listing.owner_phone}`
-                      : ''}
-                  </p>
-                  <div className="admin-card__badges">
-                    <span className="status-badge">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
-                    <span
-                      className={`status-badge status-badge--${listing.status === 'published' ? 'approved' : listing.status === 'draft' ? 'pending' : 'rejected'}`}
-                    >
-                      {listing.status}
-                    </span>
-                    <span
-                      className={`status-badge status-badge--${listing.available !== false ? 'approved' : 'rejected'}`}
-                    >
-                      {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
-                    </span>
-                    {listing.featured ? <span className="status-badge">Featured</span> : null}
+                    <img src={listing.image_urls[0]} alt="" className="showcase-admin-row__thumb" />
+                  ) : (
+                    <div className="showcase-admin-row__thumb showcase-admin-row__thumb--empty" aria-hidden />
+                  )}
+                  <div className="showcase-admin-row__body">
+                    <div className="showcase-admin-row__top">
+                      <strong className="showcase-admin-row__title">{listing.title}</strong>
+                      <div className="showcase-admin-row__actions">
+                        <button
+                          type="button"
+                          className="showcase-admin-row__icon-btn"
+                          title="Edit"
+                          aria-label={`Edit ${listing.title}`}
+                          onClick={() => startEdit(listing)}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        {available ? (
+                          <button
+                            type="button"
+                            className="showcase-admin-row__icon-btn"
+                            title={`Mark ${unavailableLabel}`}
+                            aria-label={`Mark ${unavailableLabel}`}
+                            onClick={() => void setAvailable(listing, false)}
+                          >
+                            <Archive size={14} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="showcase-admin-row__icon-btn"
+                            title={`Mark ${availableLabel}`}
+                            aria-label={`Mark ${availableLabel}`}
+                            onClick={() => void setAvailable(listing, true)}
+                          >
+                            <CheckCircle2 size={14} />
+                          </button>
+                        )}
+                        {listing.status !== 'published' ? (
+                          <button
+                            type="button"
+                            className="showcase-admin-row__icon-btn showcase-admin-row__icon-btn--accent"
+                            title="Publish"
+                            aria-label={`Publish ${listing.title}`}
+                            onClick={() => void setStatus(listing.id, 'published')}
+                          >
+                            <Upload size={14} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="showcase-admin-row__icon-btn"
+                            title="Unpublish"
+                            aria-label={`Unpublish ${listing.title}`}
+                            onClick={() => void setStatus(listing.id, 'draft')}
+                          >
+                            <EyeOff size={14} />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="showcase-admin-row__icon-btn showcase-admin-row__icon-btn--danger"
+                          title="Delete"
+                          aria-label={`Delete ${listing.title}`}
+                          onClick={() => void deleteListing(listing.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="showcase-admin-row__meta">
+                      {listing.showcase_columns?.title || 'Column'}
+                      {listing.location ? ` · ${listing.location}` : ''}
+                      {listing.price_label ? ` · ${listing.price_label}` : ''}
+                    </p>
+                    <div className="showcase-admin-row__badges">
+                      <span className="status-badge">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
+                      <span
+                        className={`status-badge status-badge--${listing.status === 'published' ? 'approved' : listing.status === 'draft' ? 'pending' : 'rejected'}`}
+                      >
+                        {listing.status}
+                      </span>
+                      <span className={`status-badge status-badge--${available ? 'approved' : 'rejected'}`}>
+                        {showcaseAvailabilityLabel(listing.deal_type, available)}
+                      </span>
+                      {listing.featured ? <span className="status-badge">Featured</span> : null}
+                    </div>
                   </div>
-                </div>
-                <div className="admin-card__actions">
-                  <Button size="sm" variant="secondary" onClick={() => startEdit(listing)}>
-                    Edit
-                  </Button>
-                  {listing.available !== false ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => void setAvailable(listing, false)}
-                    >
-                      Mark {SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].unavailable}
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="ghost" onClick={() => void setAvailable(listing, true)}>
-                      Mark {SHOWCASE_AVAILABILITY_LABELS[listing.deal_type].available}
-                    </Button>
-                  )}
-                  {listing.status !== 'published' ? (
-                    <Button size="sm" onClick={() => void setStatus(listing.id, 'published')}>
-                      Publish
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="ghost" onClick={() => void setStatus(listing.id, 'draft')}>
-                      Unpublish
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" onClick={() => void deleteListing(listing.id)}>
-                    <Trash2 size={14} /> Delete
-                  </Button>
-                </div>
-              </article>
-            ))}
+                </article>
+              )
+            })}
             {filtered.length === 0 ? (
               <p className="admin-dashboard__empty">
-                No listings yet. Add a property, project, or opportunity in the form — it appears on the public
-                Showcase page when published.
+                No listings match. Adjust filters or add a listing in the form.
               </p>
             ) : null}
           </div>
+
+          {filtered.length > LIST_PAGE_SIZE ? (
+            <div className="showcase-admin-list__pager">
+              <button
+                type="button"
+                className="showcase-admin-row__icon-btn"
+                disabled={safeListPage <= 1}
+                onClick={() => setListPage((page) => Math.max(1, page - 1))}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span>
+                Page {safeListPage} / {listPageCount}
+              </span>
+              <button
+                type="button"
+                className="showcase-admin-row__icon-btn"
+                disabled={safeListPage >= listPageCount}
+                onClick={() => setListPage((page) => Math.min(listPageCount, page + 1))}
+                aria-label="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          ) : null}
         </section>
 
         <section className="dashboard-panel admin-dashboard__panel">
