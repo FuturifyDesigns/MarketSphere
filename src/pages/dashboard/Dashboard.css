@@ -1259,7 +1259,12 @@
   flex-direction: column;
   gap: 0.45rem;
   max-height: min(42vh, 28rem);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-gutter: stable;
   padding-right: 0.15rem;
 }
 

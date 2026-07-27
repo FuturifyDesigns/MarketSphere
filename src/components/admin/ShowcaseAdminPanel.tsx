@@ -576,7 +576,7 @@ export function ShowcaseAdminPanel() {
             </select>
           </div>
 
-          <div className="showcase-admin-list">
+          <div className="showcase-admin-list" data-lenis-prevent>
             {pagedListings.map((listing) => {
               const dealType = listing.deal_type in SHOWCASE_DEAL_LABELS ? listing.deal_type : 'other'
               const available = listing.available !== false
