@@ -28,7 +28,7 @@ interface AuthContextType {
     },
   ) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<SignInResult>
-  signInWithGoogle: () => Promise<{ error: Error | null }>
+  signInWithGoogle: (role?: 'customer' | 'provider') => Promise<{ error: Error | null }>
   resetPasswordForEmail: (email: string) => Promise<{ error: Error | null }>
   updatePassword: (password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
@@ -247,14 +247,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (role?: 'customer' | 'provider') => {
     try {
       // Same flow for new + existing accounts: Supabase creates on first Google login,
       // and signs in / auto-links when the Google email already belongs to a user.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: getOAuthCallbackUrl(),
+          redirectTo: getOAuthCallbackUrl(role),
           queryParams: {
             access_type: 'online',
             prompt: 'select_account',

@@ -48,17 +48,29 @@ export function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [googleRole, setGoogleRole] = useState<'customer' | 'provider' | ''>('')
+  const [roleError, setRoleError] = useState('')
   const { locked, runLocked } = useSubmitLock()
   useResetGoogleLoading(setGoogleLoading)
 
   const handleGoogle = async () => {
     if (loading || locked || googleLoading) return
     setError('')
+    setRoleError('')
+
+    if (!googleRole) {
+      const msg = 'Choose Customer or Provider before continuing with Google.'
+      setRoleError(msg)
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
+
     setGoogleLoading(true)
     applyRememberMePreference(rememberMe, email.trim())
-    storeOAuthSignupIntent('customer', false, 'login')
+    storeOAuthSignupIntent(googleRole, false, 'login')
     try {
-      const { error: err } = await signInWithGoogle()
+      const { error: err } = await signInWithGoogle(googleRole)
       if (err) {
         setError(err.message)
         showToast(err.message, 'error')
@@ -162,6 +174,34 @@ export function Login() {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
+              <p className="role-toggle__heading">New with Google? Choose how you&apos;re joining</p>
+              <div className="role-toggle" role="radiogroup" aria-label="Account type for Google">
+                <button
+                  type="button"
+                  className={googleRole === 'customer' ? 'role-toggle__btn--active' : ''}
+                  aria-pressed={googleRole === 'customer'}
+                  onClick={() => {
+                    setGoogleRole('customer')
+                    setRoleError('')
+                  }}
+                >
+                  <span className="role-toggle__title">I&apos;m a Customer</span>
+                  <span className="role-toggle__hint">Find and book services</span>
+                </button>
+                <button
+                  type="button"
+                  className={googleRole === 'provider' ? 'role-toggle__btn--active' : ''}
+                  aria-pressed={googleRole === 'provider'}
+                  onClick={() => {
+                    setGoogleRole('provider')
+                    setRoleError('')
+                  }}
+                >
+                  <span className="role-toggle__title">I&apos;m a Provider</span>
+                  <span className="role-toggle__hint">List your business</span>
+                </button>
+              </div>
+              {roleError ? <p className="auth-error auth-error--inline" role="alert">{roleError}</p> : null}
               <GoogleAuthButton
                 label="Continue with Google"
                 loading={googleLoading}
@@ -169,7 +209,7 @@ export function Login() {
                 onClick={() => void handleGoogle()}
               />
               <p className="auth-google-hint">
-                New here? We&apos;ll create your account. Already registered? You&apos;ll be signed in.
+                Existing accounts sign in as usual. New Google accounts use the role you selected above.
               </p>
               <div className="auth-divider" role="separator" aria-label="or">
                 <span>or</span>

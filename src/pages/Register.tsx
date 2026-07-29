@@ -61,11 +61,17 @@ export function Register() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [privacyConsent, setPrivacyConsent] = useState(false)
   const [consentError, setConsentError] = useState('')
+  const [roleSelected, setRoleSelected] = useState(() => searchParams.get('role') === 'provider' || searchParams.get('role') === 'customer')
+  const [roleError, setRoleError] = useState('')
   const { locked, runLocked } = useSubmitLock()
   useResetGoogleLoading(setGoogleLoading)
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+    if (key === 'role') {
+      setRoleSelected(true)
+      setRoleError('')
+    }
     if (key in fieldErrors) {
       setFieldErrors((prev) => clearFieldError(prev, key as RegisterFields))
     }
@@ -82,7 +88,15 @@ export function Register() {
     if (loading || locked || googleLoading) return
     setError('')
     setConsentError('')
+    setRoleError('')
 
+    if (!roleSelected) {
+      const msg = 'Choose Customer or Provider before creating your account.'
+      setRoleError(msg)
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
     const errors = collectErrors<RegisterFields>([
       ['full_name', validateName(form.full_name, 'Full name')],
       ['email', validateEmail(form.email)],
@@ -141,6 +155,15 @@ export function Register() {
     if (loading || locked || googleLoading) return
     setError('')
     setConsentError('')
+    setRoleError('')
+
+    if (!roleSelected) {
+      const msg = 'Choose Customer or Provider before continuing with Google.'
+      setRoleError(msg)
+      setError(msg)
+      showToast(msg, 'error')
+      return
+    }
 
     if (!privacyConsent) {
       const msg = 'Please accept the Terms of Service and Privacy Policy to continue with Google.'
@@ -151,9 +174,10 @@ export function Register() {
     }
 
     setGoogleLoading(true)
-    storeOAuthSignupIntent(form.role === 'provider' ? 'provider' : 'customer', true, 'register')
+    const intendedRole = form.role === 'provider' ? 'provider' : 'customer'
+    storeOAuthSignupIntent(intendedRole, true, 'register')
     try {
-      const { error: err } = await signInWithGoogle()
+      const { error: err } = await signInWithGoogle(intendedRole)
       if (err) {
         setError(err.message)
         showToast(err.message, 'error')
@@ -220,8 +244,8 @@ export function Register() {
             <div className="role-toggle" role="radiogroup" aria-label="Account type">
               <button
                 type="button"
-                className={form.role === 'customer' ? 'role-toggle__btn--active' : ''}
-                aria-pressed={form.role === 'customer'}
+                className={roleSelected && form.role === 'customer' ? 'role-toggle__btn--active' : ''}
+                aria-pressed={roleSelected && form.role === 'customer'}
                 onClick={() => updateField('role', 'customer')}
               >
                 <span className="role-toggle__title">I&apos;m a Customer</span>
@@ -229,34 +253,39 @@ export function Register() {
               </button>
               <button
                 type="button"
-                className={form.role === 'provider' ? 'role-toggle__btn--active' : ''}
-                aria-pressed={form.role === 'provider'}
+                className={roleSelected && form.role === 'provider' ? 'role-toggle__btn--active' : ''}
+                aria-pressed={roleSelected && form.role === 'provider'}
                 onClick={() => updateField('role', 'provider')}
               >
                 <span className="role-toggle__title">I&apos;m a Provider</span>
                 <span className="role-toggle__hint">List your business</span>
               </button>
             </div>
+            {roleError ? <p className="auth-error auth-error--inline" role="alert">{roleError}</p> : null}
 
-            <div className="role-choice-banner" role="status" aria-live="polite">
-              <CheckCircle2 size={18} aria-hidden="true" />
-              <div>
-                <p className="role-choice-banner__title">
-                  Applying as a <strong>{roleLabel}</strong>
-                </p>
-                <p className="role-choice-banner__text">{roleSummary}</p>
+            {roleSelected ? (
+              <div className="role-choice-banner" role="status" aria-live="polite">
+                <CheckCircle2 size={18} aria-hidden="true" />
+                <div>
+                  <p className="role-choice-banner__title">
+                    Applying as a <strong>{roleLabel}</strong>
+                  </p>
+                  <p className="role-choice-banner__text">{roleSummary}</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="auth-google-hint">Select Customer or Provider first — required for Google and email signup.</p>
+            )}
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
               <GoogleAuthButton
                 label="Continue with Google"
                 loading={googleLoading}
-                disabled={loading || locked}
+                disabled={loading || locked || !roleSelected}
                 onClick={() => void handleGoogle()}
               />
               <p className="auth-google-hint">
-                New here? We&apos;ll create your account. Already registered? You&apos;ll be signed in.
+                New here? We&apos;ll create your account with the role above. Already registered? You&apos;ll be signed in.
               </p>
               <div className="auth-divider" role="separator" aria-label="or">
                 <span>or</span>

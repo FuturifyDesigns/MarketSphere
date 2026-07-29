@@ -59,8 +59,29 @@ export function consumeOAuthSignupIntent(): {
 }
 
 /** Absolute callback URL Supabase returns to with ?code=…&state=… */
-export function getOAuthCallbackUrl() {
-  return getAuthRouteUrl('/auth/callback')
+export function getOAuthCallbackUrl(role?: OAuthIntendedRole) {
+  const url = getAuthRouteUrl('/auth/callback')
+  // sessionStorage is per-origin and is lost if Supabase falls back to the
+  // configured Site URL instead of returning to the origin we started on, so
+  // the role also travels in the redirect URL. This grants no extra privilege:
+  // claim_provider_role only ever upgrades the caller's own customer profile.
+  return role ? `${url}?role=${encodeURIComponent(role)}` : url
+}
+
+/** Role carried back on the callback URL, used when sessionStorage was lost. */
+export function readRoleFromCallbackUrl(): OAuthIntendedRole | null {
+  try {
+    const fromSearch = new URLSearchParams(window.location.search).get('role')
+    const hash = window.location.hash.startsWith('#')
+      ? window.location.hash.slice(1)
+      : window.location.hash
+    const hashQuery = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
+    const role = fromSearch || new URLSearchParams(hashQuery).get('role')
+    if (role === 'provider' || role === 'customer') return role
+    return null
+  } catch {
+    return null
+  }
 }
 
 export function isOAuthCancelError(message: string) {

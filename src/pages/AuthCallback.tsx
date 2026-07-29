@@ -13,6 +13,7 @@ import {
   consumeOAuthSignupIntent,
   isOAuthCancelError,
   peekOAuthReturnTo,
+  readRoleFromCallbackUrl,
 } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned } from '../lib/accountGuard'
 import type { Profile } from '../lib/types'
@@ -38,7 +39,8 @@ function readOAuthParams() {
 }
 
 function clearOAuthParamsFromUrl() {
-  window.history.replaceState({}, document.title, `${window.location.origin}/auth/callback`)
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  window.history.replaceState({}, document.title, `${window.location.origin}${base}/auth/callback`)
 }
 
 async function waitForProfile(userId: string, attempts = 8): Promise<Profile | null> {
@@ -73,6 +75,8 @@ export function AuthCallback() {
       try {
         const { code, errorDescription } = readOAuthParams()
         const returnTo = peekOAuthReturnTo() === 'register' ? '/register' : '/login'
+        // Read before clearOAuthParamsFromUrl() strips the query string.
+        const roleFromUrl = readRoleFromCallbackUrl()
 
         if (errorDescription) {
           const decoded = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
@@ -120,6 +124,9 @@ export function AuthCallback() {
         }
 
         const intent = consumeOAuthSignupIntent()
+        // sessionStorage is lost when Supabase returns to a different origin
+        // than the one the flow started on, so the URL is the fallback.
+        const intendedRole = intent?.role ?? roleFromUrl
 
         const fullName =
           (session.user.user_metadata?.full_name as string | undefined) ||
@@ -147,9 +154,6 @@ export function AuthCallback() {
         const createdAtMs = Date.parse(session.user.created_at || '')
         const isNewAccount = Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 10 * 60 * 1000
 
-        // If the intent was lost (e.g. sessionStorage cleared during redirect),
-        // the account already exists in the DB — proceed with the default role
-        // rather than signing the user out.
         if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
           const { error: nameError } = await supabase
             .from('profiles')
@@ -162,7 +166,7 @@ export function AuthCallback() {
         // starts as 'customer'. The role must go through the RPC: a plain UPDATE
         // is silently reverted by protect_profile_columns and still reports success.
         let nextRole = profile.role
-        if (intent?.role === 'provider' && profile.role === 'customer') {
+        if (intendedRole === 'provider' && profile.role === 'customer') {
           const { data: claimed, error: claimError } = await supabase.rpc('claim_provider_role')
           if (claimError) {
             console.error('[auth] claim_provider_role failed', claimError)
