@@ -158,13 +158,9 @@ export function AuthCallback() {
         if (intent?.role === 'provider' && profile.role === 'customer') {
           updates.role = 'provider'
         }
-        if (isNewAccount && !intent) {
-          await signOut()
-          clearOAuthSignupIntent()
-          setStatus('error')
-          setMessage('Please choose Customer or Provider, then sign up with Google again.')
-          return
-        }
+        // If the intent was lost (e.g. sessionStorage cleared during redirect),
+        // the account already exists in the DB — proceed with the default role
+        // rather than signing the user out.
 
         let nextRole = profile.role
         if (Object.keys(updates).length > 0) {
