@@ -140,7 +140,11 @@
 
 .onboarding-card__top {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   padding: 1.5rem 1.5rem 0.5rem;
 }
 

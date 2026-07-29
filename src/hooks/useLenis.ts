@@ -46,7 +46,7 @@ export function useLenis() {
       wheelMultiplier: 1,
       prevent: (node) => {
         if (!(node instanceof HTMLElement)) return false
-        return Boolean(node.closest('[data-lenis-prevent]'))
+        return Boolean(node.closest('[data-lenis-prevent], [data-modal-scroll]'))
       },
     })
     lenisInstance = lenis

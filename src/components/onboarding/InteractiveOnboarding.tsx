@@ -379,7 +379,7 @@ export function InteractiveOnboarding({
         <X size={18} aria-hidden="true" />
       </button>
 
-      <div className="onboarding-card__top">
+      <div className="onboarding-card__top" data-lenis-prevent>
         {steps.length > 1 ? (
           <div className="onboarding-card__progress" aria-hidden="true">
             {steps.map((item, index) => (
@@ -510,10 +510,11 @@ export function InteractiveOnboarding({
           ) : null}
 
           {centered ? (
-            <div className="onboarding-card-stage onboarding-card-stage--centered">
+            <div className="onboarding-card-stage onboarding-card-stage--centered" data-lenis-prevent>
               <motion.div
                 ref={cardRef}
                 className="onboarding-card onboarding-card--centered"
+                data-lenis-prevent
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="onboarding-title"
@@ -529,6 +530,7 @@ export function InteractiveOnboarding({
             <motion.div
               ref={cardRef}
               className="onboarding-card onboarding-card--docked"
+              data-lenis-prevent
               style={tooltipStyle}
               role="dialog"
               aria-modal="true"
