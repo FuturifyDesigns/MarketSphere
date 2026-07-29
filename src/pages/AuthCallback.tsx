@@ -147,33 +147,28 @@ export function AuthCallback() {
         const createdAtMs = Date.parse(session.user.created_at || '')
         const isNewAccount = Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 10 * 60 * 1000
 
-        const updates: Record<string, unknown> = {}
-        if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
-          updates.full_name = fullName.trim()
-        }
-        // Apply the chosen role regardless of account age — the DB trigger
-        // can't receive the role via signInWithIdToken / OAuth, so it always
-        // defaults to 'customer'. The protect_profile_columns trigger already
-        // limits this to customer→provider only.
-        if (intent?.role === 'provider' && profile.role === 'customer') {
-          updates.role = 'provider'
-        }
         // If the intent was lost (e.g. sessionStorage cleared during redirect),
         // the account already exists in the DB — proceed with the default role
         // rather than signing the user out.
-
-        let nextRole = profile.role
-        if (Object.keys(updates).length > 0) {
-          const { data: updated, error: updateError } = await supabase
+        if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
+          const { error: nameError } = await supabase
             .from('profiles')
-            .update(updates)
+            .update({ full_name: fullName.trim() })
             .eq('id', session.user.id)
-            .select('role')
-            .maybeSingle()
-          if (updateError) {
-            console.error('[auth] oauth profile update failed', updateError)
-          } else if (updated?.role) {
-            nextRole = updated.role as Profile['role']
+          if (nameError) console.error('[auth] oauth name update failed', nameError)
+        }
+
+        // OAuth can't pass a role to the signup trigger, so every Google account
+        // starts as 'customer'. The role must go through the RPC: a plain UPDATE
+        // is silently reverted by protect_profile_columns and still reports success.
+        let nextRole = profile.role
+        if (intent?.role === 'provider' && profile.role === 'customer') {
+          const { data: claimed, error: claimError } = await supabase.rpc('claim_provider_role')
+          if (claimError) {
+            console.error('[auth] claim_provider_role failed', claimError)
+            showToast('Signed in, but your provider role could not be applied.', 'error')
+          } else if (claimed) {
+            nextRole = claimed as Profile['role']
           }
         }
 
