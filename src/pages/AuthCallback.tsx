@@ -120,8 +120,6 @@ export function AuthCallback() {
         }
 
         const intent = consumeOAuthSignupIntent()
-        const createdAtMs = Date.parse(session.user.created_at || '')
-        const isNewAccount = Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 10 * 60 * 1000
 
         const fullName =
           (session.user.user_metadata?.full_name as string | undefined) ||
@@ -146,12 +144,26 @@ export function AuthCallback() {
           return
         }
 
+        const createdAtMs = Date.parse(session.user.created_at || '')
+        const isNewAccount = Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 10 * 60 * 1000
+
         const updates: Record<string, unknown> = {}
         if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
           updates.full_name = fullName.trim()
         }
-        if (isNewAccount && intent?.role === 'provider' && profile.role === 'customer') {
+        // Apply the chosen role regardless of account age — the DB trigger
+        // can't receive the role via signInWithIdToken / OAuth, so it always
+        // defaults to 'customer'. The protect_profile_columns trigger already
+        // limits this to customer→provider only.
+        if (intent?.role === 'provider' && profile.role === 'customer') {
           updates.role = 'provider'
+        }
+        if (isNewAccount && !intent) {
+          await signOut()
+          clearOAuthSignupIntent()
+          setStatus('error')
+          setMessage('Please choose Customer or Provider, then sign up with Google again.')
+          return
         }
 
         let nextRole = profile.role
