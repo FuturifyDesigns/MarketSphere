@@ -226,13 +226,18 @@ function scrollTargetForTooltip(
   cardHeight: number,
   cardWidth: number,
   centered: boolean,
+  onDone?: () => void,
 ) {
-  scrollTourAfterLayout(element, {
-    centered,
-    cardHeight,
-    cardWidth,
-    placement: placement ?? 'right',
-  })
+  scrollTourAfterLayout(
+    element,
+    {
+      centered,
+      cardHeight,
+      cardWidth,
+      placement: placement ?? 'right',
+    },
+    onDone,
+  )
 }
 
 export function InteractiveOnboarding({
@@ -306,13 +311,15 @@ export function InteractiveOnboarding({
       if (centeredStep) {
         scrollTourAfterLayout(null, { centered: true }, refreshSpotlight)
       } else if (element) {
-        scrollTargetForTooltip(element, step.placement, cardHeight, cardWidth, false)
+        scrollTargetForTooltip(element, step.placement, cardHeight, cardWidth, false, refreshSpotlight)
+      } else {
+        refreshSpotlight()
       }
-      refreshSpotlight()
     }
 
     const startTimer = window.setTimeout(runScrollAndMeasure, layoutDelay)
-    const timers = [layoutDelay + 120, layoutDelay + 320, layoutDelay + 620, layoutDelay + 950].map((delay) =>
+    // Remeasure after the scroll settles in case layout shifts.
+    const timers = [layoutDelay + 700, layoutDelay + 1100].map((delay) =>
       window.setTimeout(refreshSpotlight, delay),
     )
 

@@ -2,9 +2,9 @@ import { getLenis } from '../hooks/useLenis'
 import type { OnboardingPlacement } from '../components/onboarding/onboardingSteps'
 
 const NAVBAR_OFFSET = 76
-const TOOLTIP_GAP = 16
-const TOOLTIP_MARGIN = 16
 const SPOTLIGHT_PADDING = 10
+const VIEW_TOP_PAD = NAVBAR_OFFSET + SPOTLIGHT_PADDING + 12
+const VIEW_BOTTOM_PAD = SPOTLIGHT_PADDING + 28
 
 type TourScrollOptions = {
   centered?: boolean
@@ -18,78 +18,95 @@ function getScrollTop() {
   return lenis?.scroll ?? window.scrollY
 }
 
-function scrollToY(top: number, immediate = false) {
-  const y = Math.max(0, Math.round(top))
-  const lenis = getLenis()
-  if (lenis) {
-    lenis.scrollTo(y, { duration: immediate ? 0 : 0.75, force: true })
-    return
+/** Lift overflow lock so the tour can scroll targets into view. */
+function unlockForTourScroll() {
+  if (typeof document === 'undefined') {
+    return () => undefined
   }
-  window.scrollTo({ top: y, behavior: immediate ? 'auto' : 'smooth' })
+
+  const html = document.documentElement
+  const body = document.body
+  const locked = html.classList.contains('body-scroll-locked')
+  if (!locked) {
+    return () => undefined
+  }
+
+  const prevHtmlOverflow = html.style.overflow
+  const prevBodyOverflow = body.style.overflow
+  html.style.overflow = ''
+  body.style.overflow = ''
+
+  let restored = false
+  return () => {
+    if (restored) return
+    restored = true
+    html.style.overflow = prevHtmlOverflow || 'hidden'
+    body.style.overflow = prevBodyOverflow || 'hidden'
+  }
 }
 
-export function scrollTourIntoView(element: HTMLElement | null, options: TourScrollOptions = {}) {
-  const {
-    centered = false,
-    cardHeight = 420,
-    cardWidth = 400,
-    placement = 'right',
-  } = options
+function scrollToY(top: number, immediate = false, onComplete?: () => void) {
+  const y = Math.max(0, Math.round(top))
+  const restore = unlockForTourScroll()
+  let done = false
+  const finish = () => {
+    if (done) return
+    done = true
+    restore()
+    onComplete?.()
+  }
+
+  const lenis = getLenis()
+  if (lenis) {
+    // force: true scrolls even while Lenis is stopped for the tour lock.
+    lenis.scrollTo(y, {
+      duration: immediate ? 0 : 0.55,
+      force: true,
+      onComplete: finish,
+    })
+    window.setTimeout(finish, immediate ? 50 : 850)
+    return
+  }
+
+  window.scrollTo({ top: y, behavior: immediate ? 'auto' : 'smooth' })
+  window.setTimeout(finish, immediate ? 50 : 480)
+}
+
+/**
+ * Scroll so the highlighted target is fully visible in the viewport.
+ * Tooltip placement is handled separately after the scroll settles — never
+ * sacrifice the spotlight to make room for the card.
+ */
+export function scrollTourIntoView(
+  element: HTMLElement | null,
+  options: TourScrollOptions = {},
+  onComplete?: () => void,
+) {
+  const { centered = false } = options
 
   if (centered || !element) {
-    scrollToY(0)
+    scrollToY(0, false, onComplete)
     return
   }
 
   const rect = element.getBoundingClientRect()
   const currentScroll = getScrollTop()
   const viewportHeight = window.innerHeight
-  const pad = TOOLTIP_MARGIN + SPOTLIGHT_PADDING
-  let targetScroll = currentScroll
+  const available = Math.max(140, viewportHeight - VIEW_TOP_PAD - VIEW_BOTTOM_PAD)
 
-  const spotlightTop = rect.top
-  const spotlightBottom = rect.bottom
-  const spotlightHeight = rect.height
+  const elementTopDoc = currentScroll + rect.top
+  const elementHeight = Math.max(rect.height, 1)
 
-  if (spotlightTop < NAVBAR_OFFSET + pad) {
-    targetScroll += spotlightTop - (NAVBAR_OFFSET + pad)
-  } else if (spotlightBottom > viewportHeight - pad) {
-    targetScroll += spotlightBottom - (viewportHeight - pad)
-  }
-
-  const shiftedTop = spotlightTop - (targetScroll - currentScroll)
-  const shiftedBottom = spotlightBottom - (targetScroll - currentScroll)
-
-  let tooltipTop = 0
-  let tooltipBottom = 0
-
-  if (placement === 'left' || placement === 'right') {
-    tooltipTop = shiftedTop + spotlightHeight / 2 - cardHeight / 2
-    tooltipBottom = tooltipTop + cardHeight
-  } else if (placement === 'bottom') {
-    tooltipTop = shiftedBottom + TOOLTIP_GAP
-    tooltipBottom = tooltipTop + cardHeight
+  let targetScroll: number
+  if (elementHeight >= available) {
+    // Tall target: pin its top just below the navbar so as much as possible shows.
+    targetScroll = elementTopDoc - VIEW_TOP_PAD
   } else {
-    tooltipTop = shiftedTop - TOOLTIP_GAP - cardHeight
-    tooltipBottom = tooltipTop + cardHeight
+    // Center the full highlight in the usable viewport band.
+    targetScroll = elementTopDoc - VIEW_TOP_PAD - (available - elementHeight) / 2
   }
 
-  if (tooltipBottom > viewportHeight - pad) {
-    targetScroll += tooltipBottom - (viewportHeight - pad)
-  }
-  if (tooltipTop < NAVBAR_OFFSET + pad) {
-    targetScroll += tooltipTop - (NAVBAR_OFFSET + pad)
-  }
-
-  if (placement === 'right') {
-    const tooltipLeft = rect.right + TOOLTIP_GAP
-    const tooltipRight = tooltipLeft + cardWidth
-    if (tooltipRight > window.innerWidth - pad) {
-      targetScroll += Math.min(0, window.innerWidth - pad - tooltipRight)
-    }
-  }
-
-  scrollToY(targetScroll)
+  scrollToY(Math.max(0, targetScroll), false, onComplete)
 }
 
 export function scrollTourAfterLayout(
@@ -97,30 +114,16 @@ export function scrollTourAfterLayout(
   options: TourScrollOptions,
   onDone?: () => void,
 ) {
-  scrollTourIntoView(element, options)
-
-  const lenis = getLenis()
-  if (!lenis) {
-    window.setTimeout(() => onDone?.(), 320)
-    return
-  }
-
   let settled = false
   const finish = () => {
     if (settled) return
     settled = true
-    onDone?.()
+    // Remeasure after layout catches up to the new scroll position.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => onDone?.())
+    })
   }
 
-  const timeout = window.setTimeout(() => finish(), 900)
-  const onScroll = () => {
-    window.clearTimeout(timeout)
-    window.setTimeout(() => finish(), 120)
-  }
-
-  lenis.on('scroll', onScroll)
-  window.setTimeout(() => {
-    lenis.off('scroll', onScroll)
-    finish()
-  }, 1000)
+  scrollTourIntoView(element, options, finish)
+  window.setTimeout(finish, 900)
 }
