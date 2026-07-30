@@ -92,7 +92,6 @@ function validateListingForm(form: ListingForm): FieldErrors<ListingField> {
   if (summary) next.summary = summary
   const description = validateDescription(form.description, false, 20)
   if (description) next.description = description
-  if (form.image_urls.length < 1) next.images = 'Add at least one photo.'
   if (form.owner_name.trim()) {
     const ownerName = validateRequired(form.owner_name, 'Owner name', 2, 100)
     if (ownerName) next.owner_name = ownerName
@@ -718,8 +717,8 @@ export function ShowcaseAdminPanel() {
             <h2>{editingId ? 'Edit listing' : 'Add listing'}</h2>
           </div>
           <p className="admin-dashboard__hint">
-            Required: column, title, location, summary, description, and at least one photo. Use crop to frame
-            photos before upload.
+            Required: column, title, location, summary, and description. Photos are optional — text-only
+            listings are fine. Use crop to frame photos when you do add them.
           </p>
           <div className="dashboard-form dashboard-form--flush">
             <div className={`input-group ${errors.column_id ? 'input-group--error' : ''}`}>
@@ -889,7 +888,7 @@ export function ShowcaseAdminPanel() {
             />
 
             <div className={`input-group ${errors.images ? 'input-group--error' : ''}`}>
-              <label>Photos ({form.image_urls.length}/{MAX_IMAGES})</label>
+              <label>Photos ({form.image_urls.length}/{MAX_IMAGES}) — optional</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '0.5rem 0' }}>
                 {form.image_urls.map((url) => (
                   <div key={url} style={{ position: 'relative' }}>
@@ -944,8 +943,9 @@ export function ShowcaseAdminPanel() {
                 </span>
               ) : (
                 <span className="input-hint">
-                  Select one photo to crop, or multiple to upload together · up to {MAX_IMAGES} · ~
-                  {Math.round(UPLOAD_LIMITS.showcase.maxBytes / 1000)}KB each after compression.
+                  Optional — leave empty for a text-only listing. Select one photo to crop, or multiple to
+                  upload · up to {MAX_IMAGES} · ~{Math.round(UPLOAD_LIMITS.showcase.maxBytes / 1000)}KB each
+                  after compression.
                 </span>
               )}
             </div>
