@@ -199,6 +199,8 @@
   color: var(--color-gold);
   font-weight: 700;
   font-size: 1.05rem;
+  white-space: pre-line;
+  line-height: 1.4;
 }
 
 .home-showcase-listing-card__summary {

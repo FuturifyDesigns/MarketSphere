@@ -952,6 +952,8 @@
   font-weight: 600;
   color: var(--color-gold);
   font-size: 0.95rem;
+  white-space: pre-line;
+  line-height: 1.45;
 }
 
 .showcase-card__summary {

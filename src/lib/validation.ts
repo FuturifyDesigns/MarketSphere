@@ -20,7 +20,8 @@ export const FIELD_HINTS = {
   location: 'City, town, or area in Botswana — not numbers only.',
   listingTitle: 'Clear listing title — at least 3 characters.',
   listingSummary: 'Short teaser for the card — 10–280 characters.',
-  priceLabel: 'Optional price text, e.g. P1.2M or P4,500 / month.',
+  priceLabel:
+    'Optional. One price, or several plot options — one per line (e.g. 1000sqm — P400,000). Up to 500 characters.',
   contactEmail: 'Optional business email customers can reach you on.',
   contactPhone: 'Optional business phone — digits only.',
   serviceTitle: 'Name of the service you provide — at least 2 characters.',
@@ -264,7 +265,7 @@ export function validateListingTitle(value: string): ValidationResult {
 export function validatePriceLabel(value: string): ValidationResult {
   const v = trim(value)
   if (!v) return null
-  if (v.length > 80) return 'Price label must be at most 80 characters'
+  if (v.length > 500) return 'Price label must be at most 500 characters'
   return null
 }
 

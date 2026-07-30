@@ -18,6 +18,40 @@ export function isUsingNativeScroll() {
   return usingNativeScroll
 }
 
+/** True when the wheel target should keep native scrolling (fields, nested panels, modals). */
+function shouldLenisYieldToNativeScroll(node: EventTarget | null): boolean {
+  if (!(node instanceof Element)) return false
+  const el = node instanceof HTMLElement ? node : node.parentElement
+  if (!el) return false
+
+  if (el.closest('[data-lenis-prevent], [data-modal-scroll]')) return true
+
+  // Form controls: let overflowing textareas / selects keep native wheel.
+  // Single-line inputs must NOT block Lenis or the page won't scroll over the form.
+  const field = el.closest('textarea, select')
+  if (field instanceof HTMLTextAreaElement) {
+    return field.scrollHeight > field.clientHeight + 1
+  }
+  if (field instanceof HTMLSelectElement) return true
+
+  if (el.closest('[contenteditable=""], [contenteditable="true"]')) return true
+
+  let cur: HTMLElement | null = el
+  while (cur && cur !== document.documentElement && cur !== document.body) {
+    const style = window.getComputedStyle(cur)
+    const oy = style.overflowY
+    const ox = style.overflowX
+    const canY =
+      (oy === 'auto' || oy === 'scroll' || oy === 'overlay') && cur.scrollHeight > cur.clientHeight + 1
+    const canX =
+      (ox === 'auto' || ox === 'scroll' || ox === 'overlay') && cur.scrollWidth > cur.clientWidth + 1
+    if (canY || canX) return true
+    cur = cur.parentElement
+  }
+
+  return false
+}
+
 export function useLenis() {
   useEffect(() => {
     usingNativeScroll = shouldUseNativeScroll()
@@ -44,10 +78,7 @@ export function useLenis() {
       syncTouch: false,
       touchMultiplier: 1,
       wheelMultiplier: 1,
-      prevent: (node) => {
-        if (!(node instanceof HTMLElement)) return false
-        return Boolean(node.closest('[data-lenis-prevent], [data-modal-scroll]'))
-      },
+      prevent: (node) => shouldLenisYieldToNativeScroll(node),
     })
     lenisInstance = lenis
 

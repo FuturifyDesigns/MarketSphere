@@ -575,7 +575,7 @@ export function ShowcaseAdminPanel() {
             </select>
           </div>
 
-          <div className="showcase-admin-list" data-lenis-prevent>
+          <div className="showcase-admin-list" data-lenis-prevent data-modal-scroll>
             {pagedListings.map((listing) => {
               const dealType = listing.deal_type in SHOWCASE_DEAL_LABELS ? listing.deal_type : 'other'
               const available = listing.available !== false
@@ -776,12 +776,14 @@ export function ShowcaseAdminPanel() {
               </div>
             </div>
 
-            <Input
-              label="Price label"
+            <Textarea
+              label="Prices"
               value={form.price_label}
               onChange={(e) => patchForm('price_label', e.target.value)}
               hint={FIELD_HINTS.priceLabel}
               error={errors.price_label}
+              rows={4}
+              placeholder={'1000sqm — P400,000\n1023sqm — P400,000\n3000sqm — P900,000'}
             />
 
             <div className="input-group">
