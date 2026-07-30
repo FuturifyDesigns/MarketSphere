@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
 import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto, showcaseWhatsAppLink } from '../lib/showcase'
+import { ShowcaseTextCover } from '../components/showcase/ShowcaseTextCover'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { supabase } from '../lib/supabase'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
@@ -139,8 +140,8 @@ function ShowcaseGallery({
 
   if (count === 0) {
     return (
-      <div className="showcase-card__media-empty" aria-hidden>
-        <Building2 size={28} />
+      <div className="showcase-card__media-empty">
+        <ShowcaseTextCover title={title} />
       </div>
     )
   }

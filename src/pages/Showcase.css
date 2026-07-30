@@ -736,9 +736,9 @@
 .showcase-card__media-empty {
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
-  color: rgba(201, 162, 75, 0.55);
+  min-height: 100%;
+  display: block;
+  position: relative;
 }
 
 .showcase-card__deal {

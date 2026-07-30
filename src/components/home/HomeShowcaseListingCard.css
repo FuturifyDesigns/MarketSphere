@@ -48,9 +48,13 @@
 }
 
 .home-showcase-listing-card__placeholder {
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-gold) 18%, transparent), transparent 55%),
-    color-mix(in srgb, var(--card-border) 55%, var(--card-bg));
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-showcase-listing-card__placeholder .showcase-text-cover {
+  min-height: 18rem;
 }
 
 .home-showcase-listing-card__deal,

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel } from '../../lib/showcase'
 import type { ShowcaseListing } from '../../lib/types'
 import { ShowcaseOwnerContacts } from '../showcase/ShowcaseOwnerContacts'
+import { ShowcaseTextCover } from '../showcase/ShowcaseTextCover'
 import './HomeShowcaseListingCard.css'
 
 const PHOTO_DWELL_MS = 2800
@@ -168,7 +169,9 @@ export function HomeShowcaseListingCard({ listing, onPhotosCycleComplete }: Prop
             ))}
           </div>
         ) : (
-          <Link to={detailPath} className="home-showcase-listing-card__placeholder" aria-hidden="true" />
+          <Link to={detailPath} className="home-showcase-listing-card__placeholder" aria-hidden="true">
+            <ShowcaseTextCover title={listing.title} />
+          </Link>
         )}
 
         <span className="home-showcase-listing-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
