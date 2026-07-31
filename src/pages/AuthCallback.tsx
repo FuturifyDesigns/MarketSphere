@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import {
   ACCOUNT_EXISTS_SIGN_IN_MESSAGE,
+  NO_ACCOUNT_SIGN_UP_MESSAGE,
   clearOAuthSignupIntent,
   isBrandNewAuthUser,
   isOAuthCancelError,
@@ -17,6 +18,7 @@ import {
   peekOAuthSignupIntent,
   readIntentFromCallbackUrl,
   readRoleFromCallbackUrl,
+  registerOAuthCallbackCacheClear,
   type OAuthIntendedRole,
 } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned } from '../lib/accountGuard'
@@ -33,8 +35,15 @@ type OAuthFinishResult = {
   navigateTo?: string
 }
 
-/** One shared run across React Strict Mode remounts. */
+let oauthFinishResult: OAuthFinishResult | null = null
 let oauthFinishShared: Promise<OAuthFinishResult> | null = null
+
+function clearOAuthFinishCache() {
+  oauthFinishResult = null
+  oauthFinishShared = null
+}
+
+registerOAuthCallbackCacheClear(clearOAuthFinishCache)
 
 function readOAuthParams() {
   const fromSearch = new URLSearchParams(window.location.search)
@@ -80,24 +89,31 @@ async function claimProviderRoleWithRetry(attempts = 4): Promise<{ role: string 
 function resolveIntendedRole(
   roleFromUrl: OAuthIntendedRole | null,
   intentFromUrl: 'login' | 'register' | null,
-): { fromRegister: boolean; intendedRole: OAuthIntendedRole | null } {
+): { fromRegister: boolean; fromLogin: boolean; intendedRole: OAuthIntendedRole | null } {
   const intent = peekOAuthSignupIntent()
   const fromRegister =
     intent?.returnTo === 'register' ||
     intentFromUrl === 'register' ||
     Boolean(roleFromUrl) ||
     Boolean(intent?.role)
+  const fromLogin =
+    !fromRegister &&
+    (intentFromUrl === 'login' || intent?.returnTo === 'login' || peekOAuthReturnTo() === 'login')
   const intendedRole = fromRegister ? (intent?.role ?? roleFromUrl) : null
-  return { fromRegister, intendedRole }
+  return { fromRegister, fromLogin, intendedRole }
 }
 
-async function finishOAuthCallback(signOut: () => Promise<void>, refreshProfile: () => Promise<void>): Promise<OAuthFinishResult> {
+async function finishOAuthCallback(
+  signOut: () => Promise<void>,
+  refreshProfile: () => Promise<void>,
+): Promise<OAuthFinishResult> {
   try {
     const { code, errorDescription } = readOAuthParams()
+    const hadCode = Boolean(code)
     const returnTo = peekOAuthReturnTo() === 'register' ? '/register' : '/login'
     const roleFromUrl = readRoleFromCallbackUrl()
     const intentFromUrl = readIntentFromCallbackUrl()
-    const { fromRegister, intendedRole } = resolveIntendedRole(roleFromUrl, intentFromUrl)
+    const { fromRegister, fromLogin, intendedRole } = resolveIntendedRole(roleFromUrl, intentFromUrl)
 
     if (errorDescription) {
       const decoded = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
@@ -144,9 +160,19 @@ async function finishOAuthCallback(signOut: () => Promise<void>, refreshProfile:
       data: { session },
     } = await supabase.auth.getSession()
 
+    // Remount after we signed out a brand-new login attempt: no session, code already spent.
+    // Send them to Sign up — never show a misleading "cancelled" toast.
     if (!session?.user) {
       clearOAuthSignupIntent()
       clearOAuthParamsFromUrl()
+      if (hadCode || fromLogin) {
+        return {
+          status: 'loading',
+          message: '',
+          toast: { text: NO_ACCOUNT_SIGN_UP_MESSAGE, type: 'info' },
+          navigateTo: '/register',
+        }
+      }
       return {
         status: 'loading',
         message: '',
@@ -157,24 +183,27 @@ async function finishOAuthCallback(signOut: () => Promise<void>, refreshProfile:
 
     const again = resolveIntendedRole(roleFromUrl, intentFromUrl)
     const effectiveFromRegister = fromRegister || again.fromRegister
+    const effectiveFromLogin = fromLogin || again.fromLogin || !effectiveFromRegister
     const effectiveRole = intendedRole ?? again.intendedRole
-    const isNewAccount = isBrandNewAuthUser(session.user.created_at)
+    const isNewAccount = isBrandNewAuthUser(
+      session.user.created_at,
+      session.user.last_sign_in_at ?? session.user.created_at,
+    )
 
-    if (!effectiveFromRegister && isNewAccount) {
+    // Sign-in with Google must not auto-create accounts.
+    if (effectiveFromLogin && isNewAccount) {
       await signOut()
       clearOAuthSignupIntent()
       clearOAuthParamsFromUrl()
       return {
         status: 'loading',
         message: '',
-        toast: {
-          text: 'No account found for this Google login. Please sign up first and choose Customer or Provider.',
-          type: 'info',
-        },
+        toast: { text: NO_ACCOUNT_SIGN_UP_MESSAGE, type: 'info' },
         navigateTo: '/register',
       }
     }
 
+    // Sign-up with Google must not silently continue an existing account.
     if (effectiveFromRegister && !isNewAccount) {
       await signOut()
       clearOAuthSignupIntent()
@@ -263,6 +292,19 @@ async function finishOAuthCallback(signOut: () => Promise<void>, refreshProfile:
   }
 }
 
+function ensureOAuthFinish(
+  signOut: () => Promise<void>,
+  refreshProfile: () => Promise<void>,
+): Promise<OAuthFinishResult> {
+  if (oauthFinishResult) return Promise.resolve(oauthFinishResult)
+  if (oauthFinishShared) return oauthFinishShared
+  oauthFinishShared = finishOAuthCallback(signOut, refreshProfile).then((result) => {
+    oauthFinishResult = result
+    return result
+  })
+  return oauthFinishShared
+}
+
 export function AuthCallback() {
   const pageRef = useRef<HTMLDivElement>(null)
   useAuthPageEnter(pageRef)
@@ -272,22 +314,26 @@ export function AuthCallback() {
   const [status, setStatus] = useState<CallbackStatus>('loading')
   const [message, setMessage] = useState('Finishing Google sign-in…')
 
+  const signOutRef = useRef(signOut)
+  const refreshRef = useRef(refreshProfile)
+  const navigateRef = useRef(navigate)
+  const toastRef = useRef(showToast)
+  signOutRef.current = signOut
+  refreshRef.current = refreshProfile
+  navigateRef.current = navigate
+  toastRef.current = showToast
+
   useEffect(() => {
     let alive = true
 
-    if (!oauthFinishShared) {
-      oauthFinishShared = finishOAuthCallback(signOut, refreshProfile).finally(() => {
-        window.setTimeout(() => {
-          oauthFinishShared = null
-        }, 2000)
-      })
-    }
-
-    void oauthFinishShared.then((result) => {
+    void ensureOAuthFinish(
+      () => signOutRef.current(),
+      () => refreshRef.current(),
+    ).then((result) => {
       if (!alive) return
-      if (result.toast) showToast(result.toast.text, result.toast.type)
+      if (result.toast) toastRef.current(result.toast.text, result.toast.type)
       if (result.navigateTo && result.status !== 'error') {
-        navigate(result.navigateTo, { replace: true })
+        navigateRef.current(result.navigateTo, { replace: true })
         return
       }
       setStatus(result.status)
@@ -297,7 +343,9 @@ export function AuthCallback() {
     return () => {
       alive = false
     }
-  }, [navigate, refreshProfile, showToast, signOut])
+    // Run once per mount of this page visit. Refs keep latest auth helpers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="auth-page auth-page--signin" ref={pageRef}>

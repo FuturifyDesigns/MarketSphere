@@ -47,11 +47,23 @@ function storageRemove(key: string) {
   }
 }
 
+/** Cleared when a new Google OAuth attempt starts (login or signup). */
+let oauthCallbackCacheClear: (() => void) | null = null
+
+export function registerOAuthCallbackCacheClear(fn: (() => void) | null) {
+  oauthCallbackCacheClear = fn
+}
+
+function clearOAuthCallbackCache() {
+  oauthCallbackCacheClear?.()
+}
+
 export function storeOAuthSignupIntent(
   role: OAuthIntendedRole,
   privacyConsent: boolean,
   returnTo: OAuthReturnTo = 'register',
 ) {
+  clearOAuthCallbackCache()
   storageSet(OAUTH_ROLE_KEY, role)
   storageSet(OAUTH_CONSENT_KEY, privacyConsent ? '1' : '0')
   storageSet(OAUTH_RETURN_KEY, returnTo)
@@ -59,6 +71,7 @@ export function storeOAuthSignupIntent(
 
 /** Login-only Google: keep cancel routing, never stash a role to apply. */
 export function storeOAuthLoginIntent() {
+  clearOAuthCallbackCache()
   storageRemove(OAUTH_ROLE_KEY)
   storageRemove(OAUTH_CONSENT_KEY)
   storageSet(OAUTH_RETURN_KEY, 'login')
@@ -156,14 +169,11 @@ export function readIntentFromCallbackUrl(): OAuthReturnTo | null {
   }
 }
 
-/** True when this Google auth.users row was just created (first OAuth). */
-export function isBrandNewAuthUser(createdAt: string | undefined, windowMs = 10 * 60 * 1000) {
-  const createdAtMs = Date.parse(createdAt || '')
-  return Number.isFinite(createdAtMs) && Date.now() - createdAtMs < windowMs
-}
-
 export const ACCOUNT_EXISTS_SIGN_IN_MESSAGE =
   'An account already exists for this email. Please sign in instead.'
+
+export const NO_ACCOUNT_SIGN_UP_MESSAGE =
+  'No account found for this Google login. Please create an account and choose Customer or Provider.'
 
 export function isAccountExistsError(message: string) {
   return /already\s*(been\s*)?(registered|exists)|user already|email.*(taken|exists)|identity.*exist/i.test(
@@ -173,4 +183,20 @@ export function isAccountExistsError(message: string) {
 
 export function isOAuthCancelError(message: string) {
   return /access_denied|user.?denied|cancelled|canceled|consent.?required/i.test(message)
+}
+
+/** True when this Google auth.users row was just created / first sign-in. */
+export function isBrandNewAuthUser(
+  createdAt: string | undefined,
+  lastSignInAt?: string | undefined,
+  windowMs = 24 * 60 * 60 * 1000,
+) {
+  const createdAtMs = Date.parse(createdAt || '')
+  if (!Number.isFinite(createdAtMs)) return false
+  if (Date.now() - createdAtMs < windowMs) return true
+
+  // First sign-in often equals created_at even when clocks drift slightly.
+  const lastMs = Date.parse(lastSignInAt || '')
+  if (Number.isFinite(lastMs) && Math.abs(lastMs - createdAtMs) < 60_000) return true
+  return false
 }
