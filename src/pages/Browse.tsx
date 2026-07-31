@@ -114,7 +114,7 @@ export function Browse() {
         )
 
         if (cancelled) return
-        setProviders(results as Provider[])
+        setProviders(results as unknown as Provider[])
         setLoading(false)
       } catch (error) {
         console.error('[browse] providers threw', error)

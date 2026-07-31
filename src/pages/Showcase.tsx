@@ -446,7 +446,7 @@ export function Showcase() {
         }
       }
 
-      setColumns(colsRes.data || [])
+      setColumns((colsRes.data || []) as unknown as ShowcaseColumn[])
       setCounts(nextCounts)
       setLoading(false)
       setError('')
@@ -843,7 +843,7 @@ export function ShowcaseColumnPage() {
       }
 
       setColumn(col)
-      setListings(rows || [])
+      setListings((rows || []) as unknown as ShowcaseListing[])
       setNotFound(false)
       setError('')
       setLoading(false)

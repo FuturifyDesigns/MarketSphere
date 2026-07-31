@@ -37,7 +37,7 @@ export function CustomerDashboard() {
         .limit(80),
     ])
 
-    setEnquiries(enquiriesRes.data || [])
+    setEnquiries((enquiriesRes.data || []) as unknown as Enquiry[])
     setFavorites(
       (favoritesRes.data || [])
         .map((favorite) => favorite.providers as unknown as Provider)

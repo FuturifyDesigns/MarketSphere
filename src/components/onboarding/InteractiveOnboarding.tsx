@@ -154,7 +154,7 @@ function scorePlacement(
 }
 
 /** On phones, pin a compact coach card opposite the spotlight so highlights stay visible. */
-function getMobileDockStyle(spotlight: Box | null, cardHeight: number): CSSProperties {
+function getMobileDockStyle(spotlight: Box | null, _cardHeight: number): CSSProperties {
   const margins = getViewportMargins()
   const viewportHeight = window.innerHeight
   // Keep the card compact — never eat most of the screen.

@@ -135,7 +135,7 @@ export function Home() {
           },
           60_000,
         )
-        if (!cancelled) setProviders(rows as Provider[])
+        if (!cancelled) setProviders(rows as unknown as Provider[])
       } catch (error) {
         console.error('[home] featured providers', error)
         if (!cancelled) setProviders([])
@@ -162,7 +162,7 @@ export function Home() {
           },
           60_000,
         )
-        if (!cancelled) setShowcaseListings(rows as ShowcaseListing[])
+        if (!cancelled) setShowcaseListings(rows as unknown as ShowcaseListing[])
       } catch (error) {
         console.error('[home] showcase listings', error)
         if (!cancelled) setShowcaseListings([])
@@ -185,7 +185,7 @@ export function Home() {
           },
           90_000,
         )
-        if (!cancelled) setTestimonials(rows as Testimonial[])
+        if (!cancelled) setTestimonials(rows as unknown as Testimonial[])
       } catch (error) {
         console.error('[home] testimonials', error)
         if (!cancelled) setTestimonials([])
