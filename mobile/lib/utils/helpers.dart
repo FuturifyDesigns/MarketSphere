@@ -56,6 +56,24 @@ String? validateFullName(String? value) {
   if (v.length < 2) return 'Enter your full name';
   if (v.length > 100) return 'Name is too long';
   if (RegExp(r'\d').hasMatch(v)) return 'Name cannot include numbers';
+  if (!RegExp(r'\p{L}', unicode: true).hasMatch(v)) {
+    return 'Name needs real text — not just symbols or punctuation';
+  }
+  return null;
+}
+
+String? validateMeaningfulText(String? value, {String fieldLabel = 'This field', bool optional = true, int? minLength}) {
+  final v = (value ?? '').trim();
+  if (v.isEmpty) return optional ? null : '$fieldLabel is required';
+  if (minLength != null && v.length < minLength) {
+    return '$fieldLabel must be at least $minLength characters';
+  }
+  if (RegExp(r'^-?\d+(\.\d+)?$').hasMatch(v.replaceAll(RegExp(r'\s'), ''))) {
+    return '$fieldLabel cannot be only numbers';
+  }
+  if (!RegExp(r'\p{L}', unicode: true).hasMatch(v)) {
+    return '$fieldLabel needs real text — not just symbols or punctuation';
+  }
   return null;
 }
 
@@ -95,6 +113,7 @@ String? sanitizePreferredArea(String? value) {
   if (v.isEmpty) return null;
   if (v.length > 80) return v.substring(0, 80);
   if (RegExp(r'[<>{}$]').hasMatch(v)) return null;
+  if (!RegExp(r'\p{L}', unicode: true).hasMatch(v)) return null;
   return v;
 }
 
@@ -103,6 +122,7 @@ String? sanitizeReviewBody(String? value) {
   if (v.isEmpty) return null;
   v = v.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '');
   if (v.length > 1000) v = v.substring(0, 1000);
+  if (!RegExp(r'\p{L}', unicode: true).hasMatch(v)) return null;
   return v;
 }
 

@@ -9,6 +9,7 @@ import {
   isFreshAuthSignup,
 } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned, storeAccountNotice } from '../lib/accountGuard'
+import { isPhoneExistsError, PHONE_EXISTS_MESSAGE } from '../lib/validation'
 import type { Profile } from '../lib/types'
 
 interface SignInResult {
@@ -202,13 +203,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
       }
 
+      const phone = meta.phone?.trim() || ''
+      if (phone) {
+        const { data: phoneTaken, error: phoneError } = await supabase.rpc('phone_already_registered', {
+          p_phone: phone,
+          p_exclude_user_id: null,
+        })
+        if (!phoneError && phoneTaken === true) {
+          return { error: new Error(PHONE_EXISTS_MESSAGE) }
+        }
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
         options: {
           data: {
             full_name: meta.full_name,
-            phone: meta.phone,
+            phone: phone || undefined,
             role,
             privacy_consent: true,
             privacy_consent_at: meta.privacy_consent_at || new Date().toISOString(),
@@ -219,6 +231,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         if (isAccountExistsError(error.message)) {
           return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
+        }
+        if (isPhoneExistsError(error.message)) {
+          return { error: new Error(PHONE_EXISTS_MESSAGE) }
         }
         return { error: error as Error }
       }

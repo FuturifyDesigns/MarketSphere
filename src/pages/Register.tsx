@@ -12,6 +12,8 @@ import {
   collectErrors,
   FIELD_HINTS,
   hasErrors,
+  isPhoneExistsError,
+  PHONE_EXISTS_MESSAGE,
   sanitizePersonName,
   validateConfirmPassword,
   validateEmail,
@@ -137,6 +139,12 @@ export function Register() {
           privacy_consent_at: new Date().toISOString(),
         })
         if (err) {
+          if (isPhoneExistsError(err.message)) {
+            setFieldErrors((prev) => ({ ...prev, phone: PHONE_EXISTS_MESSAGE }))
+            setError(PHONE_EXISTS_MESSAGE)
+            showToast(PHONE_EXISTS_MESSAGE, 'error')
+            return
+          }
           const msg = isAccountExistsError(err.message) ? ACCOUNT_EXISTS_SIGN_IN_MESSAGE : err.message
           setError(msg)
           showToast(msg, 'error')

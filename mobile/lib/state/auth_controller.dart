@@ -263,6 +263,8 @@ class AuthController extends ChangeNotifier {
     }
     const existingMsg =
         'An account already exists for this email. Please sign in instead — you cannot create a second Customer or Provider account with the same email.';
+    const phoneExistsMsg =
+        'This phone number is already registered to another account. Use a different number, or sign in if it is yours.';
     try {
       final normalizedEmail = email.trim().toLowerCase();
       try {
@@ -278,12 +280,31 @@ class AuthController extends ChangeNotifier {
         // RPC may not be applied yet.
       }
 
+      final trimmedPhone = phone?.trim() ?? '';
+      if (trimmedPhone.isNotEmpty) {
+        try {
+          final phoneTaken = await Supabase.instance.client.rpc(
+            'phone_already_registered',
+            params: {
+              'p_phone': trimmedPhone,
+              'p_exclude_user_id': null,
+            },
+          );
+          if (phoneTaken == true) {
+            _error = phoneExistsMsg;
+            return phoneExistsMsg;
+          }
+        } catch (_) {
+          // RPC may not be applied yet.
+        }
+      }
+
       final response = await Supabase.instance.client.auth.signUp(
         email: normalizedEmail,
         password: password,
         data: {
           'full_name': fullName.trim(),
-          'phone': phone,
+          'phone': trimmedPhone.isEmpty ? null : trimmedPhone,
           'role': role,
           'privacy_consent_at': DateTime.now().toUtc().toIso8601String(),
         },
@@ -320,6 +341,11 @@ class AuthController extends ChangeNotifier {
       return null;
     } on AuthException catch (e) {
       final lower = e.message.toLowerCase();
+      if (lower.contains('phone') &&
+          (lower.contains('already') || lower.contains('registered') || lower.contains('exists'))) {
+        _error = phoneExistsMsg;
+        return phoneExistsMsg;
+      }
       if (lower.contains('already') || lower.contains('registered') || lower.contains('exists')) {
         _error = existingMsg;
         return existingMsg;
@@ -474,6 +500,20 @@ class AuthController extends ChangeNotifier {
       final local = phone.replaceFirst(RegExp(r'^\+267\s*'), '');
       final phoneErr = validatePhoneLocalOptional(local);
       if (phoneErr != null) return phoneErr;
+      try {
+        final phoneTaken = await Supabase.instance.client.rpc(
+          'phone_already_registered',
+          params: {
+            'p_phone': phone.trim(),
+            'p_exclude_user_id': user.id,
+          },
+        );
+        if (phoneTaken == true) {
+          return 'This phone number is already registered to another account. Use a different number.';
+        }
+      } catch (_) {
+        // RPC may not be applied yet; DB trigger still enforces uniqueness.
+      }
     }
     try {
       final updates = <String, dynamic>{};
@@ -490,7 +530,12 @@ class AuthController extends ChangeNotifier {
       await Supabase.instance.client.from('profiles').update(updates).eq('id', user.id);
       await refreshProfile();
       return null;
-    } catch (_) {
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('PHONE_ALREADY_REGISTERED') ||
+          (msg.toLowerCase().contains('phone') && msg.toLowerCase().contains('already'))) {
+        return 'This phone number is already registered to another account. Use a different number.';
+      }
       return 'Could not update profile. Check your connection and try again.';
     }
   }

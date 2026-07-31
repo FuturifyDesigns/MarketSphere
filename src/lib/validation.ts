@@ -35,6 +35,13 @@ export const FIELD_HINTS = {
   serviceType: 'Optional label, e.g. Academic Tuition.',
 } as const
 
+export const PHONE_EXISTS_MESSAGE =
+  'This phone number is already registered to another account. Use a different number, or sign in if it is yours.'
+
+export function isPhoneExistsError(message: string) {
+  return /phone.*(already|exist|registered)|PHONE_ALREADY_REGISTERED/i.test(message)
+}
+
 export type PasswordStrengthLevel = 'empty' | 'weak' | 'fair' | 'good' | 'strong'
 
 export interface PasswordStrength {
@@ -72,6 +79,17 @@ function hasLetters(value: string) {
 
 function isNumericOnly(value: string) {
   return /^-?\d+(\.\d+)?$/.test(value.replace(/\s/g, ''))
+}
+
+/** Rejects empty-looking junk: only punctuation, symbols, or numbers with no letters. */
+function requireMeaningfulText(value: string, fieldLabel: string): ValidationResult {
+  const v = trim(value)
+  if (!v) return null
+  if (isNumericOnly(v)) return `${fieldLabel} cannot be only numbers`
+  if (!hasLetters(v)) {
+    return `${fieldLabel} needs real text — not just symbols or punctuation`
+  }
+  return null
 }
 
 export function sanitizePersonName(value: string) {
@@ -190,6 +208,8 @@ export function validateName(value: string, fieldLabel = 'Name'): ValidationResu
   if (!PERSON_NAME_RE.test(v)) {
     return `${fieldLabel} can only include letters, spaces, hyphens, and apostrophes`
   }
+  const meaningful = requireMeaningfulText(v, fieldLabel)
+  if (meaningful) return meaningful
   return null
 }
 
@@ -206,27 +226,19 @@ export function validatePhone(value: string, optional = true): ValidationResult 
 export function validateMessage(value: string, min = 10, max = 2000): ValidationResult {
   const required = validateRequired(value, 'Message', min, max)
   if (required) return required
-  if (isNumericOnly(trim(value))) return 'Message cannot be only numbers'
-  if (!hasLetters(trim(value))) return 'Message must include some text'
-  return null
+  return requireMeaningfulText(value, 'Message')
 }
 
 export function validateSubject(value: string): ValidationResult {
   const required = validateRequired(value, 'Subject', 3, 120)
   if (required) return required
-  const v = trim(value)
-  if (isNumericOnly(v)) return 'Subject cannot be only numbers'
-  if (!hasLetters(v)) return 'Subject must include letters'
-  return null
+  return requireMeaningfulText(value, 'Subject')
 }
 
 export function validateBusinessName(value: string): ValidationResult {
   const required = validateRequired(value, 'Business name', 2, 120)
   if (required) return required
-  const v = trim(value)
-  if (isNumericOnly(v)) return 'Business name cannot be only numbers'
-  if (!hasLetters(v)) return 'Business name must include letters'
-  return null
+  return requireMeaningfulText(value, 'Business name')
 }
 
 export function validateDescription(value: string, optional = true, min = 10): ValidationResult {
@@ -234,17 +246,14 @@ export function validateDescription(value: string, optional = true, min = 10): V
   if (!v) return optional ? null : 'Description is required'
   if (v.length < min) return `Description must be at least ${min} characters`
   if (v.length > 2000) return 'Description must be at most 2000 characters'
-  if (isNumericOnly(v)) return 'Description cannot be only numbers'
-  return null
+  return requireMeaningfulText(v, 'Description')
 }
 
 export function validateLocation(value: string): ValidationResult {
   const v = trim(value)
   if (!v) return null
   if (v.length > 120) return 'Location must be at most 120 characters'
-  if (isNumericOnly(v)) return 'Location must be a place name, not only numbers'
-  if (!hasLetters(v)) return 'Location must include letters'
-  return null
+  return requireMeaningfulText(v, 'Location')
 }
 
 export function validateRequiredLocation(value: string): ValidationResult {
@@ -256,16 +265,17 @@ export function validateRequiredLocation(value: string): ValidationResult {
 export function validateListingTitle(value: string): ValidationResult {
   const required = validateRequired(value, 'Title', 3, 140)
   if (required) return required
-  const v = trim(value)
-  if (isNumericOnly(v)) return 'Title cannot be only numbers'
-  if (!hasLetters(v)) return 'Title must include letters'
-  return null
+  return requireMeaningfulText(value, 'Title')
 }
 
 export function validatePriceLabel(value: string): ValidationResult {
   const v = trim(value)
   if (!v) return null
   if (v.length > 500) return 'Price label must be at most 500 characters'
+  // Allow pure numbers/currency, but not punctuation-only junk like "!!!" or "..."
+  if (!hasLetters(v) && !/\d/.test(v)) {
+    return 'Price label needs a real price or text — not just symbols'
+  }
   return null
 }
 
@@ -274,8 +284,7 @@ export function validateListingSummary(value: string): ValidationResult {
   if (!v) return 'Short summary is required'
   if (v.length < 10) return 'Summary must be at least 10 characters'
   if (v.length > 280) return 'Summary must be at most 280 characters'
-  if (isNumericOnly(v)) return 'Summary cannot be only numbers'
-  return null
+  return requireMeaningfulText(v, 'Summary')
 }
 
 export function validateSlug(value: string): ValidationResult {
@@ -290,35 +299,26 @@ export function validateSlug(value: string): ValidationResult {
 export function validateServiceTitle(value: string): ValidationResult {
   const required = validateRequired(value, 'Service title', 2, 120)
   if (required) return required
-  const v = trim(value)
-  if (isNumericOnly(v)) return 'Service title cannot be only numbers'
-  if (!hasLetters(v)) return 'Service title must include letters'
-  return null
+  return requireMeaningfulText(value, 'Service title')
 }
 
 export function validateServiceDescription(value: string): ValidationResult {
   const v = trim(value)
   if (!v) return null
   if (v.length > 500) return 'Service description must be at most 500 characters'
-  if (isNumericOnly(v)) return 'Description cannot be only numbers'
-  return null
+  return requireMeaningfulText(v, 'Description')
 }
 
 export function validateCategoryName(value: string): ValidationResult {
   const required = validateRequired(value, 'Category name', 2, 80)
   if (required) return required
-  const v = trim(value)
-  if (isNumericOnly(v)) return 'Category name cannot be only numbers'
-  if (!hasLetters(v)) return 'Category name must include letters'
-  return null
+  return requireMeaningfulText(value, 'Category name')
 }
 
 export function validateTestimonialContent(value: string): ValidationResult {
   const required = validateRequired(value, 'Testimonial', 10, 800)
   if (required) return required
-  if (isNumericOnly(trim(value))) return 'Testimonial cannot be only numbers'
-  if (!hasLetters(trim(value))) return 'Testimonial must include text'
-  return null
+  return requireMeaningfulText(value, 'Testimonial')
 }
 
 export function validateClientName(value: string): ValidationResult {
@@ -329,7 +329,7 @@ export function validateClientName(value: string): ValidationResult {
   if (!PERSON_NAME_RE.test(v)) {
     return 'Client name can only include letters, spaces, hyphens, and apostrophes'
   }
-  return null
+  return requireMeaningfulText(v, 'Client name')
 }
 
 export function validateConfirmPassword(password: string, confirm: string): ValidationResult {
@@ -341,17 +341,14 @@ export function validateConfirmPassword(password: string, confirm: string): Vali
 export function validateBanReason(value: string): ValidationResult {
   const required = validateRequired(value, 'Ban reason', 3, 500)
   if (required) return required
-  if (!hasLetters(trim(value))) return 'Ban reason must include some text'
-  return null
+  return requireMeaningfulText(value, 'Ban reason')
 }
 
 export function validateServiceType(value: string): ValidationResult {
   const v = trim(value)
   if (!v) return null
   if (v.length > 80) return 'Service type is too long'
-  if (isNumericOnly(v)) return 'Service type cannot be only numbers'
-  if (!hasLetters(v)) return 'Service type must include letters'
-  return null
+  return requireMeaningfulText(v, 'Service type')
 }
 
 export function collectErrors<T extends string>(

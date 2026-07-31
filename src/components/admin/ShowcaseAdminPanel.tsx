@@ -12,13 +12,14 @@ import type { ShowcaseColumn, ShowcaseDealType, ShowcaseListing, ShowcaseListing
 import {
   FIELD_HINTS,
   type FieldErrors,
+  validateCategoryName,
   validateDescription,
   validateListingSummary,
   validateListingTitle,
+  validateName,
   validateOptionalEmail,
   validatePhone,
   validatePriceLabel,
-  validateRequired,
   validateRequiredLocation,
 } from '../../lib/validation'
 import { Button } from '../ui/Button'
@@ -93,7 +94,7 @@ function validateListingForm(form: ListingForm): FieldErrors<ListingField> {
   const description = validateDescription(form.description, false, 20)
   if (description) next.description = description
   if (form.owner_name.trim()) {
-    const ownerName = validateRequired(form.owner_name, 'Owner name', 2, 100)
+    const ownerName = validateName(form.owner_name.trim(), 'Owner name')
     if (ownerName) next.owner_name = ownerName
   }
   const ownerPhone = validatePhone(form.owner_phone, true)
@@ -485,9 +486,22 @@ export function ShowcaseAdminPanel() {
 
   const saveColumn = async (column: ShowcaseColumn) => {
     const draft = columnDrafts[column.id] || {}
-    const title = validateRequired(String(draft.title ?? column.title), 'Column title', 2, 80)
+    const titleValue = String(draft.title ?? column.title)
+    const title = validateCategoryName(titleValue)
     if (title) {
-      showToast(title, 'error')
+      showToast(title.replace('Category name', 'Column title'), 'error')
+      return
+    }
+    const taglineValue = String(draft.tagline ?? column.tagline ?? '')
+    const taglineErr = validateDescription(taglineValue, true, 3)
+    if (taglineErr) {
+      showToast(taglineErr.replace('Description', 'Tagline'), 'error')
+      return
+    }
+    const descriptionValue = String(draft.description ?? column.description ?? '')
+    const descriptionErr = validateDescription(descriptionValue, true, 5)
+    if (descriptionErr) {
+      showToast(descriptionErr, 'error')
       return
     }
 
@@ -495,9 +509,9 @@ export function ShowcaseAdminPanel() {
     const { error } = await supabase
       .from('showcase_columns')
       .update({
-        title: String(draft.title ?? column.title).trim(),
-        tagline: String(draft.tagline ?? column.tagline ?? '').trim() || null,
-        description: String(draft.description ?? column.description ?? '').trim() || null,
+        title: titleValue.trim(),
+        tagline: taglineValue.trim() || null,
+        description: descriptionValue.trim() || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', column.id)

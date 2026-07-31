@@ -235,6 +235,9 @@ class DataRepository {
     if (_net.isOffline) return 'Connect to the internet to submit a review.';
 
     final cleanBody = sanitizeReviewBody(body);
+    if ((body ?? '').trim().isNotEmpty && cleanBody == null) {
+      return 'Review needs real text — not just symbols or punctuation';
+    }
     try {
       await _db.from('provider_reviews').upsert({
         'provider_id': providerId,
