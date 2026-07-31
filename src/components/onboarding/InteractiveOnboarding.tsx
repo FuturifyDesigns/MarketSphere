@@ -153,33 +153,11 @@ function scorePlacement(
   return { box, score }
 }
 
-/** On phones, pin a compact coach card opposite the spotlight so highlights stay visible. */
-function getMobileDockStyle(spotlight: Box | null, _cardHeight: number): CSSProperties {
+/** On phones: docked cards only — no spotlight-based placement. */
+function getMobileDockStyle(): CSSProperties {
   const margins = getViewportMargins()
   const viewportHeight = window.innerHeight
-  // Keep the card compact — never eat most of the screen.
-  const maxCardHeight = Math.min(
-    Math.round(viewportHeight * 0.38),
-    Math.max(180, viewportHeight - (spotlight?.height ?? 120) - 120),
-  )
-
-  const spotlightCenter = spotlight
-    ? spotlight.top + spotlight.height / 2
-    : viewportHeight * 0.35
-  // If the highlight sits in the lower half, dock the card at the top (and vice versa).
-  const dockTop = spotlightCenter > viewportHeight * 0.48
-
-  if (dockTop) {
-    return {
-      position: 'fixed',
-      left: margins.left,
-      right: margins.right,
-      top: margins.top,
-      bottom: 'auto',
-      width: 'auto',
-      maxHeight: `${maxCardHeight}px`,
-    }
-  }
+  const maxCardHeight = Math.min(Math.round(viewportHeight * 0.42), 360)
 
   return {
     position: 'fixed',
@@ -198,13 +176,13 @@ function getTooltipPosition(
   cardWidth: number,
   cardHeight: number,
 ): CSSProperties {
-  if (!spotlight) {
-    return isMobileViewport() ? getMobileDockStyle(null, cardHeight) : {}
+  // Mobile: cards only (no highlight cutouts / rings).
+  if (isMobileViewport()) {
+    return getMobileDockStyle()
   }
 
-  const mobile = isMobileViewport()
-  if (mobile) {
-    return getMobileDockStyle(spotlight, cardHeight)
+  if (!spotlight) {
+    return {}
   }
 
   const preferred = preferredPlacement ?? 'bottom'
@@ -300,7 +278,14 @@ export function InteractiveOnboarding({
 
     if (!step || isCenterStep(step)) {
       setSpotlight(null)
-      setTooltipStyle({})
+      setTooltipStyle(isMobileViewport() ? getMobileDockStyle() : {})
+      return
+    }
+
+    // Mobile: cards only — skip highlight rings / cutouts.
+    if (isMobileViewport()) {
+      setSpotlight(null)
+      setTooltipStyle(getMobileDockStyle())
       return
     }
 
@@ -502,45 +487,51 @@ export function InteractiveOnboarding({
           transition={{ duration: 0.22 }}
           role="presentation"
         >
-          <svg className="onboarding-spotlight" aria-hidden="true">
-            <defs>
-              <mask id={maskId}>
-                <rect x="0" y="0" width="100%" height="100%" fill="white" />
-                {spotlight ? (
-                  <rect
-                    x={spotlight.left}
-                    y={spotlight.top}
-                    width={spotlight.width}
-                    height={spotlight.height}
-                    rx="14"
-                    ry="14"
-                    fill="black"
-                  />
-                ) : null}
-              </mask>
-            </defs>
-            <rect
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
-              fill="rgba(10, 12, 16, 0.62)"
-              mask={`url(#${maskId})`}
-            />
-          </svg>
+          {isMobileViewport() ? (
+            <div className="onboarding-overlay__veil onboarding-overlay__veil--mobile" aria-hidden="true" />
+          ) : (
+            <>
+              <svg className="onboarding-spotlight" aria-hidden="true">
+                <defs>
+                  <mask id={maskId}>
+                    <rect x="0" y="0" width="100%" height="100%" fill="white" />
+                    {spotlight ? (
+                      <rect
+                        x={spotlight.left}
+                        y={spotlight.top}
+                        width={spotlight.width}
+                        height={spotlight.height}
+                        rx="14"
+                        ry="14"
+                        fill="black"
+                      />
+                    ) : null}
+                  </mask>
+                </defs>
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  fill="rgba(10, 12, 16, 0.62)"
+                  mask={`url(#${maskId})`}
+                />
+              </svg>
 
-          {spotlight ? (
-            <div
-              className="onboarding-spotlight__ring"
-              style={{
-                top: spotlight.top,
-                left: spotlight.left,
-                width: spotlight.width,
-                height: spotlight.height,
-              }}
-              aria-hidden="true"
-            />
-          ) : null}
+              {spotlight ? (
+                <div
+                  className="onboarding-spotlight__ring"
+                  style={{
+                    top: spotlight.top,
+                    left: spotlight.left,
+                    width: spotlight.width,
+                    height: spotlight.height,
+                  }}
+                  aria-hidden="true"
+                />
+              ) : null}
+            </>
+          )}
 
           {centered ? (
             <div className="onboarding-card-stage onboarding-card-stage--centered" data-lenis-prevent>
