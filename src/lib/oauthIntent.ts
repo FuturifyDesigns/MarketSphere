@@ -48,14 +48,34 @@ function storageRemove(key: string) {
 }
 
 /** Cleared when a new Google OAuth attempt starts (login or signup). */
-let oauthCallbackCacheClear: (() => void) | null = null
-
-export function registerOAuthCallbackCacheClear(fn: (() => void) | null) {
-  oauthCallbackCacheClear = fn
+type OAuthFinishCache = {
+  result: unknown | null
+  shared: Promise<unknown> | null
 }
 
-function clearOAuthCallbackCache() {
-  oauthCallbackCacheClear?.()
+const oauthFinishCache: OAuthFinishCache = {
+  result: null,
+  shared: null,
+}
+
+export function clearOAuthCallbackCache() {
+  oauthFinishCache.result = null
+  oauthFinishCache.shared = null
+}
+
+export function getOAuthFinishCache<T>(): {
+  result: T | null
+  shared: Promise<T> | null
+} {
+  return oauthFinishCache as { result: T | null; shared: Promise<T> | null }
+}
+
+export function setOAuthFinishShared<T>(promise: Promise<T>): Promise<T> {
+  oauthFinishCache.shared = promise as Promise<unknown>
+  return promise.then((result) => {
+    oauthFinishCache.result = result
+    return result
+  })
 }
 
 export function storeOAuthSignupIntent(
@@ -130,8 +150,9 @@ function readCallbackParams() {
 
 /**
  * Absolute callback URL Supabase returns to with ?code=…&state=….
- * Role/intent are also mirrored into the hash so they survive when GoTrue
- * rebuilds the redirect URL and drops custom query params.
+ * Role/intent travel in the query string AND in local/session storage.
+ * Do not put a hash on redirectTo — OAuth providers often reject or strip it
+ * and the flow then looks like a cancelled sign-in.
  */
 export function getOAuthCallbackUrl(opts?: {
   role?: OAuthIntendedRole
@@ -142,9 +163,7 @@ export function getOAuthCallbackUrl(opts?: {
   if (opts?.intent) params.set('intent', opts.intent)
   if (opts?.role) params.set('role', opts.role)
   const qs = params.toString()
-  // Query + hash: query helps when preserved; hash is kept by the browser even
-  // if the IdP/GoTrue only round-trips the path + auth code query.
-  return qs ? `${url}?${qs}#${qs}` : url
+  return qs ? `${url}?${qs}` : url
 }
 
 /** Role carried back on the callback URL, used when storage was lost. */

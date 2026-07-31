@@ -12,13 +12,14 @@ import {
   ACCOUNT_EXISTS_SIGN_IN_MESSAGE,
   NO_ACCOUNT_SIGN_UP_MESSAGE,
   clearOAuthSignupIntent,
+  getOAuthFinishCache,
   isBrandNewAuthUser,
   isOAuthCancelError,
   peekOAuthReturnTo,
   peekOAuthSignupIntent,
   readIntentFromCallbackUrl,
   readRoleFromCallbackUrl,
-  registerOAuthCallbackCacheClear,
+  setOAuthFinishShared,
   type OAuthIntendedRole,
 } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned } from '../lib/accountGuard'
@@ -34,16 +35,6 @@ type OAuthFinishResult = {
   toast?: { text: string; type: 'info' | 'error' }
   navigateTo?: string
 }
-
-let oauthFinishResult: OAuthFinishResult | null = null
-let oauthFinishShared: Promise<OAuthFinishResult> | null = null
-
-function clearOAuthFinishCache() {
-  oauthFinishResult = null
-  oauthFinishShared = null
-}
-
-registerOAuthCallbackCacheClear(clearOAuthFinishCache)
 
 function readOAuthParams() {
   const fromSearch = new URLSearchParams(window.location.search)
@@ -103,6 +94,15 @@ function resolveIntendedRole(
   return { fromRegister, fromLogin, intendedRole }
 }
 
+function cancelResult(navigateTo: '/login' | '/register'): OAuthFinishResult {
+  return {
+    status: 'loading',
+    message: '',
+    toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
+    navigateTo,
+  }
+}
+
 async function finishOAuthCallback(
   signOut: () => Promise<void>,
   refreshProfile: () => Promise<void>,
@@ -110,25 +110,38 @@ async function finishOAuthCallback(
   try {
     const { code, errorDescription } = readOAuthParams()
     const hadCode = Boolean(code)
-    const returnTo = peekOAuthReturnTo() === 'register' ? '/register' : '/login'
     const roleFromUrl = readRoleFromCallbackUrl()
     const intentFromUrl = readIntentFromCallbackUrl()
     const { fromRegister, fromLogin, intendedRole } = resolveIntendedRole(roleFromUrl, intentFromUrl)
+    const returnTo: '/login' | '/register' = fromRegister || peekOAuthReturnTo() === 'register' ? '/register' : '/login'
 
     if (errorDescription) {
       const decoded = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
-      if (isOAuthCancelError(decoded) || isOAuthCancelError(errorDescription)) {
-        clearOAuthSignupIntent()
-        clearOAuthParamsFromUrl()
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      // Signup should never look like a vague "cancelled" when Google/Supabase returns an error.
+      if (fromRegister || returnTo === '/register') {
+        if (isOAuthCancelError(decoded) || isOAuthCancelError(errorDescription)) {
+          return {
+            status: 'loading',
+            message: '',
+            toast: {
+              text: 'Google sign-up was not completed. Please try Continue with Google again.',
+              type: 'info',
+            },
+            navigateTo: '/register',
+          }
+        }
         return {
           status: 'loading',
           message: '',
-          toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
-          navigateTo: returnTo,
+          toast: { text: decoded || 'Google sign-up failed. Please try again.', type: 'error' },
+          navigateTo: '/register',
         }
       }
-      clearOAuthSignupIntent()
-      clearOAuthParamsFromUrl()
+      if (isOAuthCancelError(decoded) || isOAuthCancelError(errorDescription)) {
+        return cancelResult('/login')
+      }
       return { status: 'error', message: decoded }
     }
 
@@ -139,17 +152,24 @@ async function finishOAuthCallback(
           data: { session: existing },
         } = await supabase.auth.getSession()
         if (!existing) {
-          if (isOAuthCancelError(error.message)) {
-            clearOAuthSignupIntent()
-            clearOAuthParamsFromUrl()
+          clearOAuthSignupIntent()
+          clearOAuthParamsFromUrl()
+          if (fromRegister || returnTo === '/register') {
             return {
               status: 'loading',
               message: '',
-              toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
-              navigateTo: returnTo,
+              toast: {
+                text: isOAuthCancelError(error.message)
+                  ? 'Google sign-up was not completed. Please try Continue with Google again.'
+                  : error.message || 'Google sign-up failed. Please try again.',
+                type: 'error',
+              },
+              navigateTo: '/register',
             }
           }
-          clearOAuthSignupIntent()
+          if (isOAuthCancelError(error.message)) {
+            return cancelResult('/login')
+          }
           return { status: 'error', message: error.message || 'Google sign-in failed.' }
         }
       }
@@ -160,11 +180,26 @@ async function finishOAuthCallback(
       data: { session },
     } = await supabase.auth.getSession()
 
-    // Remount after we signed out a brand-new login attempt: no session, code already spent.
-    // Send them to Sign up — never show a misleading "cancelled" toast.
     if (!session?.user) {
       clearOAuthSignupIntent()
       clearOAuthParamsFromUrl()
+
+      // Sign-up flow: never show the login "cancelled" toast.
+      if (fromRegister || returnTo === '/register') {
+        return {
+          status: 'loading',
+          message: '',
+          toast: {
+            text: hadCode
+              ? 'Google sign-up did not finish. Please try Continue with Google again.'
+              : 'Google sign-up was not completed. Please try Continue with Google again.',
+            type: 'info',
+          },
+          navigateTo: '/register',
+        }
+      }
+
+      // Login flow: code spent / remount after rejecting a brand-new Google user.
       if (hadCode || fromLogin) {
         return {
           status: 'loading',
@@ -173,12 +208,8 @@ async function finishOAuthCallback(
           navigateTo: '/register',
         }
       }
-      return {
-        status: 'loading',
-        message: '',
-        toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
-        navigateTo: returnTo,
-      }
+
+      return cancelResult('/login')
     }
 
     const again = resolveIntendedRole(roleFromUrl, intentFromUrl)
@@ -296,13 +327,10 @@ function ensureOAuthFinish(
   signOut: () => Promise<void>,
   refreshProfile: () => Promise<void>,
 ): Promise<OAuthFinishResult> {
-  if (oauthFinishResult) return Promise.resolve(oauthFinishResult)
-  if (oauthFinishShared) return oauthFinishShared
-  oauthFinishShared = finishOAuthCallback(signOut, refreshProfile).then((result) => {
-    oauthFinishResult = result
-    return result
-  })
-  return oauthFinishShared
+  const cache = getOAuthFinishCache<OAuthFinishResult>()
+  if (cache.result) return Promise.resolve(cache.result)
+  if (cache.shared) return cache.shared
+  return setOAuthFinishShared(finishOAuthCallback(signOut, refreshProfile))
 }
 
 export function AuthCallback() {
@@ -343,7 +371,6 @@ export function AuthCallback() {
     return () => {
       alive = false
     }
-    // Run once per mount of this page visit. Refs keep latest auth helpers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
