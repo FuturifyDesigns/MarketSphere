@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.marketspheregroup.market_sphere",
+      "sha256_cert_fingerprints": [
+        "9C:C3:30:FD:00:FA:B1:C8:39:C8:2E:B9:11:67:50:03:77:BD:55:65:1E:5A:23:8B:4B:AF:1D:48:29:51:81:FB"
+      ]
+    }
+  }
+]

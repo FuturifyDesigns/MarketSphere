@@ -170,8 +170,8 @@ export function Login() {
                 onClick={() => void handleGoogle()}
               />
               <p className="auth-google-hint">
-                Uses the Customer or Provider role from when you created the account. New here?{' '}
-                <Link to="/register">Create an account</Link> first.
+                Existing accounts only. If you have not signed up yet,{' '}
+                <Link to="/register">create an account</Link> and choose Customer or Provider first.
               </p>
               <div className="auth-divider" role="separator" aria-label="or">
                 <span>or</span>

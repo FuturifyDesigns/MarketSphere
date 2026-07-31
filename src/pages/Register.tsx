@@ -1,5 +1,5 @@
 import { useState, useRef, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, BadgeCheck, CheckCircle2, MapPinned, UsersRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -30,7 +30,7 @@ import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import { useSubmitLock } from '../hooks/useSubmitLock'
 import { useResetGoogleLoading } from '../hooks/useResetGoogleLoading'
 import { clientRateLimitMessage, isClientRateLimited, markClientRateLimited } from '../lib/clientRateLimit'
-import { storeOAuthSignupIntent } from '../lib/oauthIntent'
+import { ACCOUNT_EXISTS_SIGN_IN_MESSAGE, isAccountExistsError, storeOAuthSignupIntent } from '../lib/oauthIntent'
 import './authTheme.css'
 import './Auth.css'
 
@@ -42,6 +42,7 @@ export function Register() {
   useAuthPageEnter(pageRef)
   const { signUp, signInWithGoogle } = useAuth()
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const defaultRole = searchParams.get('role') === 'provider' ? 'provider' : 'customer'
 
@@ -136,8 +137,12 @@ export function Register() {
           privacy_consent_at: new Date().toISOString(),
         })
         if (err) {
-          setError(err.message)
-          showToast(err.message, 'error')
+          const msg = isAccountExistsError(err.message) ? ACCOUNT_EXISTS_SIGN_IN_MESSAGE : err.message
+          setError(msg)
+          showToast(msg, 'error')
+          if (msg === ACCOUNT_EXISTS_SIGN_IN_MESSAGE) {
+            navigate('/login', { replace: true })
+          }
         } else {
           showToast('Account created. Check your email to verify your address.', 'info')
           setSuccess(true)
@@ -285,7 +290,8 @@ export function Register() {
                 onClick={() => void handleGoogle()}
               />
               <p className="auth-google-hint">
-                New here? We&apos;ll create your account with the role above. Already registered? You&apos;ll be signed in.
+                New here? We&apos;ll create your account with the role above. Already registered?{' '}
+                <Link to="/login">Sign in</Link> instead.
               </p>
               <div className="auth-divider" role="separator" aria-label="or">
                 <span>or</span>

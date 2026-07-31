@@ -146,15 +146,24 @@ class AuthController extends ChangeNotifier {
     return 'Google sign-in failed. Try again.';
   }
 
+  bool _isBrandNewAuthUser(User user) {
+    final created = DateTime.tryParse(user.createdAt);
+    if (created == null) return false;
+    return DateTime.now().toUtc().difference(created.toUtc()).inMinutes < 10;
+  }
+
   Future<void> _applyPendingOAuthRoleIfNeeded(User user) async {
     final role = await _readPendingOAuthRole();
     if (role != 'provider' && role != 'customer') {
       return;
     }
 
-    await clearOAuthRole();
-
-    await refreshProfile();
+    // Wait for the profile trigger before claiming — don't clear the stash yet.
+    for (var i = 0; i < 8; i++) {
+      await refreshProfile();
+      if (_profile != null) break;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
     if (_profile == null) return;
 
     final metaName = (user.userMetadata?['full_name'] ?? user.userMetadata?['name'])?.toString();
@@ -169,16 +178,30 @@ class AuthController extends ChangeNotifier {
     // Role must go through the RPC: a plain UPDATE is silently reverted by the
     // protect_profile_columns trigger, which reports success either way.
     if (role == 'provider' && _profile!.role == 'customer') {
-      try {
-        await Supabase.instance.client.rpc('claim_provider_role');
-      } catch (e) {
+      Object? lastError;
+      var claimed = false;
+      for (var i = 0; i < 4; i++) {
+        try {
+          final result = await Supabase.instance.client.rpc('claim_provider_role');
+          if (result?.toString() == 'provider') {
+            claimed = true;
+            break;
+          }
+          lastError = 'RPC returned $result';
+        } catch (e) {
+          lastError = e;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      if (!claimed) {
         _error = 'Signed in, but your provider role could not be applied.';
         if (kDebugMode) {
-          debugPrint('[auth] claim_provider_role failed: $e');
+          debugPrint('[auth] claim_provider_role failed: $lastError');
         }
       }
     }
 
+    await clearOAuthRole();
     await refreshProfile();
   }
 
@@ -229,12 +252,25 @@ class AuthController extends ChangeNotifier {
           'privacy_consent_at': DateTime.now().toUtc().toIso8601String(),
         },
       );
+      if (response.user != null && (response.user!.identities == null || response.user!.identities!.isEmpty)) {
+        const msg =
+            'An account already exists for this email. Please sign in instead.';
+        _error = msg;
+        return msg;
+      }
       if (response.session != null) {
         await refreshProfile();
       }
       notifyListeners();
       return null;
     } on AuthException catch (e) {
+      final lower = e.message.toLowerCase();
+      if (lower.contains('already') || lower.contains('registered') || lower.contains('exists')) {
+        const msg =
+            'An account already exists for this email. Please sign in instead.';
+        _error = msg;
+        return msg;
+      }
       _error = e.message;
       return e.message;
     } catch (_) {
@@ -338,10 +374,31 @@ class AuthController extends ChangeNotifier {
       onPhase?.call(GoogleSignInPhase.idle);
       return 'This account has been suspended. Contact support.';
     }
-    if (applyRole) {
-      await _applyPendingOAuthRoleIfNeeded(user);
-    } else {
+
+    // Login must not auto-create accounts. Supabase still creates an auth user on
+    // first Google; detect that and send them to Sign up instead.
+    if (!applyRole) {
       await clearOAuthRole();
+      if (_isBrandNewAuthUser(user)) {
+        await signOut();
+        onPhase?.call(GoogleSignInPhase.idle);
+        const msg =
+            'No account found for this Google login. Please sign up first and choose Customer or Provider.';
+        _error = msg;
+        return msg;
+      }
+    } else {
+      // Sign-up must not silently continue an existing Google account.
+      if (!_isBrandNewAuthUser(user)) {
+        await signOut();
+        await clearOAuthRole();
+        onPhase?.call(GoogleSignInPhase.idle);
+        const msg =
+            'An account already exists for this email. Please sign in instead.';
+        _error = msg;
+        return msg;
+      }
+      await _applyPendingOAuthRoleIfNeeded(user);
     }
     onPhase?.call(GoogleSignInPhase.done);
     notifyListeners();

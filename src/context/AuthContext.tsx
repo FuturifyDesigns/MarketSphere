@@ -2,7 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { getAuthRouteUrl } from '../lib/authRoutes'
-import { getOAuthCallbackUrl } from '../lib/oauthIntent'
+import {
+  ACCOUNT_EXISTS_SIGN_IN_MESSAGE,
+  getOAuthCallbackUrl,
+  isAccountExistsError,
+} from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned, storeAccountNotice } from '../lib/accountGuard'
 import type { Profile } from '../lib/types'
 
@@ -186,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!meta.privacy_consent) {
         return { error: new Error('Please accept the Terms of Service and Privacy Policy to continue.') }
       }
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -200,7 +204,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           emailRedirectTo: getAuthRouteUrl('/auth/verify'),
         },
       })
-      return { error: error as Error | null }
+      if (error) {
+        if (isAccountExistsError(error.message)) {
+          return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
+        }
+        return { error: error as Error }
+      }
+      // Supabase often returns a user with empty identities when the email already exists.
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
+      }
+      return { error: null }
     } catch (error) {
       return { error: error instanceof Error ? error : new Error('Sign up failed. Please try again.') }
     }
@@ -249,12 +263,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async (role?: 'customer' | 'provider') => {
     try {
-      // Same flow for new + existing accounts: Supabase creates on first Google login,
-      // and signs in / auto-links when the Google email already belongs to a user.
+      // Register passes a role (signup). Login omits role — AuthCallback rejects
+      // brand-new Google users and sends them to /register instead.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: getOAuthCallbackUrl(role),
+          redirectTo: getOAuthCallbackUrl(
+            role
+              ? { role, intent: 'register' }
+              : { intent: 'login' },
+          ),
           queryParams: {
             access_type: 'online',
             prompt: 'select_account',

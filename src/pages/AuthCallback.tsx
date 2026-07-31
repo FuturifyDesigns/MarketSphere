@@ -9,11 +9,15 @@ import { AuthMobileHeader } from '../components/auth/AuthMobileHeader'
 import { Button } from '../components/ui/Button'
 import { useAuthPageEnter } from '../hooks/useAuthPageEnter'
 import {
+  ACCOUNT_EXISTS_SIGN_IN_MESSAGE,
   clearOAuthSignupIntent,
-  consumeOAuthSignupIntent,
+  isBrandNewAuthUser,
   isOAuthCancelError,
   peekOAuthReturnTo,
+  peekOAuthSignupIntent,
+  readIntentFromCallbackUrl,
   readRoleFromCallbackUrl,
+  type OAuthIntendedRole,
 } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned } from '../lib/accountGuard'
 import type { Profile } from '../lib/types'
@@ -22,10 +26,20 @@ import './Auth.css'
 
 type CallbackStatus = 'loading' | 'success' | 'error'
 
+type OAuthFinishResult = {
+  status: CallbackStatus
+  message: string
+  toast?: { text: string; type: 'info' | 'error' }
+  navigateTo?: string
+}
+
+/** One shared run across React Strict Mode remounts. */
+let oauthFinishShared: Promise<OAuthFinishResult> | null = null
+
 function readOAuthParams() {
   const fromSearch = new URLSearchParams(window.location.search)
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash
-  const hashQuery = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
+  const hashQuery = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : hash
   const fromHash = new URLSearchParams(hashQuery)
 
   return {
@@ -43,13 +57,210 @@ function clearOAuthParamsFromUrl() {
   window.history.replaceState({}, document.title, `${window.location.origin}${base}/auth/callback`)
 }
 
-async function waitForProfile(userId: string, attempts = 8): Promise<Profile | null> {
+async function waitForProfile(userId: string, attempts = 12): Promise<Profile | null> {
   for (let i = 0; i < attempts; i += 1) {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
     if (!error && data) return data as Profile
     await new Promise((resolve) => window.setTimeout(resolve, 250))
   }
   return null
+}
+
+async function claimProviderRoleWithRetry(attempts = 4): Promise<{ role: string | null; error: Error | null }> {
+  let lastError: Error | null = null
+  for (let i = 0; i < attempts; i += 1) {
+    const { data, error } = await supabase.rpc('claim_provider_role')
+    if (!error && data) return { role: String(data), error: null }
+    lastError = error ? new Error(error.message) : new Error('claim_provider_role returned empty')
+    await new Promise((resolve) => window.setTimeout(resolve, 300))
+  }
+  return { role: null, error: lastError }
+}
+
+function resolveIntendedRole(
+  roleFromUrl: OAuthIntendedRole | null,
+  intentFromUrl: 'login' | 'register' | null,
+): { fromRegister: boolean; intendedRole: OAuthIntendedRole | null } {
+  const intent = peekOAuthSignupIntent()
+  const fromRegister =
+    intent?.returnTo === 'register' ||
+    intentFromUrl === 'register' ||
+    Boolean(roleFromUrl) ||
+    Boolean(intent?.role)
+  const intendedRole = fromRegister ? (intent?.role ?? roleFromUrl) : null
+  return { fromRegister, intendedRole }
+}
+
+async function finishOAuthCallback(signOut: () => Promise<void>, refreshProfile: () => Promise<void>): Promise<OAuthFinishResult> {
+  try {
+    const { code, errorDescription } = readOAuthParams()
+    const returnTo = peekOAuthReturnTo() === 'register' ? '/register' : '/login'
+    const roleFromUrl = readRoleFromCallbackUrl()
+    const intentFromUrl = readIntentFromCallbackUrl()
+    const { fromRegister, intendedRole } = resolveIntendedRole(roleFromUrl, intentFromUrl)
+
+    if (errorDescription) {
+      const decoded = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+      if (isOAuthCancelError(decoded) || isOAuthCancelError(errorDescription)) {
+        clearOAuthSignupIntent()
+        clearOAuthParamsFromUrl()
+        return {
+          status: 'loading',
+          message: '',
+          toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
+          navigateTo: returnTo,
+        }
+      }
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      return { status: 'error', message: decoded }
+    }
+
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      if (error) {
+        const {
+          data: { session: existing },
+        } = await supabase.auth.getSession()
+        if (!existing) {
+          if (isOAuthCancelError(error.message)) {
+            clearOAuthSignupIntent()
+            clearOAuthParamsFromUrl()
+            return {
+              status: 'loading',
+              message: '',
+              toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
+              navigateTo: returnTo,
+            }
+          }
+          clearOAuthSignupIntent()
+          return { status: 'error', message: error.message || 'Google sign-in failed.' }
+        }
+      }
+      clearOAuthParamsFromUrl()
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session?.user) {
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      return {
+        status: 'loading',
+        message: '',
+        toast: { text: 'Google sign-in cancelled. You can continue with email.', type: 'info' },
+        navigateTo: returnTo,
+      }
+    }
+
+    const again = resolveIntendedRole(roleFromUrl, intentFromUrl)
+    const effectiveFromRegister = fromRegister || again.fromRegister
+    const effectiveRole = intendedRole ?? again.intendedRole
+    const isNewAccount = isBrandNewAuthUser(session.user.created_at)
+
+    if (!effectiveFromRegister && isNewAccount) {
+      await signOut()
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      return {
+        status: 'loading',
+        message: '',
+        toast: {
+          text: 'No account found for this Google login. Please sign up first and choose Customer or Provider.',
+          type: 'info',
+        },
+        navigateTo: '/register',
+      }
+    }
+
+    if (effectiveFromRegister && !isNewAccount) {
+      await signOut()
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      return {
+        status: 'loading',
+        message: '',
+        toast: { text: ACCOUNT_EXISTS_SIGN_IN_MESSAGE, type: 'info' },
+        navigateTo: '/login',
+      }
+    }
+
+    const fullName =
+      (session.user.user_metadata?.full_name as string | undefined) ||
+      (session.user.user_metadata?.name as string | undefined) ||
+      ''
+
+    const profile = await waitForProfile(session.user.id)
+    if (!profile) {
+      await signOut()
+      clearOAuthSignupIntent()
+      return { status: 'error', message: 'Could not load your account profile. Please try again.' }
+    }
+
+    if (isProfileBanned(profile)) {
+      const banMessage = getBanMessage(profile)
+      await signOut()
+      clearOAuthSignupIntent()
+      return { status: 'error', message: banMessage }
+    }
+
+    if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
+      const { error: nameError } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName.trim() })
+        .eq('id', session.user.id)
+      if (nameError) console.error('[auth] oauth name update failed', nameError)
+    }
+
+    let nextRole = profile.role
+    let claimFailed = false
+    if (effectiveRole === 'provider' && profile.role === 'customer') {
+      const { role: claimed, error: claimError } = await claimProviderRoleWithRetry()
+      if (claimError || claimed !== 'provider') {
+        console.error('[auth] claim_provider_role failed', claimError, { effectiveRole, claimed })
+        claimFailed = true
+      } else {
+        nextRole = 'provider'
+      }
+    }
+
+    clearOAuthSignupIntent()
+    await refreshProfile()
+
+    const destination =
+      nextRole === 'admin'
+        ? '/dashboard/admin'
+        : nextRole === 'provider'
+          ? '/dashboard/provider'
+          : '/dashboard/customer'
+
+    return {
+      status: 'success',
+      message: isNewAccount ? 'Account created. Signing you in…' : 'Welcome back. Signing you in…',
+      toast: claimFailed
+        ? {
+            text: 'Signed in, but your provider role could not be applied. Try again or contact support.',
+            type: 'error',
+          }
+        : {
+            text: isNewAccount
+              ? effectiveRole === 'provider'
+                ? 'Provider account created with Google.'
+                : 'Account created with Google.'
+              : 'Signed in with Google.',
+            type: 'info',
+          },
+      navigateTo: destination,
+    }
+  } catch (error) {
+    clearOAuthSignupIntent()
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Google sign-in failed.',
+    }
+  }
 }
 
 export function AuthCallback() {
@@ -62,141 +273,29 @@ export function AuthCallback() {
   const [message, setMessage] = useState('Finishing Google sign-in…')
 
   useEffect(() => {
-    let cancelled = false
+    let alive = true
 
-    const returnHome = (path: '/login' | '/register', toastMessage: string) => {
-      clearOAuthSignupIntent()
-      clearOAuthParamsFromUrl()
-      showToast(toastMessage, 'info')
-      navigate(path, { replace: true })
+    if (!oauthFinishShared) {
+      oauthFinishShared = finishOAuthCallback(signOut, refreshProfile).finally(() => {
+        window.setTimeout(() => {
+          oauthFinishShared = null
+        }, 2000)
+      })
     }
 
-    const finish = async () => {
-      try {
-        const { code, errorDescription } = readOAuthParams()
-        const returnTo = peekOAuthReturnTo() === 'register' ? '/register' : '/login'
-        // Read before clearOAuthParamsFromUrl() strips the query string.
-        const roleFromUrl = readRoleFromCallbackUrl()
-
-        if (errorDescription) {
-          const decoded = decodeURIComponent(errorDescription.replace(/\+/g, ' '))
-          if (isOAuthCancelError(decoded) || isOAuthCancelError(errorDescription)) {
-            returnHome(returnTo, 'Google sign-in cancelled. You can continue with email.')
-            return
-          }
-          clearOAuthSignupIntent()
-          clearOAuthParamsFromUrl()
-          setStatus('error')
-          setMessage(decoded)
-          return
-        }
-
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (cancelled) return
-          if (error) {
-            const {
-              data: { session: existing },
-            } = await supabase.auth.getSession()
-            if (!existing) {
-              if (isOAuthCancelError(error.message)) {
-                returnHome(returnTo, 'Google sign-in cancelled. You can continue with email.')
-                return
-              }
-              clearOAuthSignupIntent()
-              setStatus('error')
-              setMessage(error.message || 'Google sign-in failed.')
-              return
-            }
-          }
-          clearOAuthParamsFromUrl()
-        }
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        if (cancelled) return
-
-        if (!session?.user) {
-          // No code and no session usually means cancel / incomplete redirect.
-          returnHome(returnTo, 'Google sign-in cancelled. You can continue with email.')
-          return
-        }
-
-        const intent = consumeOAuthSignupIntent()
-        // Role is chosen at signup only. Login must never re-assign Customer/Provider.
-        const intendedRole =
-          intent?.returnTo === 'register' ? (intent.role ?? roleFromUrl) : null
-
-        const fullName =
-          (session.user.user_metadata?.full_name as string | undefined) ||
-          (session.user.user_metadata?.name as string | undefined) ||
-          ''
-
-        const profile = await waitForProfile(session.user.id)
-        if (cancelled) return
-
-        if (!profile) {
-          await signOut()
-          setStatus('error')
-          setMessage('Could not load your account profile. Please try again.')
-          return
-        }
-
-        if (isProfileBanned(profile)) {
-          const banMessage = getBanMessage(profile)
-          await signOut()
-          setStatus('error')
-          setMessage(banMessage)
-          return
-        }
-
-        const createdAtMs = Date.parse(session.user.created_at || '')
-        const isNewAccount = Number.isFinite(createdAtMs) && Date.now() - createdAtMs < 10 * 60 * 1000
-
-        if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
-          const { error: nameError } = await supabase
-            .from('profiles')
-            .update({ full_name: fullName.trim() })
-            .eq('id', session.user.id)
-          if (nameError) console.error('[auth] oauth name update failed', nameError)
-        }
-
-        // OAuth can't pass a role to the signup trigger, so every Google account
-        // starts as 'customer'. The role must go through the RPC: a plain UPDATE
-        // is silently reverted by protect_profile_columns and still reports success.
-        let nextRole = profile.role
-        if (intendedRole === 'provider' && profile.role === 'customer') {
-          const { data: claimed, error: claimError } = await supabase.rpc('claim_provider_role')
-          if (claimError) {
-            console.error('[auth] claim_provider_role failed', claimError)
-            showToast('Signed in, but your provider role could not be applied.', 'error')
-          } else if (claimed) {
-            nextRole = claimed as Profile['role']
-          }
-        }
-
-        await refreshProfile()
-        if (cancelled) return
-
-        setStatus('success')
-        setMessage(isNewAccount ? 'Account created. Signing you in…' : 'Welcome back. Signing you in…')
-        showToast(isNewAccount ? 'Account created with Google.' : 'Signed in with Google.')
-
-        if (nextRole === 'admin') navigate('/dashboard/admin', { replace: true })
-        else if (nextRole === 'provider') navigate('/dashboard/provider', { replace: true })
-        else navigate('/dashboard/customer', { replace: true })
-      } catch (error) {
-        if (cancelled) return
-        clearOAuthSignupIntent()
-        setStatus('error')
-        setMessage(error instanceof Error ? error.message : 'Google sign-in failed.')
+    void oauthFinishShared.then((result) => {
+      if (!alive) return
+      if (result.toast) showToast(result.toast.text, result.toast.type)
+      if (result.navigateTo && result.status !== 'error') {
+        navigate(result.navigateTo, { replace: true })
+        return
       }
-    }
+      setStatus(result.status)
+      if (result.message) setMessage(result.message)
+    })
 
-    void finish()
     return () => {
-      cancelled = true
+      alive = false
     }
   }, [navigate, refreshProfile, showToast, signOut])
 
