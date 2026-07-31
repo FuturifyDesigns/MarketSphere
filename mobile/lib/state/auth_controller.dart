@@ -62,7 +62,7 @@ class AuthController extends ChangeNotifier {
     try {
       final row = await Supabase.instance.client
           .from('profiles')
-          .select('id, email, full_name, phone, role, avatar_url, banned_at')
+          .select('id, email, full_name, phone, role, avatar_url, banned_at, created_at')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -146,10 +146,28 @@ class AuthController extends ChangeNotifier {
     return 'Google sign-in failed. Try again.';
   }
 
-  bool _isBrandNewAuthUser(User user) {
+  /// True only for a brand-new auth row from this signup attempt.
+  /// Returning users must not pass — otherwise a second "sign up as provider"
+  /// would sign into / upgrade the existing account.
+  bool _isFreshAuthSignup(User user) {
     final created = DateTime.tryParse(user.createdAt);
     if (created == null) return false;
-    return DateTime.now().toUtc().difference(created.toUtc()).inMinutes < 10;
+    final createdUtc = created.toUtc();
+    if (DateTime.now().toUtc().difference(createdUtc).inSeconds > 120) return false;
+
+    final lastRaw = user.lastSignInAt;
+    final last = lastRaw != null ? DateTime.tryParse(lastRaw) : null;
+    if (last != null) {
+      final delta = last.toUtc().difference(createdUtc).inSeconds;
+      if (delta > 45) return false;
+    }
+    return true;
+  }
+
+  bool _profileIsFresh(Profile profile) {
+    final created = profile.createdAt;
+    if (created == null) return false;
+    return DateTime.now().toUtc().difference(created.toUtc()).inSeconds < 120;
   }
 
   Future<void> _applyPendingOAuthRoleIfNeeded(User user) async {
@@ -175,9 +193,11 @@ class AuthController extends ChangeNotifier {
           .update({'full_name': metaName.trim()}).eq('id', user.id);
     }
 
-    // Role must go through the RPC: a plain UPDATE is silently reverted by the
-    // protect_profile_columns trigger, which reports success either way.
-    if (role == 'provider' && _profile!.role == 'customer') {
+    // Only first-time signup may claim provider — never upgrade via "sign up again".
+    if (role == 'provider' &&
+        _profile!.role == 'customer' &&
+        _isFreshAuthSignup(user) &&
+        _profileIsFresh(_profile!)) {
       Object? lastError;
       var claimed = false;
       for (var i = 0; i < 4; i++) {
@@ -278,6 +298,11 @@ class AuthController extends ChangeNotifier {
         return existingMsg;
       }
       if (response.session != null && user != null) {
+        if (!_isFreshAuthSignup(user)) {
+          await Supabase.instance.client.auth.signOut();
+          _error = existingMsg;
+          return existingMsg;
+        }
         final row = await Supabase.instance.client
             .from('profiles')
             .select('created_at')
@@ -407,7 +432,7 @@ class AuthController extends ChangeNotifier {
     // first Google; detect that and send them to Sign up instead.
     if (!applyRole) {
       await clearOAuthRole();
-      if (_isBrandNewAuthUser(user)) {
+      if (_isFreshAuthSignup(user)) {
         await signOut();
         onPhase?.call(GoogleSignInPhase.idle);
         const msg =
@@ -416,13 +441,14 @@ class AuthController extends ChangeNotifier {
         return msg;
       }
     } else {
-      // Sign-up must not silently continue an existing Google account.
-      if (!_isBrandNewAuthUser(user)) {
+      // Sign-up must not silently continue / upgrade an existing Google account.
+      final profileStale = _profile != null && !_profileIsFresh(_profile!);
+      if (!_isFreshAuthSignup(user) || profileStale) {
         await signOut();
         await clearOAuthRole();
         onPhase?.call(GoogleSignInPhase.idle);
         const msg =
-            'An account already exists for this email. Please sign in instead.';
+            'An account already exists for this email. Please sign in instead — you cannot create another Customer or Provider account with the same email.';
         _error = msg;
         return msg;
       }

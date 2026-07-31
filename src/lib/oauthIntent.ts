@@ -209,13 +209,13 @@ export function readIntentFromCallbackUrl(): OAuthReturnTo | null {
 }
 
 export const ACCOUNT_EXISTS_SIGN_IN_MESSAGE =
-  'An account already exists for this email. Please sign in instead — you cannot create a second Customer or Provider account with the same email.'
+  'An account already exists for this email. Please sign in instead — you cannot create another Customer or Provider account with the same email.'
 
 export const NO_ACCOUNT_SIGN_UP_MESSAGE =
   'No account found for this Google login. Please create an account and choose Customer or Provider.'
 
 export function isAccountExistsError(message: string) {
-  return /already\s*(been\s*)?(registered|exists)|user already|email.*(taken|exists)|identity.*exist|second (customer|provider)|same email/i.test(
+  return /already\s*(been\s*)?(registered|exists)|user already|email.*(taken|exists)|identity.*exist|second (customer|provider)|same email|another (customer|provider)/i.test(
     message,
   )
 }
@@ -225,17 +225,31 @@ export function isOAuthCancelError(message: string) {
   return /access_denied|user.?denied|popup.?closed|user cancelled|user canceled/i.test(message)
 }
 
-/** True when this Google auth.users row was just created / first sign-in. */
+/**
+ * True only for a brand-new auth row from this signup attempt.
+ * Returning users (even minutes after first create) must not pass — otherwise
+ * a second "sign up as provider" would sign into / upgrade the existing account.
+ */
+export function isFreshAuthSignup(
+  createdAt: string | undefined,
+  lastSignInAt?: string | undefined,
+  windowMs = 2 * 60 * 1000,
+) {
+  const createdMs = Date.parse(createdAt || '')
+  if (!Number.isFinite(createdMs)) return false
+  if (Date.now() - createdMs > windowMs) return false
+
+  const lastMs = Date.parse(lastSignInAt || createdAt || '')
+  // Second OAuth/email visit updates last_sign_in well after created_at.
+  if (Number.isFinite(lastMs) && lastMs - createdMs > 45_000) return false
+  return true
+}
+
+/** @deprecated Prefer isFreshAuthSignup for signup/login gating. */
 export function isBrandNewAuthUser(
   createdAt: string | undefined,
   lastSignInAt?: string | undefined,
-  windowMs = 24 * 60 * 60 * 1000,
+  windowMs = 2 * 60 * 1000,
 ) {
-  const createdAtMs = Date.parse(createdAt || '')
-  if (!Number.isFinite(createdAtMs)) return false
-  if (Date.now() - createdAtMs < windowMs) return true
-
-  const lastMs = Date.parse(lastSignInAt || '')
-  if (Number.isFinite(lastMs) && Math.abs(lastMs - createdAtMs) < 60_000) return true
-  return false
+  return isFreshAuthSignup(createdAt, lastSignInAt, windowMs)
 }

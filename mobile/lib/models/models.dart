@@ -7,6 +7,7 @@ class Profile {
     required this.role,
     this.avatarUrl,
     this.bannedAt,
+    this.createdAt,
   });
 
   final String id;
@@ -16,6 +17,7 @@ class Profile {
   final String role;
   final String? avatarUrl;
   final DateTime? bannedAt;
+  final DateTime? createdAt;
 
   bool get isBanned => bannedAt != null;
   bool get isAdmin => role == 'admin';
@@ -31,6 +33,7 @@ class Profile {
       role: (json['role'] as String?) ?? 'customer',
       avatarUrl: json['avatar_url'] as String?,
       bannedAt: json['banned_at'] != null ? DateTime.tryParse(json['banned_at'] as String) : null,
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
     );
   }
 }

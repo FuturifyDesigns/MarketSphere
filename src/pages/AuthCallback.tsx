@@ -13,7 +13,7 @@ import {
   NO_ACCOUNT_SIGN_UP_MESSAGE,
   clearOAuthSignupIntent,
   getOAuthFinishCache,
-  isBrandNewAuthUser,
+  isFreshAuthSignup,
   isOAuthCancelError,
   peekOAuthReturnTo,
   peekOAuthSignupIntent,
@@ -203,12 +203,14 @@ async function finishOAuthCallback(
     const effectiveFromRegister = fromRegister || again.fromRegister
     const effectiveFromLogin = fromLogin || again.fromLogin || !effectiveFromRegister
     const effectiveRole = intendedRole ?? again.intendedRole
-    const isNewAccount = isBrandNewAuthUser(
+    // Strict freshness: existing emails must never "sign up" again or get role-claimed.
+    const isFreshSignup = isFreshAuthSignup(
       session.user.created_at,
       session.user.last_sign_in_at ?? session.user.created_at,
     )
 
-    if (effectiveFromLogin && isNewAccount) {
+    // Sign-in must not auto-create accounts.
+    if (effectiveFromLogin && isFreshSignup) {
       await signOut()
       clearOAuthSignupIntent()
       clearOAuthParamsFromUrl()
@@ -220,14 +222,15 @@ async function finishOAuthCallback(
       }
     }
 
-    if (effectiveFromRegister && !isNewAccount) {
+    // Sign-up must not continue / upgrade an existing account (any role).
+    if (effectiveFromRegister && !isFreshSignup) {
       await signOut()
       clearOAuthSignupIntent()
       clearOAuthParamsFromUrl()
       return {
         status: 'loading',
         message: '',
-        toast: { text: ACCOUNT_EXISTS_SIGN_IN_MESSAGE, type: 'info' },
+        toast: { text: ACCOUNT_EXISTS_SIGN_IN_MESSAGE, type: 'error' },
         navigateTo: '/login',
       }
     }
@@ -251,6 +254,22 @@ async function finishOAuthCallback(
       return { status: 'error', message: banMessage }
     }
 
+    // Extra guard: profile already existed before this attempt — do not claim a new role.
+    const profileCreatedMs = Date.parse(profile.created_at || '')
+    const profileIsFresh =
+      Number.isFinite(profileCreatedMs) && Date.now() - profileCreatedMs < 2 * 60 * 1000
+    if (effectiveFromRegister && !profileIsFresh) {
+      await signOut()
+      clearOAuthSignupIntent()
+      clearOAuthParamsFromUrl()
+      return {
+        status: 'loading',
+        message: '',
+        toast: { text: ACCOUNT_EXISTS_SIGN_IN_MESSAGE, type: 'error' },
+        navigateTo: '/login',
+      }
+    }
+
     if ((!profile.full_name || !String(profile.full_name).trim()) && fullName.trim()) {
       const { error: nameError } = await supabase
         .from('profiles')
@@ -261,7 +280,14 @@ async function finishOAuthCallback(
 
     let nextRole = profile.role
     let claimFailed = false
-    if (effectiveRole === 'provider' && profile.role === 'customer') {
+    // Only first-time signup may claim provider — never upgrade an existing customer via "sign up".
+    if (
+      effectiveFromRegister &&
+      isFreshSignup &&
+      profileIsFresh &&
+      effectiveRole === 'provider' &&
+      profile.role === 'customer'
+    ) {
       const { role: claimed, error: claimError } = await claimProviderRoleWithRetry()
       if (claimError || claimed !== 'provider') {
         console.error('[auth] claim_provider_role failed', claimError, { effectiveRole, claimed })
@@ -283,14 +309,14 @@ async function finishOAuthCallback(
 
     return {
       status: 'success',
-      message: isNewAccount ? 'Account created. Signing you in…' : 'Welcome back. Signing you in…',
+      message: isFreshSignup ? 'Account created. Signing you in…' : 'Welcome back. Signing you in…',
       toast: claimFailed
         ? {
             text: 'Signed in, but your provider role could not be applied. Try again or contact support.',
             type: 'error',
           }
         : {
-            text: isNewAccount
+            text: isFreshSignup
               ? effectiveRole === 'provider'
                 ? 'Provider account created with Google.'
                 : 'Account created with Google.'

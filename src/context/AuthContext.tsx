@@ -6,6 +6,7 @@ import {
   ACCOUNT_EXISTS_SIGN_IN_MESSAGE,
   getOAuthCallbackUrl,
   isAccountExistsError,
+  isFreshAuthSignup,
 } from '../lib/oauthIntent'
 import { getBanMessage, isProfileBanned, storeAccountNotice } from '../lib/accountGuard'
 import type { Profile } from '../lib/types'
@@ -232,6 +233,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Same email + password can return a real session for an existing account.
       if (data.session && user) {
+        if (!isFreshAuthSignup(user.created_at, user.last_sign_in_at ?? user.created_at)) {
+          await supabase.auth.signOut()
+          return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
+        }
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('created_at')
