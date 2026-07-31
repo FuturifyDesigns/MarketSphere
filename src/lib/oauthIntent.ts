@@ -3,6 +3,7 @@ import { getAuthRouteUrl } from './authRoutes'
 const OAUTH_ROLE_KEY = 'msg-oauth-intended-role'
 const OAUTH_CONSENT_KEY = 'msg-oauth-privacy-consent'
 const OAUTH_RETURN_KEY = 'msg-oauth-return-to'
+const OAUTH_COOKIE = 'msg_oauth_intent'
 
 export type OAuthIntendedRole = 'customer' | 'provider'
 export type OAuthReturnTo = 'login' | 'register'
@@ -42,6 +43,39 @@ function storageRemove(key: string) {
   }
   try {
     localStorage.removeItem(key)
+  } catch {
+    /* ignore */
+  }
+}
+
+function writeOAuthCookie(role: OAuthIntendedRole | '', returnTo: OAuthReturnTo) {
+  try {
+    const value = encodeURIComponent(`${returnTo}:${role || ''}`)
+    // Lax so it returns with top-level OAuth redirects on the same site.
+    document.cookie = `${OAUTH_COOKIE}=${value}; path=/; max-age=1800; SameSite=Lax`
+  } catch {
+    /* ignore */
+  }
+}
+
+function readOAuthCookie(): { role: OAuthIntendedRole | null; returnTo: OAuthReturnTo } | null {
+  try {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${OAUTH_COOKIE}=([^;]*)`))
+    if (!match?.[1]) return null
+    const raw = decodeURIComponent(match[1])
+    const [returnToRaw, roleRaw] = raw.split(':')
+    const returnTo: OAuthReturnTo = returnToRaw === 'register' ? 'register' : 'login'
+    const role: OAuthIntendedRole | null =
+      roleRaw === 'provider' || roleRaw === 'customer' ? roleRaw : null
+    return { role, returnTo }
+  } catch {
+    return null
+  }
+}
+
+function clearOAuthCookie() {
+  try {
+    document.cookie = `${OAUTH_COOKIE}=; path=/; max-age=0; SameSite=Lax`
   } catch {
     /* ignore */
   }
@@ -87,6 +121,7 @@ export function storeOAuthSignupIntent(
   storageSet(OAUTH_ROLE_KEY, role)
   storageSet(OAUTH_CONSENT_KEY, privacyConsent ? '1' : '0')
   storageSet(OAUTH_RETURN_KEY, returnTo)
+  writeOAuthCookie(role, returnTo)
 }
 
 /** Login-only Google: keep cancel routing, never stash a role to apply. */
@@ -95,16 +130,23 @@ export function storeOAuthLoginIntent() {
   storageRemove(OAUTH_ROLE_KEY)
   storageRemove(OAUTH_CONSENT_KEY)
   storageSet(OAUTH_RETURN_KEY, 'login')
+  writeOAuthCookie('', 'login')
 }
 
 export function peekOAuthReturnTo(): OAuthReturnTo {
-  return storageGet(OAUTH_RETURN_KEY) === 'register' ? 'register' : 'login'
+  if (storageGet(OAUTH_RETURN_KEY) === 'register') return 'register'
+  if (storageGet(OAUTH_RETURN_KEY) === 'login') return 'login'
+  const cookie = readOAuthCookie()
+  if (cookie?.returnTo === 'register') return 'register'
+  if (cookie?.returnTo === 'login') return 'login'
+  return 'login'
 }
 
 export function clearOAuthSignupIntent() {
   storageRemove(OAUTH_ROLE_KEY)
   storageRemove(OAUTH_CONSENT_KEY)
   storageRemove(OAUTH_RETURN_KEY)
+  clearOAuthCookie()
 }
 
 /** Read stashed OAuth signup intent without clearing (safe under React Strict Mode). */
@@ -116,10 +158,20 @@ export function peekOAuthSignupIntent(): {
   const roleRaw = storageGet(OAUTH_ROLE_KEY)
   const consentRaw = storageGet(OAUTH_CONSENT_KEY)
   const returnRaw = storageGet(OAUTH_RETURN_KEY)
-  if (!roleRaw && !returnRaw) return null
+  const cookie = readOAuthCookie()
+
   const role: OAuthIntendedRole | null =
-    roleRaw === 'provider' || roleRaw === 'customer' ? roleRaw : null
-  const returnTo: OAuthReturnTo = returnRaw === 'register' ? 'register' : 'login'
+    roleRaw === 'provider' || roleRaw === 'customer'
+      ? roleRaw
+      : cookie?.role ?? null
+  const returnTo: OAuthReturnTo =
+    returnRaw === 'register' || cookie?.returnTo === 'register'
+      ? 'register'
+      : returnRaw === 'login' || cookie?.returnTo === 'login'
+        ? 'login'
+        : 'login'
+
+  if (!role && !returnRaw && !cookie) return null
   return { role, privacyConsent: consentRaw === '1', returnTo }
 }
 
@@ -134,58 +186,26 @@ export function consumeOAuthSignupIntent(): {
   return intent
 }
 
-function readCallbackParams() {
-  const fromSearch = new URLSearchParams(window.location.search)
-  const hash = window.location.hash.startsWith('#')
-    ? window.location.hash.slice(1)
-    : window.location.hash
-  // Support both `#role=provider` and `#/path?role=provider`
-  const hashQuery = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : hash
-  const fromHash = new URLSearchParams(hashQuery)
-  return {
-    role: fromSearch.get('role') || fromHash.get('role'),
-    intent: fromSearch.get('intent') || fromHash.get('intent'),
-  }
-}
-
 /**
- * Absolute callback URL Supabase returns to with ?code=…&state=….
- * Role/intent travel in the query string AND in local/session storage.
- * Do not put a hash on redirectTo — OAuth providers often reject or strip it
- * and the flow then looks like a cancelled sign-in.
+ * Bare callback URL only. Role/intent live in storage + cookie.
+ * Query params on redirectTo are often rejected by Supabase allow-lists and
+ * then surface as access_denied / “cancelled” after Google.
  */
-export function getOAuthCallbackUrl(opts?: {
+export function getOAuthCallbackUrl(_opts?: {
   role?: OAuthIntendedRole
   intent?: OAuthReturnTo
 }) {
-  const url = getAuthRouteUrl('/auth/callback')
-  const params = new URLSearchParams()
-  if (opts?.intent) params.set('intent', opts.intent)
-  if (opts?.role) params.set('role', opts.role)
-  const qs = params.toString()
-  return qs ? `${url}?${qs}` : url
+  return getAuthRouteUrl('/auth/callback')
 }
 
-/** Role carried back on the callback URL, used when storage was lost. */
+/** @deprecated Query params are no longer used on the callback URL. */
 export function readRoleFromCallbackUrl(): OAuthIntendedRole | null {
-  try {
-    const role = readCallbackParams().role
-    if (role === 'provider' || role === 'customer') return role
-    return null
-  } catch {
-    return null
-  }
+  return null
 }
 
-/** Signup vs login, from callback URL when storage was lost. */
+/** @deprecated Query params are no longer used on the callback URL. */
 export function readIntentFromCallbackUrl(): OAuthReturnTo | null {
-  try {
-    const intent = readCallbackParams().intent
-    if (intent === 'register' || intent === 'login') return intent
-    return null
-  } catch {
-    return null
-  }
+  return null
 }
 
 export const ACCOUNT_EXISTS_SIGN_IN_MESSAGE =
@@ -200,8 +220,9 @@ export function isAccountExistsError(message: string) {
   )
 }
 
+/** Only treat explicit user-abort style errors as cancel — not redirect misconfig. */
 export function isOAuthCancelError(message: string) {
-  return /access_denied|user.?denied|cancelled|canceled|consent.?required/i.test(message)
+  return /access_denied|user.?denied|popup.?closed|user cancelled|user canceled/i.test(message)
 }
 
 /** True when this Google auth.users row was just created / first sign-in. */
@@ -214,7 +235,6 @@ export function isBrandNewAuthUser(
   if (!Number.isFinite(createdAtMs)) return false
   if (Date.now() - createdAtMs < windowMs) return true
 
-  // First sign-in often equals created_at even when clocks drift slightly.
   const lastMs = Date.parse(lastSignInAt || '')
   if (Number.isFinite(lastMs) && Math.abs(lastMs - createdAtMs) < 60_000) return true
   return false
