@@ -124,9 +124,9 @@ export function AuthCallback() {
         }
 
         const intent = consumeOAuthSignupIntent()
-        // sessionStorage is lost when Supabase returns to a different origin
-        // than the one the flow started on, so the URL is the fallback.
-        const intendedRole = intent?.role ?? roleFromUrl
+        // Role is chosen at signup only. Login must never re-assign Customer/Provider.
+        const intendedRole =
+          intent?.returnTo === 'register' ? (intent.role ?? roleFromUrl) : null
 
         const fullName =
           (session.user.user_metadata?.full_name as string | undefined) ||

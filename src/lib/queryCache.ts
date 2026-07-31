@@ -81,3 +81,27 @@ export function debounceTrailing<T extends unknown[]>(
 
   return wrapped
 }
+
+/** Memory cache + single-flight for hot public reads under load. */
+export async function cachedFetch<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlMs = 45_000,
+): Promise<T> {
+  const hit = getCached<T>(key)
+  if (hit !== null) return hit
+  return withSingleFlight(key, async () => {
+    const value = await fetcher()
+    setCached(key, value, ttlMs)
+    return value
+  })
+}
+
+/** Soft refresh when the tab becomes visible again (no realtime fan-out). */
+export function onTabVisible(callback: () => void) {
+  const handler = () => {
+    if (document.visibilityState === 'visible') callback()
+  }
+  document.addEventListener('visibilitychange', handler)
+  return () => document.removeEventListener('visibilitychange', handler)
+}

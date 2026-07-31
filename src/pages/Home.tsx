@@ -25,6 +25,7 @@ import type { HomeStat } from '../lib/siteContentDefaults'
 import type { CmsStringItem } from '../lib/cmsTypes'
 import { createHomeStat } from '../lib/cmsTypes'
 import { supabase } from '../lib/supabase'
+import { cachedFetch, clearCached, onTabVisible } from '../lib/queryCache'
 import { onIntroComplete, isIntroComplete } from '../lib/intro'
 import { scheduleScrollRefresh } from '../lib/scrollRefresh'
 import { isMobileViewport } from '../lib/nativeScroll'
@@ -119,97 +120,99 @@ export function Home() {
 
     async function loadFeaturedProviders() {
       try {
-        const { data: providerRows, error: providerError } = await supabase
-          .from('providers')
-          .select('*, provider_services(*, categories(*))')
-          .eq('status', 'approved')
-          .limit(8)
-
-        if (cancelled) return
-        if (providerError) {
-          console.error('[home] featured providers', providerError)
-          setProviders([])
-          return
-        }
-
-        setProviders(providerRows || [])
+        const rows = await cachedFetch(
+          'home:providers:v1',
+          async () => {
+            const { data, error } = await supabase
+              .from('providers')
+              .select(
+                'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone, status, ms_approved, verified_at, provider_services(id, title, categories(id, name, slug))',
+              )
+              .eq('status', 'approved')
+              .limit(8)
+            if (error) throw error
+            return data || []
+          },
+          60_000,
+        )
+        if (!cancelled) setProviders(rows as Provider[])
       } catch (error) {
-        console.error('[home] featured providers threw', error)
+        console.error('[home] featured providers', error)
         if (!cancelled) setProviders([])
       }
     }
 
     async function loadShowcaseListings() {
       try {
-        const { data, error } = await supabase
-          .from('showcase_listings')
-          .select('*, showcase_columns(id, slug, title, icon)')
-          .eq('status', 'published')
-          .order('featured', { ascending: false })
-          .order('sort_order', { ascending: true })
-          .order('created_at', { ascending: false })
-          .limit(20)
-
-        if (cancelled) return
-        if (error) {
-          console.error('[home] showcase listings', error)
-          setShowcaseListings([])
-          return
-        }
-        setShowcaseListings((data || []) as ShowcaseListing[])
+        const rows = await cachedFetch(
+          'home:showcase:v1',
+          async () => {
+            const { data, error } = await supabase
+              .from('showcase_listings')
+              .select(
+                'id, title, summary, location, price_label, deal_type, image_urls, available, featured, showcase_columns(id, slug, title, icon)',
+              )
+              .eq('status', 'published')
+              .order('featured', { ascending: false })
+              .order('sort_order', { ascending: true })
+              .order('created_at', { ascending: false })
+              .limit(20)
+            if (error) throw error
+            return data || []
+          },
+          60_000,
+        )
+        if (!cancelled) setShowcaseListings(rows as ShowcaseListing[])
       } catch (error) {
-        console.error('[home] showcase listings threw', error)
+        console.error('[home] showcase listings', error)
         if (!cancelled) setShowcaseListings([])
       }
     }
 
     async function loadTestimonials() {
       try {
-        const { data, error } = await supabase
-          .from('testimonials')
-          .select('*')
-          .eq('approved', true)
-          .order('created_at', { ascending: false })
-          .limit(12)
-
-        if (cancelled) return
-        if (error) {
-          console.error('[home] testimonials', error)
-          setTestimonials([])
-          return
-        }
-        setTestimonials(data || [])
+        const rows = await cachedFetch(
+          'home:testimonials:v1',
+          async () => {
+            const { data, error } = await supabase
+              .from('testimonials')
+              .select('id, client_name, content, service_type, rating, avatar_url, created_at')
+              .eq('approved', true)
+              .order('created_at', { ascending: false })
+              .limit(12)
+            if (error) throw error
+            return data || []
+          },
+          90_000,
+        )
+        if (!cancelled) setTestimonials(rows as Testimonial[])
       } catch (error) {
-        console.error('[home] testimonials threw', error)
+        console.error('[home] testimonials', error)
         if (!cancelled) setTestimonials([])
       }
+    }
+
+    const refresh = () => {
+      clearCached('home:providers:v1')
+      clearCached('home:showcase:v1')
+      clearCached('home:testimonials:v1')
+      void loadFeaturedProviders()
+      void loadShowcaseListings()
+      void loadTestimonials()
     }
 
     void loadFeaturedProviders()
     void loadShowcaseListings()
     void loadTestimonials()
 
-    const channel = supabase
-      .channel('home-testimonials-live')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'testimonials' },
-        () => {
-          if (!cancelled) void loadTestimonials()
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'showcase_listings' },
-        () => {
-          if (!cancelled) void loadShowcaseListings()
-        },
-      )
-      .subscribe()
+    // Soft refresh when tab becomes visible — avoid per-visitor realtime fan-out.
+    const stopVisibility = onTabVisible(() => {
+      if (!cancelled) refresh()
+    })
 
     return () => {
       cancelled = true
-      void supabase.removeChannel(channel)
+      stopVisibility()
     }
   }, [])
 

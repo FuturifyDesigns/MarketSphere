@@ -328,6 +328,14 @@
   border-color: var(--gold, #d4af37);
 }
 
+/* Hide CMS chrome inside the Android Flutter app shell. */
+html.marketsphere-android-app .live-editor-entry,
+html[data-marketsphere-app='android'] .live-editor-entry,
+html.marketsphere-android-app .live-editor-bar,
+html[data-marketsphere-app='android'] .live-editor-bar {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
   .cms-section__edit-label {
     display: none;

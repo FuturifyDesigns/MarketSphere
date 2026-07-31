@@ -21,6 +21,17 @@ export function storeOAuthSignupIntent(
   }
 }
 
+/** Login-only Google: keep cancel routing, never stash a role to apply. */
+export function storeOAuthLoginIntent() {
+  try {
+    sessionStorage.removeItem(OAUTH_ROLE_KEY)
+    sessionStorage.removeItem(OAUTH_CONSENT_KEY)
+    sessionStorage.setItem(OAUTH_RETURN_KEY, 'login')
+  } catch {
+    /* ignore */
+  }
+}
+
 export function peekOAuthReturnTo(): OAuthReturnTo {
   try {
     return sessionStorage.getItem(OAUTH_RETURN_KEY) === 'register' ? 'register' : 'login'
@@ -40,7 +51,7 @@ export function clearOAuthSignupIntent() {
 }
 
 export function consumeOAuthSignupIntent(): {
-  role: OAuthIntendedRole
+  role: OAuthIntendedRole | null
   privacyConsent: boolean
   returnTo: OAuthReturnTo
 } | null {
@@ -50,7 +61,8 @@ export function consumeOAuthSignupIntent(): {
     const returnRaw = sessionStorage.getItem(OAUTH_RETURN_KEY)
     clearOAuthSignupIntent()
     if (!roleRaw && !returnRaw) return null
-    const role: OAuthIntendedRole = roleRaw === 'provider' ? 'provider' : 'customer'
+    const role: OAuthIntendedRole | null =
+      roleRaw === 'provider' || roleRaw === 'customer' ? roleRaw : null
     const returnTo: OAuthReturnTo = returnRaw === 'register' ? 'register' : 'login'
     return { role, privacyConsent: consentRaw === '1', returnTo }
   } catch {

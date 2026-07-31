@@ -215,7 +215,7 @@ export function AdminDashboard() {
       if (document.visibilityState === 'visible') {
         void loadDataRef.current()
       }
-    }, 20_000)
+    }, 60_000)
 
     return () => {
       if (timer !== undefined) window.clearTimeout(timer)

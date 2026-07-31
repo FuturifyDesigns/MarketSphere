@@ -1,18 +1,23 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/models.dart';
+import '../services/app_secure_storage.dart';
+import '../services/env_config.dart';
 import '../utils/helpers.dart';
+
+enum GoogleSignInPhase { idle, pickingAccount, exchanging, done }
 
 class AuthController extends ChangeNotifier {
   AuthController();
 
   static const _pendingRoleKey = 'pending_oauth_role';
+  static const _allowedRoles = {'customer', 'provider'};
+  static final _secure = AppSecureStorage.instance;
 
   Profile? _profile;
   var _ready = false;
@@ -83,23 +88,71 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> stashOAuthRole(String role) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_pendingRoleKey, role);
-  }
-
-  Future<void> clearOAuthRole() async {
+    if (!_allowedRoles.contains(role)) return;
+    await _secure.write(key: _pendingRoleKey, value: role);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_pendingRoleKey);
   }
 
-  Future<void> _applyPendingOAuthRoleIfNeeded(User user) async {
+  Future<void> clearOAuthRole() async {
+    await _secure.delete(key: _pendingRoleKey);
     final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString(_pendingRoleKey);
+    await prefs.remove(_pendingRoleKey);
+  }
+
+  Future<String?> _readPendingOAuthRole() async {
+    final secure = await _secure.read(key: _pendingRoleKey);
+    if (secure != null && secure.isNotEmpty) return secure;
+    final prefs = await SharedPreferences.getInstance();
+    final legacy = prefs.getString(_pendingRoleKey);
+    if (legacy != null && legacy.isNotEmpty) {
+      await _secure.write(key: _pendingRoleKey, value: legacy);
+      await prefs.remove(_pendingRoleKey);
+      return legacy;
+    }
+    return null;
+  }
+
+  /// Maps Google Sign-In failures to a user-facing message.
+  /// Missing Android OAuth client / SHA-1 often surfaces as "canceled".
+  static String _googleSignInErrorMessage(Object error) {
+    if (error is GoogleSignInException) {
+      switch (error.code) {
+        case GoogleSignInExceptionCode.canceled:
+          return 'Google sign-in did not complete. If you did not cancel, add an Android OAuth client in Google Cloud for package com.marketspheregroup.market_sphere with this app’s SHA-1.';
+        case GoogleSignInExceptionCode.clientConfigurationError:
+        case GoogleSignInExceptionCode.providerConfigurationError:
+          return 'Google setup incomplete. In Google Cloud create an Android OAuth client for package com.marketspheregroup.market_sphere and add this app’s SHA-1 fingerprint.';
+        case GoogleSignInExceptionCode.interrupted:
+          return 'Google sign-in was interrupted. Try again.';
+        case GoogleSignInExceptionCode.uiUnavailable:
+          return 'Google sign-in UI is unavailable on this device. Try again or use email.';
+        default:
+          final detail = error.description?.trim();
+          if (detail != null && detail.isNotEmpty) {
+            return 'Google sign-in failed: $detail';
+          }
+          return 'Google sign-in failed. Check the Android OAuth client and SHA-1 in Google Cloud.';
+      }
+    }
+
+    final msg = error.toString().toLowerCase();
+    if (msg.contains('10:') || msg.contains('api_exception: 10') || msg.contains('apiexception: 10')) {
+      return 'Google setup incomplete. Add an Android OAuth client with package com.marketspheregroup.market_sphere and this app’s SHA-1.';
+    }
+    if (msg.contains('canceled') || msg.contains('cancelled')) {
+      return 'Google sign-in did not complete. If you did not cancel, add an Android OAuth client in Google Cloud for package com.marketspheregroup.market_sphere with this app’s SHA-1.';
+    }
+    return 'Google sign-in failed. Try again.';
+  }
+
+  Future<void> _applyPendingOAuthRoleIfNeeded(User user) async {
+    final role = await _readPendingOAuthRole();
     if (role != 'provider' && role != 'customer') {
       return;
     }
 
-    await prefs.remove(_pendingRoleKey);
+    await clearOAuthRole();
 
     await refreshProfile();
     if (_profile == null) return;
@@ -162,6 +215,9 @@ class AuthController extends ChangeNotifier {
     String? phone,
   }) async {
     _error = null;
+    if (!_allowedRoles.contains(role)) {
+      return 'Choose Customer or Provider before creating an account.';
+    }
     try {
       final response = await Supabase.instance.client.auth.signUp(
         email: email.trim(),
@@ -186,23 +242,33 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<String?> signInWithGoogle({required String role}) async {
+  /// Native Google Sign-In (Credential Manager / account picker).
+  ///
+  /// [onPhase] lets the UI avoid showing loaders while Google's translucent
+  /// sheets are open — Flutter spinners bleed through those dialogs.
+  Future<String?> signInWithGoogle({
+    String? role,
+    void Function(GoogleSignInPhase phase)? onPhase,
+  }) async {
     _error = null;
-    if (role != 'customer' && role != 'provider') {
-      return 'Choose Customer or Provider before continuing with Google.';
+    final applyRole = role == 'customer' || role == 'provider';
+    if (applyRole) {
+      await stashOAuthRole(role!);
+    } else {
+      await clearOAuthRole();
     }
-    await stashOAuthRole(role);
 
-    final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID']?.trim() ?? '';
+    final webClientId = EnvConfig.googleWebClientId;
     if (webClientId.isEmpty) {
       await clearOAuthRole();
       return 'Google sign-in is not configured for the app yet.';
     }
 
-    // ── Step 1: native Google account picker ──
+    // ── Step 1: native Google account picker (modern GIS / Credential Manager) ──
     final google = GoogleSignIn.instance;
     await google.initialize(serverClientId: webClientId);
 
+    onPhase?.call(GoogleSignInPhase.pickingAccount);
     late final GoogleSignInAccount googleUser;
     try {
       googleUser = await google.authenticate(
@@ -210,29 +276,22 @@ class AuthController extends ChangeNotifier {
       );
     } on GoogleSignInException catch (e) {
       await clearOAuthRole();
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return 'Google sign-in was cancelled.';
-      }
-      return 'Google sign-in failed. Check that the app package and SHA-1 are registered in Google Cloud.';
+      onPhase?.call(GoogleSignInPhase.idle);
+      return _googleSignInErrorMessage(e);
     } catch (e) {
       await clearOAuthRole();
-      final msg = e.toString().toLowerCase();
-      if (msg.contains('canceled') || msg.contains('cancelled')) {
-        return 'Google sign-in was cancelled.';
-      }
-      if (msg.contains('10:') || msg.contains('api_exception: 10') || msg.contains('apiexception: 10')) {
-        return 'Google setup incomplete. Add an Android OAuth client with package com.marketspheregroup.market_sphere and your debug/release SHA-1.';
-      }
-      return 'Google sign-in failed. Try again.';
+      onPhase?.call(GoogleSignInPhase.idle);
+      return _googleSignInErrorMessage(e);
     }
 
     final idToken = googleUser.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
       await clearOAuthRole();
+      onPhase?.call(GoogleSignInPhase.idle);
       return 'Google did not return an ID token. Confirm GOOGLE_WEB_CLIENT_ID is your Web client ID.';
     }
 
-    // ── Step 2: get an access token (best-effort, not required) ──
+    // Keep "picking" while any Google consent UI may still be on screen.
     String? accessToken;
     try {
       GoogleSignInClientAuthorization? authz =
@@ -243,6 +302,9 @@ class AuthController extends ChangeNotifier {
       // accessToken is optional for signInWithIdToken; proceed without it.
     }
 
+    // Google sheets closed — safe for app-side busy text (no spinner overlays).
+    onPhase?.call(GoogleSignInPhase.exchanging);
+
     // ── Step 3: exchange with Supabase ──
     try {
       await Supabase.instance.client.auth.signInWithIdToken(
@@ -252,17 +314,20 @@ class AuthController extends ChangeNotifier {
       );
     } on AuthException catch (e) {
       await clearOAuthRole();
+      onPhase?.call(GoogleSignInPhase.idle);
       _error = e.message;
       return e.message;
     } catch (_) {
       await clearOAuthRole();
+      onPhase?.call(GoogleSignInPhase.idle);
       return 'Google sign-in failed. Try again.';
     }
 
-    // ── Step 4: apply chosen role & finish ──
+    // ── Step 4: apply chosen role only when signup provided one ──
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       await clearOAuthRole();
+      onPhase?.call(GoogleSignInPhase.idle);
       return 'Google sign-in failed. No session created.';
     }
 
@@ -270,9 +335,15 @@ class AuthController extends ChangeNotifier {
     if (_profile?.isBanned == true) {
       await signOut();
       await clearOAuthRole();
+      onPhase?.call(GoogleSignInPhase.idle);
       return 'This account has been suspended. Contact support.';
     }
-    await _applyPendingOAuthRoleIfNeeded(user);
+    if (applyRole) {
+      await _applyPendingOAuthRoleIfNeeded(user);
+    } else {
+      await clearOAuthRole();
+    }
+    onPhase?.call(GoogleSignInPhase.done);
     notifyListeners();
     return null;
   }
@@ -299,7 +370,7 @@ class AuthController extends ChangeNotifier {
       if (phone != null) updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
       if (avatarUrl != null) {
         final url = avatarUrl.trim();
-        if (url.isNotEmpty && !(url.startsWith('https://') || url.startsWith('http://'))) {
+        if (url.isNotEmpty && !url.startsWith('https://')) {
           return 'Invalid photo URL.';
         }
         updates['avatar_url'] = url.isEmpty ? null : url;

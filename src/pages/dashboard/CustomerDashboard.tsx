@@ -26,13 +26,15 @@ export function CustomerDashboard() {
     const [enquiriesRes, favoritesRes] = await Promise.all([
       supabase
         .from('enquiries')
-        .select('*, providers(business_name)')
+        .select('id, subject, message, status, created_at, providers(business_name)')
         .eq('customer_id', user.id)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(100),
       supabase
         .from('favorites')
-        .select('providers(*)')
-        .eq('customer_id', user.id),
+        .select('providers(id, business_name, description, location, logo_url, cover_url, status, ms_approved, verified_at)')
+        .eq('customer_id', user.id)
+        .limit(80),
     ])
 
     setEnquiries(enquiriesRes.data || [])

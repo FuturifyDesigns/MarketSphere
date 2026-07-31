@@ -115,6 +115,7 @@ export function ProviderDashboard() {
         .select('*, profiles(full_name, email)')
         .eq('provider_id', provider.id)
         .order('created_at', { ascending: false })
+        .limit(100)
       setEnquiries(data || [])
     }
 

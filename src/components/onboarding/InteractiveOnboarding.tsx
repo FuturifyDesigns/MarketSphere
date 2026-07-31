@@ -65,10 +65,10 @@ function isMobileViewport() {
 function getViewportMargins() {
   const mobile = isMobileViewport()
   return {
-    top: mobile ? 72 : TOOLTIP_MARGIN,
-    bottom: TOOLTIP_MARGIN,
-    left: TOOLTIP_MARGIN,
-    right: TOOLTIP_MARGIN,
+    top: mobile ? 64 : TOOLTIP_MARGIN,
+    bottom: mobile ? Math.max(TOOLTIP_MARGIN, 12) : TOOLTIP_MARGIN,
+    left: mobile ? 12 : TOOLTIP_MARGIN,
+    right: mobile ? 12 : TOOLTIP_MARGIN,
   }
 }
 
@@ -84,6 +84,7 @@ function clampBox(top: number, left: number, width: number, height: number): Box
     height,
   }
 }
+
 function positionForPlacement(spotlight: Box, placement: OnboardingPlacement, cardWidth: number, cardHeight: number) {
   switch (placement) {
     case 'top':
@@ -152,6 +153,45 @@ function scorePlacement(
   return { box, score }
 }
 
+/** On phones, pin a compact coach card opposite the spotlight so highlights stay visible. */
+function getMobileDockStyle(spotlight: Box | null, cardHeight: number): CSSProperties {
+  const margins = getViewportMargins()
+  const viewportHeight = window.innerHeight
+  // Keep the card compact — never eat most of the screen.
+  const maxCardHeight = Math.min(
+    Math.round(viewportHeight * 0.38),
+    Math.max(180, viewportHeight - (spotlight?.height ?? 120) - 120),
+  )
+
+  const spotlightCenter = spotlight
+    ? spotlight.top + spotlight.height / 2
+    : viewportHeight * 0.35
+  // If the highlight sits in the lower half, dock the card at the top (and vice versa).
+  const dockTop = spotlightCenter > viewportHeight * 0.48
+
+  if (dockTop) {
+    return {
+      position: 'fixed',
+      left: margins.left,
+      right: margins.right,
+      top: margins.top,
+      bottom: 'auto',
+      width: 'auto',
+      maxHeight: `${maxCardHeight}px`,
+    }
+  }
+
+  return {
+    position: 'fixed',
+    left: margins.left,
+    right: margins.right,
+    top: 'auto',
+    bottom: margins.bottom,
+    width: 'auto',
+    maxHeight: `${maxCardHeight}px`,
+  }
+}
+
 function getTooltipPosition(
   spotlight: Box | null,
   preferredPlacement: OnboardingPlacement | undefined,
@@ -159,14 +199,16 @@ function getTooltipPosition(
   cardHeight: number,
 ): CSSProperties {
   if (!spotlight) {
-    return {}
+    return isMobileViewport() ? getMobileDockStyle(null, cardHeight) : {}
   }
 
   const mobile = isMobileViewport()
+  if (mobile) {
+    return getMobileDockStyle(spotlight, cardHeight)
+  }
+
   const preferred = preferredPlacement ?? 'bottom'
-  const candidates: OnboardingPlacement[] = mobile
-    ? [preferred === 'left' || preferred === 'right' ? 'bottom' : preferred, 'top', 'bottom']
-    : [preferred, 'right', 'left', 'bottom', 'top']
+  const candidates: OnboardingPlacement[] = [preferred, 'right', 'left', 'bottom', 'top']
 
   let best: { box: Box; score: number } | null = null
   for (const placement of candidates) {
@@ -193,22 +235,6 @@ function getTooltipPosition(
       cardHeight,
     )
     best = { box, score: 0 }
-  }
-
-  if (mobile) {
-    const margins = getViewportMargins()
-    const reservedTop = margins.top + 40
-    const maxCardHeight = Math.max(220, window.innerHeight - reservedTop - margins.bottom)
-
-    return {
-      position: 'fixed',
-      left: margins.left,
-      right: margins.right,
-      bottom: margins.bottom,
-      top: 'auto',
-      width: 'auto',
-      maxHeight: `min(78dvh, ${maxCardHeight}px)`,
-    }
   }
 
   return {

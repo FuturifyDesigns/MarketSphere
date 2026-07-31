@@ -5,12 +5,19 @@ const NAVBAR_OFFSET = 76
 const SPOTLIGHT_PADDING = 10
 const VIEW_TOP_PAD = NAVBAR_OFFSET + SPOTLIGHT_PADDING + 12
 const VIEW_BOTTOM_PAD = SPOTLIGHT_PADDING + 28
+const MOBILE_CARD_RESERVE = Math.round(
+  typeof window !== 'undefined' ? Math.min(window.innerHeight * 0.38, 320) + 24 : 280,
+)
 
 type TourScrollOptions = {
   centered?: boolean
   cardHeight?: number
   cardWidth?: number
   placement?: OnboardingPlacement
+}
+
+function isMobileViewport() {
+  return typeof window !== 'undefined' && window.innerWidth <= 640
 }
 
 function getScrollTop() {
@@ -92,7 +99,14 @@ export function scrollTourIntoView(
   const rect = element.getBoundingClientRect()
   const currentScroll = getScrollTop()
   const viewportHeight = window.innerHeight
-  const available = Math.max(140, viewportHeight - VIEW_TOP_PAD - VIEW_BOTTOM_PAD)
+  const mobile = isMobileViewport()
+  const cardReserve = mobile
+    ? Math.min(options.cardHeight || MOBILE_CARD_RESERVE, Math.round(viewportHeight * 0.38) + 24)
+    : 0
+  // Prefer scrolling the highlight into the band opposite a bottom-docked mobile card.
+  const topPad = VIEW_TOP_PAD
+  const bottomPad = mobile ? cardReserve + 16 : VIEW_BOTTOM_PAD
+  const available = Math.max(120, viewportHeight - topPad - bottomPad)
 
   const elementTopDoc = currentScroll + rect.top
   const elementHeight = Math.max(rect.height, 1)
@@ -100,10 +114,10 @@ export function scrollTourIntoView(
   let targetScroll: number
   if (elementHeight >= available) {
     // Tall target: pin its top just below the navbar so as much as possible shows.
-    targetScroll = elementTopDoc - VIEW_TOP_PAD
+    targetScroll = elementTopDoc - topPad
   } else {
-    // Center the full highlight in the usable viewport band.
-    targetScroll = elementTopDoc - VIEW_TOP_PAD - (available - elementHeight) / 2
+    // Keep the full highlight in the usable band above the coach card.
+    targetScroll = elementTopDoc - topPad - (available - elementHeight) / 2
   }
 
   scrollToY(Math.max(0, targetScroll), false, onComplete)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, MapPin, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { COMPANY } from '../lib/constants'
@@ -11,32 +11,60 @@ import {
 } from '../components/icons/MarketIcons'
 import type { Provider, Category } from '../lib/types'
 import { sanitizePostgrestFilter } from '../lib/safe'
+import { cachedFetch, debounceTrailing } from '../lib/queryCache'
 import './Browse.css'
 
 export function Browse() {
   const [providers, setProviders] = useState<Provider[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [search, setSearch] = useState('')
+  const [searchDebounced, setSearchDebounced] = useState('')
   const [category, setCategory] = useState('')
   const [location, setLocation] = useState('')
+  const [locationDebounced, setLocationDebounced] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [reloadTick, setReloadTick] = useState(0)
 
+  const pushSearch = useMemo(
+    () => debounceTrailing((value: string) => setSearchDebounced(value), 320),
+    [],
+  )
+  const pushLocation = useMemo(
+    () => debounceTrailing((value: string) => setLocationDebounced(value), 320),
+    [],
+  )
+
+  useEffect(() => {
+    pushSearch(search)
+    return () => pushSearch.cancel()
+  }, [search, pushSearch])
+
+  useEffect(() => {
+    pushLocation(location)
+    return () => pushLocation.cancel()
+  }, [location, pushLocation])
+
   useEffect(() => {
     let cancelled = false
-    void supabase
-      .from('categories')
-      .select('*')
-      .order('sort_order')
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) {
-          console.error('[browse] categories', error)
-          setCategories([])
-          return
-        }
-        setCategories(data || [])
+    void cachedFetch(
+      'browse:categories:v1',
+      async () => {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name, slug, sort_order')
+          .order('sort_order')
+        if (error) throw error
+        return data || []
+      },
+      5 * 60_000,
+    )
+      .then((data) => {
+        if (!cancelled) setCategories(data as Category[])
+      })
+      .catch((error) => {
+        console.error('[browse] categories', error)
+        if (!cancelled) setCategories([])
       })
     return () => {
       cancelled = true
@@ -48,45 +76,45 @@ export function Browse() {
     setLoading(true)
     setLoadError('')
 
-    const safeSearch = sanitizePostgrestFilter(search)
-    const safeLocation = sanitizePostgrestFilter(location)
-
-    let query = supabase
-      .from('providers')
-      .select('*, provider_services(*, categories(*))')
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-      .limit(48)
-
-    if (safeSearch) {
-      query = query.or(`business_name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`)
-    }
-    if (safeLocation) {
-      query = query.ilike('location', `%${safeLocation}%`)
-    }
+    const safeSearch = sanitizePostgrestFilter(searchDebounced)
+    const safeLocation = sanitizePostgrestFilter(locationDebounced)
+    const cacheKey = `browse:providers:v2:${safeSearch}|${safeLocation}|${category}|${reloadTick}`
 
     void (async () => {
       try {
-        const { data, error } = await query
+        const results = await cachedFetch(
+          cacheKey,
+          async () => {
+            let query = supabase
+              .from('providers')
+              .select(
+                category
+                  ? 'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone, status, ms_approved, verified_at, provider_services!inner(id, title, categories!inner(id, name, slug))'
+                  : 'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone, status, ms_approved, verified_at, provider_services(id, title, categories(id, name, slug))',
+              )
+              .eq('status', 'approved')
+              .order('created_at', { ascending: false })
+              .limit(48)
+
+            if (safeSearch) {
+              query = query.or(`business_name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`)
+            }
+            if (safeLocation) {
+              query = query.ilike('location', `%${safeLocation}%`)
+            }
+            if (category) {
+              query = query.eq('provider_services.categories.slug', category)
+            }
+
+            const { data, error } = await query
+            if (error) throw error
+            return data || []
+          },
+          30_000,
+        )
+
         if (cancelled) return
-        if (error) {
-          console.error('[browse] providers', error)
-          setProviders([])
-          setLoadError('Could not load providers. Please try again.')
-          setLoading(false)
-          return
-        }
-
-        let results = data || []
-        if (category) {
-          results = results.filter((p) =>
-            p.provider_services?.some(
-              (s: { categories?: { slug: string } }) => s.categories?.slug === category,
-            ),
-          )
-        }
-
-        setProviders(results)
+        setProviders(results as Provider[])
         setLoading(false)
       } catch (error) {
         console.error('[browse] providers threw', error)
@@ -100,7 +128,7 @@ export function Browse() {
     return () => {
       cancelled = true
     }
-  }, [search, category, location, reloadTick])
+  }, [searchDebounced, category, locationDebounced, reloadTick])
 
   const hasFilters = Boolean(search || category || location)
   const categoryLabel = categories.length > 0 ? `${categories.length}+ categories` : '8+ categories'

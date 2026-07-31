@@ -29,6 +29,7 @@ import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto,
 import { ShowcaseTextCover } from '../components/showcase/ShowcaseTextCover'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { supabase } from '../lib/supabase'
+import { cachedFetch, clearCached, onTabVisible } from '../lib/queryCache'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
 import { ShowcaseOwnerContacts } from '../components/showcase/ShowcaseOwnerContacts'
 import { EditableSection } from '../components/cms/EditableSection'
@@ -396,16 +397,34 @@ export function Showcase() {
     let cancelled = false
 
     const load = async () => {
-      const [colsRes, listingsRes] = await Promise.all([
-        supabase
-          .from('showcase_columns')
-          .select('*')
-          .eq('active', true)
-          .order('sort_order'),
-        supabase
-          .from('showcase_listings')
-          .select('column_id')
-          .eq('status', 'published'),
+      const [colsRes, countsRes] = await Promise.all([
+        cachedFetch(
+          'showcase:columns:v1',
+          async () => {
+            const res = await supabase
+              .from('showcase_columns')
+              .select('id, slug, title, tagline, icon, sort_order, active')
+              .eq('active', true)
+              .order('sort_order')
+            return res
+          },
+          60_000,
+        ),
+        cachedFetch(
+          'showcase:counts:v1',
+          async () => {
+            // Prefer aggregate RPC under load; fall back to capped column_id scan.
+            const rpc = await supabase.rpc('showcase_published_counts')
+            if (!rpc.error && rpc.data) return { data: rpc.data as { column_id: string; listing_count: number }[], error: null }
+            const res = await supabase
+              .from('showcase_listings')
+              .select('column_id')
+              .eq('status', 'published')
+              .limit(5000)
+            return res
+          },
+          60_000,
+        ),
       ])
 
       if (cancelled) return
@@ -418,8 +437,13 @@ export function Showcase() {
       }
 
       const nextCounts: Record<string, number> = {}
-      for (const row of listingsRes.data || []) {
-        nextCounts[row.column_id] = (nextCounts[row.column_id] || 0) + 1
+      const countRows = countsRes.data || []
+      for (const row of countRows as Array<{ column_id: string; listing_count?: number }>) {
+        if (typeof row.listing_count === 'number') {
+          nextCounts[row.column_id] = row.listing_count
+        } else {
+          nextCounts[row.column_id] = (nextCounts[row.column_id] || 0) + 1
+        }
       }
 
       setColumns(colsRes.data || [])
@@ -430,19 +454,16 @@ export function Showcase() {
 
     void load()
 
-    const channel = supabase
-      .channel(`showcase-hub-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_columns' }, () => {
-        void load()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_listings' }, () => {
-        void load()
-      })
-      .subscribe()
+    const stopVisibility = onTabVisible(() => {
+      if (cancelled) return
+      clearCached('showcase:columns:v1')
+      clearCached('showcase:counts:v1')
+      void load()
+    })
 
     return () => {
       cancelled = true
-      void supabase.removeChannel(channel)
+      stopVisibility()
     }
   }, [])
 
@@ -801,12 +822,15 @@ export function ShowcaseColumnPage() {
 
       const { data: rows, error: listError } = await supabase
         .from('showcase_listings')
-        .select('*')
+        .select(
+          'id, column_id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, owner_name, owner_phone, owner_email, sort_order, created_at',
+        )
         .eq('column_id', col.id)
         .eq('status', 'published')
         .order('featured', { ascending: false })
         .order('sort_order')
         .order('created_at', { ascending: false })
+        .limit(60)
 
       if (cancelled) return
 
@@ -827,19 +851,13 @@ export function ShowcaseColumnPage() {
 
     void load()
 
-    const channel = supabase
-      .channel(`showcase-column-${slug}-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_columns' }, () => {
-        void load()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_listings' }, () => {
-        void load()
-      })
-      .subscribe()
+    const stopVisibility = onTabVisible(() => {
+      if (!cancelled) void load()
+    })
 
     return () => {
       cancelled = true
-      void supabase.removeChannel(channel)
+      stopVisibility()
     }
   }, [slug])
 
