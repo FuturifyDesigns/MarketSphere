@@ -209,13 +209,13 @@ export function readIntentFromCallbackUrl(): OAuthReturnTo | null {
 }
 
 export const ACCOUNT_EXISTS_SIGN_IN_MESSAGE =
-  'An account already exists for this email. Please sign in instead.'
+  'An account already exists for this email. Please sign in instead — you cannot create a second Customer or Provider account with the same email.'
 
 export const NO_ACCOUNT_SIGN_UP_MESSAGE =
   'No account found for this Google login. Please create an account and choose Customer or Provider.'
 
 export function isAccountExistsError(message: string) {
-  return /already\s*(been\s*)?(registered|exists)|user already|email.*(taken|exists)|identity.*exist/i.test(
+  return /already\s*(been\s*)?(registered|exists)|user already|email.*(taken|exists)|identity.*exist|second (customer|provider)|same email/i.test(
     message,
   )
 }

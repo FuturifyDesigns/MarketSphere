@@ -190,8 +190,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!meta.privacy_consent) {
         return { error: new Error('Please accept the Terms of Service and Privacy Policy to continue.') }
       }
+
+      const normalizedEmail = email.trim().toLowerCase()
+
+      // Explicit duplicate check so Customer → Provider (same email) always errors.
+      const { data: taken, error: takenError } = await supabase.rpc('email_already_registered', {
+        p_email: normalizedEmail,
+      })
+      if (!takenError && taken === true) {
+        return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
+      }
+
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
           data: {
@@ -210,10 +221,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return { error: error as Error }
       }
+
+      const user = data.user
       // Supabase often returns a user with empty identities when the email already exists.
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      const identitiesEmpty = Boolean(user && Array.isArray(user.identities) && user.identities.length === 0)
+      if (identitiesEmpty) {
+        if (data.session) await supabase.auth.signOut()
         return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
       }
+
+      // Same email + password can return a real session for an existing account.
+      if (data.session && user) {
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('created_at')
+          .eq('id', user.id)
+          .maybeSingle()
+        const profileCreatedMs = Date.parse(existingProfile?.created_at || '')
+        const profileOlderThanSignup =
+          Number.isFinite(profileCreatedMs) && Date.now() - profileCreatedMs > 30_000
+        if (profileOlderThanSignup) {
+          await supabase.auth.signOut()
+          return { error: new Error(ACCOUNT_EXISTS_SIGN_IN_MESSAGE) }
+        }
+      }
+
       return { error: null }
     } catch (error) {
       return { error: error instanceof Error ? error : new Error('Sign up failed. Please try again.') }

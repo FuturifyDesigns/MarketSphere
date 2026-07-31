@@ -241,9 +241,25 @@ class AuthController extends ChangeNotifier {
     if (!_allowedRoles.contains(role)) {
       return 'Choose Customer or Provider before creating an account.';
     }
+    const existingMsg =
+        'An account already exists for this email. Please sign in instead — you cannot create a second Customer or Provider account with the same email.';
     try {
+      final normalizedEmail = email.trim().toLowerCase();
+      try {
+        final taken = await Supabase.instance.client.rpc(
+          'email_already_registered',
+          params: {'p_email': normalizedEmail},
+        );
+        if (taken == true) {
+          _error = existingMsg;
+          return existingMsg;
+        }
+      } catch (_) {
+        // RPC may not be applied yet.
+      }
+
       final response = await Supabase.instance.client.auth.signUp(
-        email: email.trim(),
+        email: normalizedEmail,
         password: password,
         data: {
           'full_name': fullName.trim(),
@@ -252,13 +268,27 @@ class AuthController extends ChangeNotifier {
           'privacy_consent_at': DateTime.now().toUtc().toIso8601String(),
         },
       );
-      if (response.user != null && (response.user!.identities == null || response.user!.identities!.isEmpty)) {
-        const msg =
-            'An account already exists for this email. Please sign in instead.';
-        _error = msg;
-        return msg;
+      final user = response.user;
+      final identitiesEmpty = user != null && (user.identities == null || user.identities!.isEmpty);
+      if (identitiesEmpty) {
+        if (response.session != null) {
+          await Supabase.instance.client.auth.signOut();
+        }
+        _error = existingMsg;
+        return existingMsg;
       }
-      if (response.session != null) {
+      if (response.session != null && user != null) {
+        final row = await Supabase.instance.client
+            .from('profiles')
+            .select('created_at')
+            .eq('id', user.id)
+            .maybeSingle();
+        final created = DateTime.tryParse(row?['created_at']?.toString() ?? '');
+        if (created != null && DateTime.now().toUtc().difference(created.toUtc()).inSeconds > 30) {
+          await Supabase.instance.client.auth.signOut();
+          _error = existingMsg;
+          return existingMsg;
+        }
         await refreshProfile();
       }
       notifyListeners();
@@ -266,10 +296,8 @@ class AuthController extends ChangeNotifier {
     } on AuthException catch (e) {
       final lower = e.message.toLowerCase();
       if (lower.contains('already') || lower.contains('registered') || lower.contains('exists')) {
-        const msg =
-            'An account already exists for this email. Please sign in instead.';
-        _error = msg;
-        return msg;
+        _error = existingMsg;
+        return existingMsg;
       }
       _error = e.message;
       return e.message;
