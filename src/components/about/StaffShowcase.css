@@ -39,7 +39,7 @@
   padding: 0.5rem 0 1rem;
   display: grid;
   grid-template-rows: auto auto auto;
-  gap: clamp(1.35rem, 3.5vw, 2.25rem);
+  gap: clamp(1.75rem, 4vw, 2.75rem);
   justify-items: center;
   overflow: visible;
 }
@@ -51,7 +51,8 @@
   height: 100%;
   overflow: visible;
   pointer-events: none;
-  z-index: 2;
+  /* Behind portraits so connectors never paint over PFPs */
+  z-index: 0;
 }
 
 .staff-tree__path {
@@ -63,7 +64,7 @@
 
 .staff-tree__hub {
   position: relative;
-  z-index: 3;
+  z-index: 2;
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -72,6 +73,7 @@
   box-shadow:
     0 0 0 7px color-mix(in srgb, var(--color-gold) 14%, transparent),
     0 0 22px color-mix(in srgb, var(--color-gold) 28%, transparent);
+  margin-block: 0.35rem;
 }
 
 .staff-tree__root,
@@ -92,6 +94,8 @@
   gap: clamp(1rem, 3vw, 2rem);
   align-items: start;
   width: 100%;
+  /* Extra air so the fork arm sits above portrait rings */
+  margin-top: 0.35rem;
 }
 
 .staff-tree__node {
@@ -174,6 +178,7 @@
 
 .staff-tree__photo-wrap {
   position: relative;
+  z-index: 1;
   width: 8.75rem;
   height: 8.75rem;
   flex-shrink: 0;

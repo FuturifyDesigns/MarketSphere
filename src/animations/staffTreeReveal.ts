@@ -26,6 +26,18 @@ function relativePoint(el: HTMLElement, svg: SVGSVGElement, edge: 'center' | 'to
   }
 }
 
+/** End connectors above the portrait ring — never through the PFP. */
+function branchConnectorPoint(node: HTMLElement, svg: SVGSVGElement): Point {
+  const card = relativePoint(node, svg, 'top')
+  const photo = node.querySelector<HTMLElement>('.staff-tree__photo-wrap')
+  if (!photo) return { x: card.x, y: card.y - 6 }
+
+  const photoTop = relativePoint(photo, svg, 'top')
+  // Stop in the card padding band, clearly above the gold ring.
+  const stopY = Math.min(card.y + 6, photoTop.y - 14)
+  return { x: card.x, y: stopY }
+}
+
 /** Measure layout as if GSAP intro transforms were not applied (y/scale at rest). */
 function withRestTransforms<T>(elements: HTMLElement[], measure: () => T): T {
   const snapshot = elements.map((el) => ({
@@ -80,10 +92,12 @@ function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
 
     const from = relativePoint(rootNode, svg, 'bottom')
     const hubPoint = relativePoint(hub, svg, 'center')
-    // Stop at the top edge of each card — not into the photo.
-    const branchTops = branchNodes.map((node) => relativePoint(node, svg, 'top'))
+    const branchTops = branchNodes.map((node) => branchConnectorPoint(node, svg))
     const branchBottoms = branchNodes.map((node) => relativePoint(node, svg, 'bottom'))
     const stacked = isStackedBranches(branchTops)
+
+    // Keep the fork arm in the gap above portraits (never at PFP height).
+    const armY = Math.min(hubPoint.y, Math.min(...branchTops.map((point) => point.y)) - 18)
 
     root.dataset.staffTreeLayout = stacked ? 'stacked' : 'forked'
 
@@ -110,10 +124,14 @@ function rebuildStaffPaths(root: HTMLElement): StaffPaths | null {
     } else {
       const leftX = Math.min(...branchTops.map((point) => point.x))
       const rightX = Math.max(...branchTops.map((point) => point.x))
-      arm = createPath(`M ${leftX} ${hubPoint.y} L ${rightX} ${hubPoint.y}`, 'arm')
+      arm = createPath(`M ${leftX} ${armY} L ${rightX} ${armY}`, 'arm')
       fragment.appendChild(arm)
+      // Hub → arm height, then down to each card (stops above PFP).
+      if (Math.abs(hubPoint.y - armY) > 1) {
+        drops.push(createPath(`M ${hubPoint.x} ${hubPoint.y} L ${hubPoint.x} ${armY}`, 'hub-drop'))
+      }
       branchTops.forEach((point, index) => {
-        drops.push(createPath(`M ${point.x} ${hubPoint.y} L ${point.x} ${point.y}`, `drop-${index}`))
+        drops.push(createPath(`M ${point.x} ${armY} L ${point.x} ${point.y}`, `drop-${index}`))
       })
     }
 
