@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Search, MapPin, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { COMPANY } from '../lib/constants'
+import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { ProviderCard } from '../components/ui/ProviderCard'
 import {
@@ -14,7 +15,22 @@ import { sanitizePostgrestFilter } from '../lib/safe'
 import { cachedFetch, debounceTrailing } from '../lib/queryCache'
 import './Browse.css'
 
+function browsePrimaryCta(role: string | undefined | null): { to: string; label: string } {
+  if (role === 'provider') {
+    return { to: '/dashboard/provider', label: 'Open provider dashboard' }
+  }
+  if (role === 'admin') {
+    return { to: '/dashboard/admin', label: 'Open admin dashboard' }
+  }
+  if (role === 'customer') {
+    return { to: '/dashboard/customer', label: 'Open your dashboard' }
+  }
+  return { to: '/register?role=provider', label: 'Become a Provider' }
+}
+
 export function Browse() {
+  const { profile } = useAuth()
+  const primaryCta = browsePrimaryCta(profile?.role)
   const [providers, setProviders] = useState<Provider[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [search, setSearch] = useState('')
@@ -280,7 +296,11 @@ export function Browse() {
               <p>
                 {hasFilters
                   ? 'Try adjusting your search or filters to discover more professionals in our network.'
-                  : 'Our provider network is growing. Be among the first to list your business with us.'}
+                  : profile?.role === 'provider' || profile?.role === 'admin'
+                    ? 'No public providers match right now. You can manage your listing from your dashboard.'
+                    : profile?.role === 'customer'
+                      ? 'Our provider network is still growing. Check back soon, or open your dashboard for saved activity.'
+                      : 'Our provider network is growing. Be among the first to list your business with us.'}
               </p>
               <div className="browse-empty__actions">
                 {hasFilters ? (
@@ -291,8 +311,8 @@ export function Browse() {
                     Clear filters
                   </Button>
                 ) : (
-                  <Button to="/register?role=provider" size="lg">
-                    Become a Provider <ArrowRight size={16} />
+                  <Button to={primaryCta.to} size="lg">
+                    {primaryCta.label} <ArrowRight size={16} />
                   </Button>
                 )}
                 <Button to="/contact" variant="secondary">Contact us</Button>
@@ -305,12 +325,28 @@ export function Browse() {
       <section className="section browse-cta">
         <div className="container">
           <div className="cta-panel bento-card page-reveal">
-            <span className="section-label">List Your Business</span>
-            <h2 className="display-lg">Ready to join {COMPANY.shortName}?</h2>
-            <p>Reach customers across Botswana with a verified provider profile on our marketplace.</p>
+            {profile?.role === 'provider' || profile?.role === 'admin' ? (
+              <>
+                <span className="section-label">Your listing</span>
+                <h2 className="display-lg">Manage your provider presence</h2>
+                <p>Update your profile, services, and availability from your dashboard.</p>
+              </>
+            ) : profile?.role === 'customer' ? (
+              <>
+                <span className="section-label">Your account</span>
+                <h2 className="display-lg">Looking for the right provider?</h2>
+                <p>Use your dashboard to save providers, track updates, and manage your Marketplace activity.</p>
+              </>
+            ) : (
+              <>
+                <span className="section-label">List Your Business</span>
+                <h2 className="display-lg">Ready to join {COMPANY.shortName}?</h2>
+                <p>Reach customers across Botswana with a verified provider profile on our marketplace.</p>
+              </>
+            )}
             <div className="cta-panel__actions">
-              <Button to="/register?role=provider" size="lg">
-                Get Listed <ArrowRight size={16} />
+              <Button to={primaryCta.to} size="lg">
+                {profile ? primaryCta.label : 'Get Listed'} <ArrowRight size={16} />
               </Button>
               <Button to="/services" variant="secondary" size="lg">Explore Services</Button>
             </div>
