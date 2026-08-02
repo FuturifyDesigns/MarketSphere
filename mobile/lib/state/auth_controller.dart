@@ -41,6 +41,20 @@ class AuthController extends ChangeNotifier {
       // the listener only refreshes the profile.
     });
 
+    // Drop corrupt / expired local sessions — otherwise PostgREST returns 401
+    // (PGRST301) for every table query and the app looks "disconnected".
+    if (client.auth.currentSession != null) {
+      try {
+        await client.auth.getUser();
+      } catch (e) {
+        if (kDebugMode) debugPrint('[auth] clearing invalid session: $e');
+        try {
+          await client.auth.signOut(scope: SignOutScope.local);
+        } catch (_) {}
+        _profile = null;
+      }
+    }
+
     if (client.auth.currentSession != null) {
       await refreshProfile();
       if (_profile?.isBanned == true) {

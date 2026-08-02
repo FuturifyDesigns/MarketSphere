@@ -39,14 +39,52 @@ class DataRepository {
     return future.timeout(timeout);
   }
 
+  bool _isJwtError(Object error) {
+    if (error is AuthException) {
+      final msg = error.message.toLowerCase();
+      return msg.contains('jwt') || msg.contains('session') || msg.contains('token');
+    }
+    if (error is PostgrestException) {
+      final code = error.code ?? '';
+      final msg = error.message.toLowerCase();
+      return code == 'PGRST301' ||
+          code == '401' ||
+          msg.contains('jwt') ||
+          msg.contains('authorized') ||
+          msg.contains('decode the jwt');
+    }
+    final text = error.toString().toLowerCase();
+    return text.contains('pgrst301') || text.contains('jwt');
+  }
+
+  Future<void> _clearInvalidSession() async {
+    try {
+      await _db.auth.signOut(scope: SignOutScope.local);
+    } catch (_) {}
+  }
+
+  /// Public catalog reads: always hit the network (don't trust connectivity).
+  /// If a corrupt local JWT causes 401, clear session and retry as anon once.
+  Future<T> _publicRead<T>(Future<T> Function() run) async {
+    try {
+      return await _timeout(run());
+    } catch (e) {
+      if (_isJwtError(e)) {
+        if (kDebugMode) debugPrint('[repo] jwt error, clearing session and retrying: $e');
+        await _clearInvalidSession();
+        return await _timeout(run());
+      }
+      rethrow;
+    }
+  }
+
   Future<List<ShowcaseColumn>> fetchColumns() {
     return _singleFlight('columns', () async {
       final cached = await _cache.catalogColumns();
-      if (_net.isOffline) return cached;
 
       try {
-        final rowsFuture = _timeout(
-          _db
+        final rowsFuture = _publicRead(
+          () => _db
               .from('showcase_columns')
               .select('id, slug, title, tagline')
               .eq('active', true)
@@ -54,7 +92,7 @@ class DataRepository {
         );
         final countsFuture = () async {
           try {
-            return await _timeout(_db.rpc('showcase_published_counts'));
+            return await _publicRead(() => _db.rpc('showcase_published_counts'));
           } catch (_) {
             return null;
           }
@@ -83,7 +121,7 @@ class DataRepository {
         if (withCounts.isNotEmpty) {
           await _cache.saveCatalogColumns(withCounts);
         }
-        return withCounts;
+        return withCounts.isNotEmpty ? withCounts : cached;
       } catch (e) {
         if (kDebugMode) debugPrint('[repo] fetchColumns failed: $e');
         return cached;
@@ -102,10 +140,9 @@ class DataRepository {
       final cachedForCol =
           col.isEmpty ? cached : cached.where((l) => l.columnId == col).toList();
 
-      if (_net.isOffline) return cachedForCol;
-
       try {
         final list = await _queryListings(limit: capped, columnId: col);
+        if (list.isEmpty && cachedForCol.isNotEmpty) return cachedForCol;
         if (col.isEmpty) {
           // Never wipe a good cache with a short/empty home preview.
           if (list.isNotEmpty && (list.length >= cached.length || capped >= 30)) {
@@ -129,17 +166,17 @@ class DataRepository {
     required String columnId,
   }) async {
     Future<List<ShowcaseListing>> run(String select) async {
-      var query = _db.from('showcase_listings').select(select).eq('status', 'published');
-      if (columnId.isNotEmpty) {
-        query = query.eq('column_id', columnId);
-      }
-      final rows = await _timeout(
-        query
+      final rows = await _publicRead(() async {
+        var query = _db.from('showcase_listings').select(select).eq('status', 'published');
+        if (columnId.isNotEmpty) {
+          query = query.eq('column_id', columnId);
+        }
+        return query
             .order('featured', ascending: false)
             .order('sort_order', ascending: true)
             .order('created_at', ascending: false)
-            .limit(limit),
-      );
+            .limit(limit);
+      });
       return (rows as List)
           .map((row) => ShowcaseListing.fromJson(Map<String, dynamic>.from(row as Map)))
           .where((e) => isUuid(e.id))
@@ -156,10 +193,9 @@ class DataRepository {
 
   Future<ShowcaseListing?> fetchListing(String id) async {
     if (!isUuid(id)) return null;
-    if (_net.isOffline) return _cache.findListing(id);
     try {
-      final row = await _timeout(
-        _db
+      final row = await _publicRead(
+        () => _db
             .from('showcase_listings')
             .select(_listingSelect)
             .eq('id', id)
@@ -181,23 +217,22 @@ class DataRepository {
     final q = query?.trim() ?? '';
     return _singleFlight('providers:$capped:${q.toLowerCase()}', () async {
       final cached = await _cache.offlineProviderFeed(limit: capped, query: query);
-      if (_net.isOffline) return cached;
 
       try {
-        var queryBuilder = _db.from('providers').select(_providerSelect).eq('status', 'approved');
+        final rows = await _publicRead(() async {
+          var queryBuilder = _db.from('providers').select(_providerSelect).eq('status', 'approved');
 
-        if (q.isNotEmpty) {
-          final safe = q.replaceAll(RegExp(r'[%_,]'), ' ').trim();
-          if (safe.isNotEmpty) {
-            queryBuilder = queryBuilder.or(
-              'business_name.ilike.%$safe%,location.ilike.%$safe%,description.ilike.%$safe%',
-            );
+          if (q.isNotEmpty) {
+            final safe = q.replaceAll(RegExp(r'[%_,]'), ' ').trim();
+            if (safe.isNotEmpty) {
+              queryBuilder = queryBuilder.or(
+                'business_name.ilike.%$safe%,location.ilike.%$safe%,description.ilike.%$safe%',
+              );
+            }
           }
-        }
 
-        final rows = await _timeout(
-          queryBuilder.order('created_at', ascending: false).limit(capped),
-        );
+          return queryBuilder.order('created_at', ascending: false).limit(capped);
+        });
 
         var list = (rows as List)
             .map((row) => ProviderItem.fromJson(Map<String, dynamic>.from(row as Map)))
@@ -217,7 +252,7 @@ class DataRepository {
             await _cache.mergeCatalogProviders(list);
           }
         }
-        return list;
+        return list.isNotEmpty ? list : cached;
       } catch (e) {
         if (kDebugMode) debugPrint('[repo] fetchProviders failed: $e');
         return cached;
@@ -227,10 +262,9 @@ class DataRepository {
 
   Future<ProviderItem?> fetchProvider(String id) async {
     if (!isUuid(id)) return null;
-    if (_net.isOffline) return _cache.findProvider(id);
     try {
-      final row = await _timeout(
-        _db
+      final row = await _publicRead(
+        () => _db
             .from('providers')
             .select(_providerSelect)
             .eq('id', id)

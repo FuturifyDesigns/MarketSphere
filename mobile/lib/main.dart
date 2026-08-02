@@ -51,10 +51,18 @@ Future<void> main() async {
   // Optional override: --dart-define-from-file=.env
   try {
     await dotenv.load(fileName: '.env');
-  } catch (_) {}
+  } catch (e) {
+    if (kDebugMode) debugPrint('[env] dotenv load failed: $e');
+  }
 
   final supabaseUrl = EnvConfig.supabaseUrl;
   final supabaseAnonKey = EnvConfig.supabaseAnonKey;
+  if (kDebugMode) {
+    debugPrint(
+      '[env] supabase host=${Uri.tryParse(supabaseUrl)?.host ?? '(missing)'} '
+      'anonKeyLen=${supabaseAnonKey.length}',
+    );
+  }
   if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
     runApp(
       const _BootErrorApp(
