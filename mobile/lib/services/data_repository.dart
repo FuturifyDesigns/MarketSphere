@@ -105,9 +105,13 @@ class DataRepository {
   }
 
   Future<void> _clearInvalidSession() async {
+    // Bounded: sign-out takes the auth lock, which an in-flight token refresh
+    // may still hold. Waiting on it forever would stall the whole feed.
     try {
-      await _db.auth.signOut(scope: SignOutScope.local);
-    } catch (_) {}
+      await _db.auth.signOut(scope: SignOutScope.local).timeout(_statsTimeout);
+    } catch (e) {
+      debugPrint('[repo] clearing invalid session failed: $e');
+    }
   }
 
   /// Public catalog reads: always hit the network (don't trust connectivity).

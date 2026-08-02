@@ -62,8 +62,14 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
   }
 
   Future<String> _connect(String host, InternetAddressType type) async {
-    final addresses = await InternetAddress.lookup(host, type: type);
-    if (addresses.isEmpty) return 'Not offered by DNS (skipped)';
+    List<InternetAddress> addresses;
+    try {
+      addresses = await InternetAddress.lookup(host, type: type);
+    } on SocketException {
+      // Supabase publishes no AAAA record, so an IPv6 miss is expected here.
+      addresses = const [];
+    }
+    if (addresses.isEmpty) return 'Not offered by DNS — normal, nothing to fix';
     final socket = await Socket.connect(
       addresses.first,
       443,
@@ -133,13 +139,29 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
         await client.auth.getUser();
         return 'Signed in as ${client.auth.currentUser?.email ?? 'user'}';
       }),
-      await _time('Read listings', () async {
+      await _time('Read listings (simple)', () async {
         final rows = await client
             .from('showcase_listings')
             .select('id')
             .eq('status', 'published')
             .limit(5);
         return '${(rows as List).length} published row(s) returned';
+      }),
+      // The exact shape the home feed asks for, embed and ordering included.
+      await _time('Read listings (feed query)', () async {
+        final rows = await client
+            .from('showcase_listings')
+            .select(
+              'id, title, summary, description, location, price_label, deal_type, '
+              'image_urls, available, featured, owner_name, owner_phone, owner_email, '
+              'column_id, showcase_columns(id, slug, title)',
+            )
+            .eq('status', 'published')
+            .order('featured', ascending: false)
+            .order('sort_order', ascending: true)
+            .order('created_at', ascending: false)
+            .limit(20);
+        return '${(rows as List).length} row(s) returned';
       }),
       await _time('Read providers', () async {
         final rows = await client
