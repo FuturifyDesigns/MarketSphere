@@ -117,9 +117,11 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
+                                  stops: const [0.0, 0.42, 1.0],
                                   colors: [
-                                    Colors.black.withValues(alpha: 0.15),
-                                    Colors.black.withValues(alpha: 0.78),
+                                    Colors.black.withValues(alpha: 0.2),
+                                    Colors.black.withValues(alpha: 0.55),
+                                    Colors.black.withValues(alpha: 0.88),
                                   ],
                                 ),
                               ),
@@ -133,10 +135,13 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                                     fieldLabel,
                                     style: TextStyle(
                                       color: const Color(AppConfig.colorGoldLight)
-                                          .withValues(alpha: 0.9),
+                                          .withValues(alpha: 0.95),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.8,
+                                      shadows: const [
+                                        Shadow(blurRadius: 6, color: Colors.black87),
+                                      ],
                                     ),
                                   ),
                                   const Spacer(),
@@ -147,6 +152,9 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                                       fontSize: 22,
                                       fontWeight: FontWeight.w800,
                                       height: 1.15,
+                                      shadows: [
+                                        Shadow(blurRadius: 8, color: Colors.black87),
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -156,21 +164,39 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                                         : 'Explore ${column.title}',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: scheme.onSurface.withValues(alpha: 0.86),
+                                    style: const TextStyle(
+                                      color: Color(0xFFF0E6D0),
                                       fontSize: 13.5,
                                       height: 1.35,
+                                      shadows: [
+                                        Shadow(blurRadius: 6, color: Colors.black87),
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(height: 12),
                                   Row(
                                     children: [
-                                      Text(
-                                        '${column.listingCount} live listing${column.listingCount == 1 ? '' : 's'}',
-                                        style: const TextStyle(
-                                          color: Color(AppConfig.colorBronze),
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 12.5,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.62),
+                                          borderRadius: BorderRadius.circular(999),
+                                          border: Border.all(
+                                            color: const Color(AppConfig.colorGold)
+                                                .withValues(alpha: 0.7),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '${column.listingCount} live listing${column.listingCount == 1 ? '' : 's'}',
+                                          style: const TextStyle(
+                                            color: Color(AppConfig.colorGoldLight),
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 13,
+                                            letterSpacing: 0.2,
+                                          ),
                                         ),
                                       ),
                                       const Spacer(),
