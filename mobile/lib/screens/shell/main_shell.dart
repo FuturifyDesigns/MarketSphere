@@ -71,14 +71,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           children: [
             const OfflineBanner(),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: KeyedSubtree(
-                  key: ValueKey(_index),
-                  child: _pages[_index],
-                ),
+              child: IndexedStack(
+                index: _index,
+                children: _pages,
               ),
             ),
           ],

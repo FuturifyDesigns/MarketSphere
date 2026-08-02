@@ -49,6 +49,7 @@ class LocalCacheService {
 
   static const _catalogListingsKey = 'cache_catalog_listings_v2';
   static const _catalogProvidersKey = 'cache_catalog_providers_v2';
+  static const _catalogColumnsKey = 'cache_catalog_columns_v1';
   static const _recentListingsKey = 'cache_recent_listings_v2';
   static const _recentProvidersKey = 'cache_recent_providers_v2';
   static const _favListingsKeyPrefix = 'cache_fav_listings_v2_';
@@ -93,12 +94,53 @@ class LocalCacheService {
   Future<List<ShowcaseListing>> catalogListings() => _readListings(_catalogListingsKey);
   Future<List<ProviderItem>> catalogProviders() => _readProviders(_catalogProvidersKey);
 
+  Future<List<ShowcaseColumn>> catalogColumns() async {
+    final prefs = await _prefs;
+    final raw = prefs.getString(_catalogColumnsKey);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw) as List;
+      return decoded
+          .map((e) => ShowcaseColumn.fromJson(Map<String, dynamic>.from(e as Map)))
+          .where((c) => isUuid(c.id))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveCatalogColumns(List<ShowcaseColumn> columns) async {
+    final prefs = await _prefs;
+    final payload = columns.map((c) => c.toCacheJson()).toList();
+    await prefs.setString(_catalogColumnsKey, jsonEncode(payload));
+  }
+
   Future<void> saveCatalogListings(List<ShowcaseListing> listings) async {
     await _writeListings(_catalogListingsKey, listings.take(_maxCatalog).toList());
   }
 
   Future<void> saveCatalogProviders(List<ProviderItem> providers) async {
     await _writeProviders(_catalogProvidersKey, providers.take(_maxCatalog).toList());
+  }
+
+  Future<void> mergeCatalogListings(List<ShowcaseListing> listings) async {
+    final map = <String, ShowcaseListing>{
+      for (final item in await catalogListings()) item.id: item,
+    };
+    for (final item in listings) {
+      map[item.id] = item;
+    }
+    await saveCatalogListings(map.values.toList());
+  }
+
+  Future<void> mergeCatalogProviders(List<ProviderItem> providers) async {
+    final map = <String, ProviderItem>{
+      for (final item in await catalogProviders()) item.id: item,
+    };
+    for (final item in providers) {
+      map[item.id] = item;
+    }
+    await saveCatalogProviders(map.values.toList());
   }
 
   Future<List<ShowcaseListing>> recentListings() => _readListings(_recentListingsKey);

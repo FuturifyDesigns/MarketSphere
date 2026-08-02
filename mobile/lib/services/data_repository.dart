@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/models.dart';
@@ -11,8 +12,15 @@ class DataRepository {
   final _net = ConnectivityService.instance;
   final Map<String, Future<dynamic>> _inflight = {};
 
+  static const _netTimeout = Duration(seconds: 10);
+  static const _statsTimeout = Duration(seconds: 3);
+
+  /// Full select (detail-ready). Falls back to [_listingSelectSlim] on schema/embed errors.
   static const _listingSelect =
       'id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, owner_name, owner_phone, owner_email, column_id, showcase_columns(id, slug, title)';
+
+  static const _listingSelectSlim =
+      'id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, column_id';
 
   static const _providerSelect =
       'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone';
@@ -27,37 +35,60 @@ class DataRepository {
     return future;
   }
 
-  Future<List<ShowcaseColumn>> fetchColumns() async {
-    if (_net.isOffline) return const [];
-    try {
-      final rows = await _db
-          .from('showcase_columns')
-          .select('id, slug, title, tagline')
-          .eq('active', true)
-          .order('sort_order', ascending: true);
-      final columns = (rows as List)
-          .map((row) => ShowcaseColumn.fromJson(Map<String, dynamic>.from(row as Map)))
-          .toList();
+  Future<T> _timeout<T>(Future<T> future, {Duration timeout = _netTimeout}) {
+    return future.timeout(timeout);
+  }
 
-      Map<String, int> counts = {};
+  Future<List<ShowcaseColumn>> fetchColumns() {
+    return _singleFlight('columns', () async {
+      final cached = await _cache.catalogColumns();
+      if (_net.isOffline) return cached;
+
       try {
-        final countRows = await _db.rpc('showcase_published_counts');
-        for (final row in (countRows as List)) {
-          final map = Map<String, dynamic>.from(row as Map);
-          final id = map['column_id']?.toString();
-          if (id == null) continue;
-          counts[id] = (map['listing_count'] as num?)?.toInt() ?? 0;
-        }
-      } catch (_) {
-        // RPC may be missing on older projects.
-      }
+        final rowsFuture = _timeout(
+          _db
+              .from('showcase_columns')
+              .select('id, slug, title, tagline')
+              .eq('active', true)
+              .order('sort_order', ascending: true),
+        );
+        final countsFuture = () async {
+          try {
+            return await _timeout(_db.rpc('showcase_published_counts'));
+          } catch (_) {
+            return null;
+          }
+        }();
 
-      return columns
-          .map((c) => c.copyWith(listingCount: counts[c.id] ?? c.listingCount))
-          .toList();
-    } catch (_) {
-      return const [];
-    }
+        final results = await Future.wait<Object?>([rowsFuture, countsFuture]);
+        final rows = results[0] as List;
+        final columns = rows
+            .map((row) => ShowcaseColumn.fromJson(Map<String, dynamic>.from(row as Map)))
+            .toList();
+
+        final counts = <String, int>{};
+        final countRows = results[1];
+        if (countRows is List) {
+          for (final row in countRows) {
+            final map = Map<String, dynamic>.from(row as Map);
+            final id = map['column_id']?.toString();
+            if (id == null) continue;
+            counts[id] = (map['listing_count'] as num?)?.toInt() ?? 0;
+          }
+        }
+
+        final withCounts = columns
+            .map((c) => c.copyWith(listingCount: counts[c.id] ?? c.listingCount))
+            .toList();
+        if (withCounts.isNotEmpty) {
+          await _cache.saveCatalogColumns(withCounts);
+        }
+        return withCounts;
+      } catch (e) {
+        if (kDebugMode) debugPrint('[repo] fetchColumns failed: $e');
+        return cached;
+      }
+    });
   }
 
   Future<List<ShowcaseListing>> fetchShowcaseListings({
@@ -67,56 +98,80 @@ class DataRepository {
     final capped = limit.clamp(1, 60);
     final col = columnId?.trim() ?? '';
     return _singleFlight('listings:$capped:$col', () async {
-      if (_net.isOffline) {
-        final cached = await _cache.offlineListingFeed(limit: capped);
-        if (col.isEmpty) return cached;
-        return cached.where((l) => l.columnId == col).toList();
-      }
+      final cached = await _cache.offlineListingFeed(limit: capped);
+      final cachedForCol =
+          col.isEmpty ? cached : cached.where((l) => l.columnId == col).toList();
+
+      if (_net.isOffline) return cachedForCol;
+
       try {
-        var query = _db
-            .from('showcase_listings')
-            .select(_listingSelect)
-            .eq('status', 'published');
-        if (col.isNotEmpty) {
-          query = query.eq('column_id', col);
+        final list = await _queryListings(limit: capped, columnId: col);
+        if (col.isEmpty) {
+          // Never wipe a good cache with a short/empty home preview.
+          if (list.isNotEmpty && (list.length >= cached.length || capped >= 30)) {
+            await _cache.saveCatalogListings(list);
+          } else if (list.isNotEmpty) {
+            await _cache.mergeCatalogListings(list);
+          }
+        } else if (list.isNotEmpty) {
+          await _cache.mergeCatalogListings(list);
         }
-        final rows = await query
+        return list;
+      } catch (e) {
+        if (kDebugMode) debugPrint('[repo] fetchShowcaseListings failed: $e');
+        return cachedForCol;
+      }
+    });
+  }
+
+  Future<List<ShowcaseListing>> _queryListings({
+    required int limit,
+    required String columnId,
+  }) async {
+    Future<List<ShowcaseListing>> run(String select) async {
+      var query = _db.from('showcase_listings').select(select).eq('status', 'published');
+      if (columnId.isNotEmpty) {
+        query = query.eq('column_id', columnId);
+      }
+      final rows = await _timeout(
+        query
             .order('featured', ascending: false)
             .order('sort_order', ascending: true)
             .order('created_at', ascending: false)
-            .limit(capped);
+            .limit(limit),
+      );
+      return (rows as List)
+          .map((row) => ShowcaseListing.fromJson(Map<String, dynamic>.from(row as Map)))
+          .where((e) => isUuid(e.id))
+          .toList();
+    }
 
-        final list = (rows as List)
-            .map((row) => ShowcaseListing.fromJson(Map<String, dynamic>.from(row as Map)))
-            .where((e) => isUuid(e.id))
-            .toList();
-        if (col.isEmpty) {
-          await _cache.saveCatalogListings(list);
-        }
-        return list;
-      } catch (_) {
-        final cached = await _cache.offlineListingFeed(limit: capped);
-        if (col.isEmpty) return cached;
-        return cached.where((l) => l.columnId == col).toList();
-      }
-    });
+    try {
+      return await run(_listingSelect);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[repo] full listing select failed, trying slim: $e');
+      return run(_listingSelectSlim);
+    }
   }
 
   Future<ShowcaseListing?> fetchListing(String id) async {
     if (!isUuid(id)) return null;
     if (_net.isOffline) return _cache.findListing(id);
     try {
-      final row = await _db
-          .from('showcase_listings')
-          .select(_listingSelect)
-          .eq('id', id)
-          .eq('status', 'published')
-          .maybeSingle();
+      final row = await _timeout(
+        _db
+            .from('showcase_listings')
+            .select(_listingSelect)
+            .eq('id', id)
+            .eq('status', 'published')
+            .maybeSingle(),
+      );
       if (row == null) return _cache.findListing(id);
       final listing = ShowcaseListing.fromJson(Map<String, dynamic>.from(row));
       await _cache.recordListingView(listing);
       return listing;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('[repo] fetchListing failed: $e');
       return _cache.findListing(id);
     }
   }
@@ -125,33 +180,47 @@ class DataRepository {
     final capped = limit.clamp(1, 60);
     final q = query?.trim() ?? '';
     return _singleFlight('providers:$capped:${q.toLowerCase()}', () async {
-      if (_net.isOffline) {
-        return _cache.offlineProviderFeed(limit: capped, query: query);
-      }
+      final cached = await _cache.offlineProviderFeed(limit: capped, query: query);
+      if (_net.isOffline) return cached;
+
       try {
-        var query = _db.from('providers').select(_providerSelect).eq('status', 'approved');
+        var queryBuilder = _db.from('providers').select(_providerSelect).eq('status', 'approved');
 
         if (q.isNotEmpty) {
           final safe = q.replaceAll(RegExp(r'[%_,]'), ' ').trim();
           if (safe.isNotEmpty) {
-            query = query.or(
+            queryBuilder = queryBuilder.or(
               'business_name.ilike.%$safe%,location.ilike.%$safe%,description.ilike.%$safe%',
             );
           }
         }
 
-        final rows = await query.order('created_at', ascending: false).limit(capped);
+        final rows = await _timeout(
+          queryBuilder.order('created_at', ascending: false).limit(capped),
+        );
 
         var list = (rows as List)
             .map((row) => ProviderItem.fromJson(Map<String, dynamic>.from(row as Map)))
             .where((e) => isUuid(e.id))
             .toList();
 
-        list = await _attachReviewStats(list);
-        await _cache.saveCatalogProviders(list);
+        // Never block the provider list on review aggregates.
+        list = await _attachReviewStats(list).timeout(
+          _statsTimeout,
+          onTimeout: () => list,
+        );
+
+        if (list.isNotEmpty) {
+          if (q.isEmpty && (list.length >= cached.length || capped >= 30)) {
+            await _cache.saveCatalogProviders(list);
+          } else {
+            await _cache.mergeCatalogProviders(list);
+          }
+        }
         return list;
-      } catch (_) {
-        return _cache.offlineProviderFeed(limit: capped, query: query);
+      } catch (e) {
+        if (kDebugMode) debugPrint('[repo] fetchProviders failed: $e');
+        return cached;
       }
     });
   }
@@ -160,19 +229,25 @@ class DataRepository {
     if (!isUuid(id)) return null;
     if (_net.isOffline) return _cache.findProvider(id);
     try {
-      final row = await _db
-          .from('providers')
-          .select(_providerSelect)
-          .eq('id', id)
-          .eq('status', 'approved')
-          .maybeSingle();
+      final row = await _timeout(
+        _db
+            .from('providers')
+            .select(_providerSelect)
+            .eq('id', id)
+            .eq('status', 'approved')
+            .maybeSingle(),
+      );
       if (row == null) return _cache.findProvider(id);
       final provider = ProviderItem.fromJson(Map<String, dynamic>.from(row));
-      final withStats = await _attachReviewStats([provider]);
+      final withStats = await _attachReviewStats([provider]).timeout(
+        _statsTimeout,
+        onTimeout: () => [provider],
+      );
       final result = withStats.first;
       await _cache.recordProviderView(result);
       return result;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('[repo] fetchProvider failed: $e');
       return _cache.findProvider(id);
     }
   }
@@ -185,7 +260,10 @@ class DataRepository {
 
       // Prefer aggregate RPC (one row per provider) under load.
       try {
-        final stats = await _db.rpc('provider_review_stats', params: {'p_ids': ids});
+        final stats = await _timeout(
+          _db.rpc('provider_review_stats', params: {'p_ids': ids}),
+          timeout: _statsTimeout,
+        );
         if (stats is List && stats.isNotEmpty) {
           final byId = <String, Map<String, dynamic>>{};
           for (final row in stats) {
@@ -206,12 +284,15 @@ class DataRepository {
         // Fall through to capped raw select if RPC is not deployed yet.
       }
 
-      final rows = await _db
-          .from('provider_reviews')
-          .select('provider_id, rating')
-          .inFilter('provider_id', ids)
-          .eq('approved', true)
-          .limit(800);
+      final rows = await _timeout(
+        _db
+            .from('provider_reviews')
+            .select('provider_id, rating')
+            .inFilter('provider_id', ids)
+            .eq('approved', true)
+            .limit(200),
+        timeout: _statsTimeout,
+      );
 
       final sums = <String, int>{};
       final counts = <String, int>{};

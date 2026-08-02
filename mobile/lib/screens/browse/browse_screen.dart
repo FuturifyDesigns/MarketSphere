@@ -25,7 +25,10 @@ class _BrowseScreenState extends State<BrowseScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _future ??= context.read<DataRepository>().fetchProviders();
+    _future ??= context.read<DataRepository>().fetchProviders(limit: 40).timeout(
+          const Duration(seconds: 12),
+          onTimeout: () => const <ProviderItem>[],
+        );
   }
 
   @override

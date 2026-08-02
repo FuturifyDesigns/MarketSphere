@@ -25,12 +25,18 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _future ??= context.read<DataRepository>().fetchColumns();
+    _future ??= context.read<DataRepository>().fetchColumns().timeout(
+          const Duration(seconds: 12),
+          onTimeout: () => const <ShowcaseColumn>[],
+        );
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _future = context.read<DataRepository>().fetchColumns();
+      _future = context.read<DataRepository>().fetchColumns().timeout(
+            const Duration(seconds: 12),
+            onTimeout: () => const <ShowcaseColumn>[],
+          );
     });
     await _future;
   }

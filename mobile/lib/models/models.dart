@@ -255,6 +255,14 @@ class ShowcaseColumn {
     );
   }
 
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'slug': slug,
+        'title': title,
+        'tagline': tagline,
+        'listing_count': listingCount,
+      };
+
   factory ShowcaseColumn.fromJson(Map<String, dynamic> json) {
     return ShowcaseColumn(
       id: json['id'] as String,

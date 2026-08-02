@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -40,14 +42,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<({List<ShowcaseListing> listings, List<ProviderItem> providers})> _load() async {
     final repo = context.read<DataRepository>();
-    final results = await Future.wait([
-      repo.fetchShowcaseListings(limit: 12),
-      repo.fetchProviders(limit: 10),
-    ]);
-    return (
-      listings: results[0] as List<ShowcaseListing>,
-      providers: results[1] as List<ProviderItem>,
-    );
+    try {
+      final results = await Future.wait([
+        repo.fetchShowcaseListings(limit: 20),
+        repo.fetchProviders(limit: 12),
+      ]).timeout(const Duration(seconds: 12));
+      return (
+        listings: results[0] as List<ShowcaseListing>,
+        providers: results[1] as List<ProviderItem>,
+      );
+    } on TimeoutException {
+      return (listings: <ShowcaseListing>[], providers: <ProviderItem>[]);
+    }
   }
 
   Future<void> _refresh() async {
