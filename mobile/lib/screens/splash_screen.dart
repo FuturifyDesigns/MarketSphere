@@ -39,13 +39,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     await Future.wait([
       Future<void>.delayed(const Duration(milliseconds: 1400)),
       Future(() async {
-        while (!auth.ready) {
+        final deadline = DateTime.now().add(const Duration(seconds: 8));
+        while (!auth.ready && DateTime.now().isBefore(deadline)) {
           await Future<void>.delayed(const Duration(milliseconds: 40));
         }
       }),
     ]);
     if (!mounted) return;
-    final next = auth.isSignedIn ? const MainShell() : const WelcomeScreen();
+    // If auth never became ready, still leave splash (guest home).
+    final next = auth.ready && auth.isSignedIn ? const MainShell() : const WelcomeScreen();
     pushAndRemoveFade(context, next);
   }
 

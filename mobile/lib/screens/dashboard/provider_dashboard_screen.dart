@@ -514,6 +514,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                         onPressed: () => launchMailto(
                           email: item.customerEmail!,
                           subject: 'Re: ${item.subject}',
+                          body: 'Hi ${item.customerName ?? ''},\n\n',
                         ),
                         icon: const Icon(Icons.reply_rounded, size: 18),
                         label: const Text('Reply by email'),

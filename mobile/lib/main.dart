@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -56,13 +58,19 @@ Future<void> main() async {
   final supabaseUrl = EnvConfig.supabaseUrl;
   final supabaseAnonKey = EnvConfig.supabaseAnonKey;
   if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-    throw StateError(
-      'Missing SUPABASE_URL / SUPABASE_ANON_KEY. '
-      'Pass --dart-define-from-file=.env (see mobile/README.md).',
+    runApp(
+      const _BootErrorApp(
+        message:
+            'This APK was built without Supabase keys.\n\n'
+            'Rebuild with:\n'
+            'flutter build apk --release --dart-define-from-file=.env',
+      ),
     );
+    return;
   }
   if (!supabaseUrl.startsWith('https://')) {
-    throw StateError('SUPABASE_URL must use https://');
+    runApp(const _BootErrorApp(message: 'SUPABASE_URL must use https://'));
+    return;
   }
 
   final sessionKey = 'sb-${Uri.parse(supabaseUrl).host.split('.').first}-auth-token';
@@ -103,7 +111,15 @@ Future<void> main() async {
   });
 
   await AlertNotificationService.instance.init(enabled: settings.pushEnabled);
-  await PushService.instance.init(userId: auth.profile?.id);
+  // Never block first frame on FCM permission / token; sync in background.
+  unawaited(
+    PushService.instance.init(userId: auth.profile?.id).timeout(
+      const Duration(seconds: 12),
+      onTimeout: () {
+        if (kDebugMode) debugPrint('[push] init timed out; continuing boot');
+      },
+    ),
+  );
 
   DeepLinkService.instance.attach(navigatorKey: _navigatorKey);
   await DeepLinkService.instance.start();
@@ -154,6 +170,38 @@ class MarketSphereApp extends StatelessWidget {
       theme: AppTheme.dark,
       themeMode: ThemeMode.dark,
       home: const SplashScreen(),
+    );
+  }
+}
+
+class _BootErrorApp extends StatelessWidget {
+  const _BootErrorApp({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(AppConfig.colorNight),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(AppConfig.colorGoldLight),
+                  fontSize: 16,
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

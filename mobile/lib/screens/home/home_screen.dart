@@ -137,9 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                     : profile.isAdmin
                                         ? 'Signed in as Admin'
                                         : 'Signed in as Customer',
-                                    : profile.isAdmin
-                                        ? 'Signed in as Admin'
-                                        : 'Signed in as Customer',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
