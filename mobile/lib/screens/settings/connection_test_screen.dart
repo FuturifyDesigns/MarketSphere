@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/diagnostics_log.dart';
 import '../../services/env_config.dart';
+import '../../utils/app_feedback.dart';
 import '../../widgets/brand_app_bar.dart';
 
 class _Check {
@@ -183,6 +186,7 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final log = DiagnosticsLog.instance.entries;
 
     return Scaffold(
       appBar: const BrandAppBar(
@@ -242,6 +246,51 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('Run again'),
           ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Recent errors',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: log.isEmpty
+                    ? null
+                    : () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: DiagnosticsLog.instance.asText()),
+                        );
+                        if (context.mounted) {
+                          showSuccessPopup(context, 'Error log copied');
+                        }
+                      },
+                icon: const Icon(Icons.copy_rounded, size: 18),
+                label: const Text('Copy'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (log.isEmpty)
+            Text(
+              'Nothing recorded yet. Open the Home or Showcase tab, let it fail, '
+              'then come back here.',
+              style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+              ),
+              child: SelectableText(
+                DiagnosticsLog.instance.asText(),
+                style: const TextStyle(fontSize: 12, height: 1.5, fontFamily: 'monospace'),
+              ),
+            ),
         ],
       ),
     );

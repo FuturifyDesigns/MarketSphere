@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/models.dart';
 import '../utils/helpers.dart';
 import 'connectivity_service.dart';
+import 'diagnostics_log.dart';
 import 'local_cache_service.dart';
 
 /// Network/query failure with no cached fallback, so the UI can show why.
@@ -73,7 +73,7 @@ class DataRepository {
     try {
       return await run().timeout(_cacheTimeout);
     } catch (e) {
-      debugPrint('[repo] cache read failed/slow: $e');
+      DiagnosticsLog.instance.record('cache-read', e);
       return fallback;
     }
   }
@@ -82,7 +82,7 @@ class DataRepository {
     try {
       await run().timeout(_cacheTimeout);
     } catch (e) {
-      debugPrint('[repo] cache write failed/slow: $e');
+      DiagnosticsLog.instance.record('cache-write', e);
     }
   }
 
@@ -110,7 +110,7 @@ class DataRepository {
     try {
       await _db.auth.signOut(scope: SignOutScope.local).timeout(_statsTimeout);
     } catch (e) {
-      debugPrint('[repo] clearing invalid session failed: $e');
+      DiagnosticsLog.instance.record('signout', e);
     }
   }
 
@@ -121,7 +121,7 @@ class DataRepository {
       return await _timeout(run());
     } catch (e) {
       if (_isJwtError(e)) {
-        if (kDebugMode) debugPrint('[repo] jwt error, clearing session and retrying: $e');
+        DiagnosticsLog.instance.record('jwt-retry', e);
         await _clearInvalidSession();
         return await _timeout(run());
       }
@@ -176,8 +176,8 @@ class DataRepository {
           await _cacheWrite(() => _cache.saveCatalogColumns(withCounts));
         }
         return withCounts.isNotEmpty ? withCounts : cached;
-      } catch (e) {
-        debugPrint('[repo] fetchColumns failed: $e');
+      } catch (e, s) {
+        DiagnosticsLog.instance.record('columns', e, stack: s);
         // Surface the failure when there is nothing cached to show.
         if (cached.isEmpty) throw DataFetchException('showcase fields', e);
         return cached;
@@ -213,8 +213,8 @@ class DataRepository {
           await _cacheWrite(() => _cache.mergeCatalogListings(list));
         }
         return list;
-      } catch (e) {
-        debugPrint('[repo] fetchShowcaseListings failed: $e');
+      } catch (e, s) {
+        DiagnosticsLog.instance.record('listings', e, stack: s);
         if (cachedForCol.isEmpty) throw DataFetchException('listings', e);
         return cachedForCol;
       }
@@ -249,7 +249,7 @@ class DataRepository {
       // Only a column/embed mismatch is worth a second round trip. Retrying a
       // timeout just doubles the wait before the user sees the real cause.
       if (!_isSchemaError(e)) rethrow;
-      debugPrint('[repo] full listing select failed, trying slim: $e');
+      DiagnosticsLog.instance.record('listings-select', e);
       return run(_listingSelectSlim);
     }
   }
@@ -280,7 +280,7 @@ class DataRepository {
       await _cache.recordListingView(listing);
       return listing;
     } catch (e) {
-      if (kDebugMode) debugPrint('[repo] fetchListing failed: $e');
+      DiagnosticsLog.instance.record('listing-detail', e);
       return _cache.findListing(id);
     }
   }
@@ -329,8 +329,8 @@ class DataRepository {
           }
         }
         return list.isNotEmpty ? list : cached;
-      } catch (e) {
-        debugPrint('[repo] fetchProviders failed: $e');
+      } catch (e, s) {
+        DiagnosticsLog.instance.record('providers', e, stack: s);
         if (cached.isEmpty) throw DataFetchException('providers', e);
         return cached;
       }
@@ -358,7 +358,7 @@ class DataRepository {
       await _cache.recordProviderView(result);
       return result;
     } catch (e) {
-      if (kDebugMode) debugPrint('[repo] fetchProvider failed: $e');
+      DiagnosticsLog.instance.record('provider-detail', e);
       return _cache.findProvider(id);
     }
   }
