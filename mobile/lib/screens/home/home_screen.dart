@@ -44,16 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<({List<ShowcaseListing> listings, List<ProviderItem> providers})> _load() async {
     final repo = context.read<DataRepository>();
-    // Listings drive the feed; providers must never break it. The repository
-    // already bounds every call, so these are only a last-resort backstop.
-    final listings = await repo.fetchShowcaseListings(limit: 20).timeout(
-          const Duration(seconds: 30),
-        );
+    // Public catalog: no auth lock / secure-storage dependency, so Home can
+    // never get stuck waiting on session bootstrap.
+    final listings = await repo.fetchShowcaseListings(limit: 20);
     List<ProviderItem> providers;
     try {
-      providers = await repo.fetchProviders(limit: 12).timeout(
-            const Duration(seconds: 30),
-          );
+      providers = await repo.fetchProviders(limit: 12);
     } catch (_) {
       providers = const [];
     }

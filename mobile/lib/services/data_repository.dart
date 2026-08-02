@@ -8,6 +8,7 @@ import '../utils/helpers.dart';
 import 'connectivity_service.dart';
 import 'diagnostics_log.dart';
 import 'local_cache_service.dart';
+import 'public_catalog_client.dart';
 
 /// Network/query failure with no cached fallback, so the UI can show why.
 class DataFetchException implements Exception {
@@ -18,6 +19,7 @@ class DataFetchException implements Exception {
 
   String get detail {
     final c = cause;
+    if (c is PublicCatalogException) return '$c';
     if (c is PostgrestException) {
       return [c.code, c.message]
           .whereType<String>()
@@ -38,6 +40,7 @@ class DataRepository {
   SupabaseClient get _db => Supabase.instance.client;
   final _cache = LocalCacheService.instance;
   final _net = ConnectivityService.instance;
+  final _public = PublicCatalogClient();
   final Map<String, Future<dynamic>> _inflight = {};
 
   static const _netTimeout = Duration(seconds: 10);
@@ -59,7 +62,10 @@ class DataRepository {
   Future<T> _singleFlight<T>(String key, Future<T> Function() run) {
     final existing = _inflight[key];
     if (existing != null) return existing as Future<T>;
-    final future = run().whenComplete(() => _inflight.remove(key));
+    // Always clear the slot, even if [run] hangs past callers' interest.
+    final future = run().timeout(const Duration(seconds: 20)).whenComplete(() {
+      _inflight.remove(key);
+    });
     _inflight[key] = future;
     return future;
   }
@@ -137,48 +143,19 @@ class DataRepository {
       );
 
       try {
-        final rowsFuture = _publicRead(
-          () => _db
-              .from('showcase_columns')
-              .select('id, slug, title, tagline')
-              .eq('active', true)
-              .order('sort_order', ascending: true),
+        final rows = await _public.getRows(
+          'showcase_columns',
+          select: 'id,slug,title,tagline',
+          filters: const {'active': 'eq.true'},
+          order: 'sort_order.asc',
         );
-        final countsFuture = () async {
-          try {
-            return await _publicRead(() => _db.rpc('showcase_published_counts'));
-          } catch (_) {
-            return null;
-          }
-        }();
-
-        final results = await Future.wait<Object?>([rowsFuture, countsFuture]);
-        final rows = results[0] as List;
-        final columns = rows
-            .map((row) => ShowcaseColumn.fromJson(Map<String, dynamic>.from(row as Map)))
-            .toList();
-
-        final counts = <String, int>{};
-        final countRows = results[1];
-        if (countRows is List) {
-          for (final row in countRows) {
-            final map = Map<String, dynamic>.from(row as Map);
-            final id = map['column_id']?.toString();
-            if (id == null) continue;
-            counts[id] = (map['listing_count'] as num?)?.toInt() ?? 0;
-          }
+        final columns = rows.map(ShowcaseColumn.fromJson).toList();
+        if (columns.isNotEmpty) {
+          await _cacheWrite(() => _cache.saveCatalogColumns(columns));
         }
-
-        final withCounts = columns
-            .map((c) => c.copyWith(listingCount: counts[c.id] ?? c.listingCount))
-            .toList();
-        if (withCounts.isNotEmpty) {
-          await _cacheWrite(() => _cache.saveCatalogColumns(withCounts));
-        }
-        return withCounts.isNotEmpty ? withCounts : cached;
+        return columns.isNotEmpty ? columns : cached;
       } catch (e, s) {
         DiagnosticsLog.instance.record('columns', e, stack: s);
-        // Surface the failure when there is nothing cached to show.
         if (cached.isEmpty) throw DataFetchException('showcase fields', e);
         return cached;
       }
@@ -203,7 +180,6 @@ class DataRepository {
         final list = await _queryListings(limit: capped, columnId: col);
         if (list.isEmpty && cachedForCol.isNotEmpty) return cachedForCol;
         if (col.isEmpty) {
-          // Never wipe a good cache with a short/empty home preview.
           if (list.isNotEmpty && (list.length >= cached.length || capped >= 30)) {
             await _cacheWrite(() => _cache.saveCatalogListings(list));
           } else if (list.isNotEmpty) {
@@ -226,19 +202,19 @@ class DataRepository {
     required String columnId,
   }) async {
     Future<List<ShowcaseListing>> run(String select) async {
-      final rows = await _publicRead(() async {
-        var query = _db.from('showcase_listings').select(select).eq('status', 'published');
-        if (columnId.isNotEmpty) {
-          query = query.eq('column_id', columnId);
-        }
-        return query
-            .order('featured', ascending: false)
-            .order('sort_order', ascending: true)
-            .order('created_at', ascending: false)
-            .limit(limit);
-      });
-      return (rows as List)
-          .map((row) => ShowcaseListing.fromJson(Map<String, dynamic>.from(row as Map)))
+      final filters = <String, String>{
+        'status': 'eq.published',
+        if (columnId.isNotEmpty) 'column_id': 'eq.$columnId',
+      };
+      final rows = await _public.getRows(
+        'showcase_listings',
+        select: select,
+        filters: filters,
+        order: 'featured.desc,sort_order.asc,created_at.desc',
+        limit: limit,
+      );
+      return rows
+          .map(ShowcaseListing.fromJson)
           .where((e) => isUuid(e.id))
           .toList();
     }
@@ -246,8 +222,6 @@ class DataRepository {
     try {
       return await run(_listingSelect);
     } catch (e) {
-      // Only a column/embed mismatch is worth a second round trip. Retrying a
-      // timeout just doubles the wait before the user sees the real cause.
       if (!_isSchemaError(e)) rethrow;
       DiagnosticsLog.instance.record('listings-select', e);
       return run(_listingSelectSlim);
@@ -255,6 +229,14 @@ class DataRepository {
   }
 
   bool _isSchemaError(Object error) {
+    if (error is PublicCatalogException) {
+      final text = error.toString().toLowerCase();
+      return text.contains('pgrst200') ||
+          text.contains('pgrst204') ||
+          text.contains('does not exist') ||
+          text.contains('could not find') ||
+          text.contains('relationship');
+    }
     if (error is! PostgrestException) return false;
     const codes = {'PGRST200', 'PGRST204', '42703', '42P01'};
     if (codes.contains(error.code)) return true;
@@ -295,31 +277,29 @@ class DataRepository {
       );
 
       try {
-        final rows = await _publicRead(() async {
-          var queryBuilder = _db.from('providers').select(_providerSelect).eq('status', 'approved');
-
-          if (q.isNotEmpty) {
-            final safe = q.replaceAll(RegExp(r'[%_,]'), ' ').trim();
-            if (safe.isNotEmpty) {
-              queryBuilder = queryBuilder.or(
-                'business_name.ilike.%$safe%,location.ilike.%$safe%,description.ilike.%$safe%',
-              );
-            }
+        final filters = <String, String>{
+          'status': 'eq.approved',
+        };
+        if (q.isNotEmpty) {
+          final safe = q.replaceAll(RegExp(r'[%_,()]'), ' ').trim();
+          if (safe.isNotEmpty) {
+            filters['or'] =
+                '(business_name.ilike.*$safe*,location.ilike.*$safe*,description.ilike.*$safe*)';
           }
+        }
 
-          return queryBuilder.order('created_at', ascending: false).limit(capped);
-        });
+        final rows = await _public.getRows(
+          'providers',
+          select: _providerSelect,
+          filters: filters,
+          order: 'created_at.desc',
+          limit: capped,
+        );
 
-        var list = (rows as List)
-            .map((row) => ProviderItem.fromJson(Map<String, dynamic>.from(row as Map)))
+        final list = rows
+            .map(ProviderItem.fromJson)
             .where((e) => isUuid(e.id))
             .toList();
-
-        // Never block the provider list on review aggregates.
-        list = await _attachReviewStats(list).timeout(
-          _statsTimeout,
-          onTimeout: () => list,
-        );
 
         if (list.isNotEmpty) {
           if (q.isEmpty && (list.length >= cached.length || capped >= 30)) {
