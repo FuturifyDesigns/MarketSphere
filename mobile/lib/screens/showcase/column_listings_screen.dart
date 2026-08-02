@@ -32,7 +32,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
     super.didChangeDependencies();
     _future ??= context.read<DataRepository>().fetchShowcaseListings(
           columnId: widget.column.id,
-          limit: 60,
+          limit: 300,
         );
   }
 
@@ -46,7 +46,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
     setState(() {
       _future = context.read<DataRepository>().fetchShowcaseListings(
             columnId: widget.column.id,
-            limit: 60,
+            limit: 300,
           );
     });
     await _future;

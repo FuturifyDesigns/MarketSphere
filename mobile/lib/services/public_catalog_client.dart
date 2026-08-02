@@ -64,6 +64,39 @@ class PublicCatalogClient {
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
   }
+
+  /// POST /rest/v1/rpc/{fn} — same aggregate path the website uses for hub counts.
+  Future<List<Map<String, dynamic>>> rpc(
+    String functionName, {
+    Map<String, dynamic> body = const {},
+  }) async {
+    final response = await _client
+        .post(
+          _uri('rpc/$functionName'),
+          headers: {
+            ..._headers,
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw PublicCatalogException(
+        'HTTP ${response.statusCode}',
+        response.body.length > 240 ? '${response.body.substring(0, 240)}…' : response.body,
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw PublicCatalogException('Unexpected RPC payload', decoded.runtimeType.toString());
+    }
+    return decoded
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
 }
 
 class PublicCatalogException implements Exception {

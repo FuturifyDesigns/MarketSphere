@@ -143,13 +143,42 @@ class DataRepository {
       );
 
       try {
-        final rows = await _public.getRows(
+        final columnsFuture = _public.getRows(
           'showcase_columns',
           select: 'id,slug,title,tagline',
           filters: const {'active': 'eq.true'},
           order: 'sort_order.asc',
         );
-        final columns = rows.map(ShowcaseColumn.fromJson).toList();
+        final countsFuture = () async {
+          try {
+            return await _public.rpc('showcase_published_counts');
+          } catch (e) {
+            DiagnosticsLog.instance.record('column-counts', e);
+            return const <Map<String, dynamic>>[];
+          }
+        }();
+
+        final results = await Future.wait([columnsFuture, countsFuture]);
+        final rows = results[0];
+        final countRows = results[1];
+
+        final counts = <String, int>{};
+        for (final row in countRows) {
+          final id = row['column_id']?.toString();
+          if (id == null || id.isEmpty) continue;
+          final raw = row['listing_count'];
+          counts[id] = raw is num ? raw.toInt() : int.tryParse('$raw') ?? 0;
+        }
+
+        final cachedById = {for (final c in cached) c.id: c};
+        final columns = rows.map(ShowcaseColumn.fromJson).map((c) {
+          if (counts.containsKey(c.id)) {
+            return c.copyWith(listingCount: counts[c.id]!);
+          }
+          // RPC failed/empty: keep last known good count rather than flashing 0.
+          return c.copyWith(listingCount: cachedById[c.id]?.listingCount ?? 0);
+        }).toList();
+
         if (columns.isNotEmpty) {
           await _cacheWrite(() => _cache.saveCatalogColumns(columns));
         }
@@ -166,7 +195,7 @@ class DataRepository {
     int limit = 40,
     String? columnId,
   }) {
-    final capped = limit.clamp(1, 60);
+    final capped = limit.clamp(1, 300);
     final col = columnId?.trim() ?? '';
     return _singleFlight('listings:$capped:$col', () async {
       final cached = await _cacheRead<List<ShowcaseListing>>(
