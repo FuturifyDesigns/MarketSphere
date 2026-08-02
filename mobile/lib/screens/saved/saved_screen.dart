@@ -6,6 +6,7 @@ import '../../state/engagement_controller.dart';
 import '../../widgets/auth_gate.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
+import '../../widgets/showcase_text_cover.dart';
 import '../../widgets/trust_widgets.dart';
 import '../browse/provider_detail_screen.dart';
 import '../showcase/listing_detail_screen.dart';
@@ -139,7 +140,9 @@ class _SavedTile extends StatelessWidget {
               child: SizedBox(
                 width: 64,
                 height: 64,
-                child: AppNetworkImage(url: imageUrl),
+                child: imageUrl == null || imageUrl!.isEmpty
+                    ? ShowcaseTextCover(title: title, height: 64)
+                    : AppNetworkImage(url: imageUrl),
               ),
             ),
             const SizedBox(width: 12),

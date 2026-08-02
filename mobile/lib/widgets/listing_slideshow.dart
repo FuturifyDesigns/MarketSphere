@@ -6,12 +6,14 @@ import '../config.dart';
 import '../models/models.dart';
 import '../utils/helpers.dart';
 import 'common.dart';
+import 'showcase_text_cover.dart';
 
 /// Reliable auto photo slideshow (AnimatedSwitcher — works inside lists).
 class PhotoSlideshow extends StatefulWidget {
   const PhotoSlideshow({
     super.key,
     required this.urls,
+    this.title,
     this.height = 200,
     this.borderRadius,
     this.autoplay = true,
@@ -19,6 +21,8 @@ class PhotoSlideshow extends StatefulWidget {
   });
 
   final List<String> urls;
+  /// Shown on the branded text cover when [urls] is empty.
+  final String? title;
   final double height;
   final BorderRadius? borderRadius;
   final bool autoplay;
@@ -64,9 +68,21 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
 
   @override
   Widget build(BuildContext context) {
-    final urls = widget.urls;
+    final urls = widget.urls.where((u) => u.trim().isNotEmpty).toList();
     final radius = widget.borderRadius ?? BorderRadius.circular(18);
-    final url = urls.isEmpty ? null : urls[_index % urls.length];
+
+    if (urls.isEmpty) {
+      return SizedBox(
+        height: widget.height,
+        width: double.infinity,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: ShowcaseTextCover(title: widget.title, height: widget.height),
+        ),
+      );
+    }
+
+    final url = urls[_index % urls.length];
 
     return SizedBox(
       height: widget.height,
@@ -81,7 +97,7 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
               switchInCurve: Curves.easeOut,
               switchOutCurve: Curves.easeIn,
               child: AppNetworkImage(
-                key: ValueKey('slide-${url ?? 'empty'}-$_index'),
+                key: ValueKey('slide-$url-$_index'),
                 url: url,
               ),
             ),
@@ -174,6 +190,7 @@ class ListingSlideshowCard extends StatelessWidget {
                   children: [
                     PhotoSlideshow(
                       urls: listing.imageUrls,
+                      title: listing.title,
                       height: 168,
                       borderRadius: BorderRadius.zero,
                     ),
@@ -268,6 +285,7 @@ class ShowcaseListingCard extends StatelessWidget {
                 children: [
                   PhotoSlideshow(
                     urls: listing.imageUrls,
+                    title: listing.title,
                     height: 210,
                     borderRadius: BorderRadius.zero,
                   ),

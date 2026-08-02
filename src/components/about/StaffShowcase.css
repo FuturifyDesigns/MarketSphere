@@ -207,7 +207,7 @@
   object-fit: cover;
   object-position: center center;
   border-radius: 50%;
-  background: var(--color-night);
+  background: transparent;
 }
 
 .staff-tree__copy {

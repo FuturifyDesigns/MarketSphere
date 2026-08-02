@@ -37,6 +37,19 @@ The app uses **native Google Sign-In** (account picker inside the app). It does 
 
 Before Google signup (website + app), users must choose Customer or Provider.
 
+## In-app dashboards
+
+- **Customer:** Account → **My enquiries**; send enquiries from a provider’s page
+  (same `enquiries` table as the website).
+- **Provider:** Account → **Provider dashboard** (Profile / Services / Inbox).
+  Logo & gallery uploads stay on the website for now.
+
+## Firebase push (when app is closed)
+
+See [docs/FIREBASE_PUSH_SETUP.md](docs/FIREBASE_PUSH_SETUP.md).
+Realtime + local alerts already work while the app can stay connected;
+FCM is for delivery after force-stop / reboot.
+
 ## Optional deep link (browser OAuth fallback)
 
 If you ever use browser OAuth again, add this to Supabase → Auth → URL Configuration → Redirect URLs:

@@ -196,12 +196,17 @@ class _TeamMemberCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+          ClipOval(
             child: SizedBox(
               width: 84,
               height: 84,
-              child: AppNetworkImage(url: member.imageUrl),
+              child: ColoredBox(
+                color: Colors.transparent,
+                child: AppNetworkImage(
+                  url: member.imageUrl,
+                  backgroundColor: Colors.transparent,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 14),

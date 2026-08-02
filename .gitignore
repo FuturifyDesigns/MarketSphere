@@ -28,3 +28,7 @@ mobile/.env.*
 mobile/android/key.properties
 mobile/**/*.jks
 mobile/**/*.keystore
+
+# Firebase / Google Cloud service accounts (never commit)
+*firebase-adminsdk*.json
+**/service-account*.json

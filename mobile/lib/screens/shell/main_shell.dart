@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../config.dart';
 import '../../services/miss_you_service.dart';
+import '../../state/app_settings_controller.dart';
 import '../../state/engagement_controller.dart';
 import '../../widgets/offline_banner.dart';
 import '../../widgets/role_onboarding.dart';
@@ -49,7 +50,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       final engagement = context.read<EngagementController>();
       engagement.flushPendingMutations();
     } else if (state == AppLifecycleState.paused) {
-      MissYouService.instance.scheduleReminders();
+      if (context.read<AppSettingsController>().pushEnabled) {
+        MissYouService.instance.scheduleReminders();
+      }
     }
   }
 

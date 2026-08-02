@@ -1,3 +1,5 @@
+import '../config.dart';
+
 const dealTypeLabels = <String, String>{
   'sale': 'For sale',
   'rent': 'For rent',
@@ -77,6 +79,30 @@ String? validateMeaningfulText(String? value, {String fieldLabel = 'This field',
   return null;
 }
 
+String? validateEnquirySubject(String? value) {
+  final v = (value ?? '').trim();
+  if (v.length < 3) return 'Subject must be at least 3 characters';
+  if (v.length > 120) return 'Subject is too long';
+  return validateMeaningfulText(v, fieldLabel: 'Subject', optional: false);
+}
+
+String? validateEnquiryMessage(String? value) {
+  final v = (value ?? '').trim();
+  if (v.length < 10) return 'Message must be at least 10 characters';
+  if (v.length > 2000) return 'Message is too long';
+  return validateMeaningfulText(v, fieldLabel: 'Message', optional: false);
+}
+
+String enquiryStatusLabel(String status) {
+  return switch (status) {
+    'new' => 'New',
+    'read' => 'Read',
+    'replied' => 'Replied',
+    'closed' => 'Closed',
+    _ => status.replaceAll('_', ' '),
+  };
+}
+
 String? validatePhoneLocalOptional(String? value) {
   final v = (value ?? '').trim();
   if (v.isEmpty) return null;
@@ -97,6 +123,12 @@ String formatPhone(String countryCode, String local) {
   if (digits.isEmpty) return '';
   final normalized = digits.startsWith('0') ? digits.substring(1) : digits;
   return '$countryCode $normalized';
+}
+
+String showcaseColumnCoverUrl(String slug) {
+  final clean = slug.trim();
+  if (clean.isEmpty) return '${AppConfig.siteUrl}showcase/real-estate.webp';
+  return '${AppConfig.siteUrl}showcase/$clean.webp';
 }
 
 final _uuidRe = RegExp(

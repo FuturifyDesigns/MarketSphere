@@ -58,7 +58,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
                   secondary: const Icon(Icons.notifications_active_outlined),
                   title: const Text('Push notifications', style: TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: const Text('Price, availability, enquiries, nearby providers, miss-you'),
+                  subtitle: const Text(
+                    'New listings, provider enquiries, alerts, and miss-you reminders',
+                  ),
                   value: settings.pushEnabled,
                   onChanged: (v) async {
                     await settings.setPushEnabled(v);

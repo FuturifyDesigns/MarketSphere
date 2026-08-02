@@ -12,6 +12,7 @@ import '../../utils/share_contact.dart';
 import '../../widgets/auth_gate.dart';
 import '../../widgets/common.dart';
 import '../../widgets/trust_widgets.dart';
+import '../dashboard/send_enquiry_sheet.dart';
 
 class ProviderDetailScreen extends StatefulWidget {
   const ProviderDetailScreen({super.key, required this.providerId});
@@ -105,6 +106,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final engagement = context.watch<EngagementController>();
+    final auth = context.watch<AuthController>();
 
     return Scaffold(
       body: FutureBuilder<ProviderItem?>(
@@ -209,15 +211,27 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                         ),
                       ],
                       const SizedBox(height: 22),
-                      if (provider.contactEmail != null)
+                      if (auth.isSignedIn && auth.profile?.isProvider != true && auth.profile?.isAdmin != true) ...[
                         FilledButton.icon(
+                          onPressed: () => showSendEnquirySheet(
+                            context,
+                            providerId: provider.id,
+                            providerName: provider.businessName,
+                          ),
+                          icon: const Icon(Icons.mail_outline_rounded),
+                          label: const Text('Send enquiry'),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      if (provider.contactEmail != null)
+                        FilledButton.tonalIcon(
                           onPressed: () => launchMailto(
                             email: provider.contactEmail!,
                             subject: 'Enquiry via Market Sphere Group',
                             body:
                                 'Hello ${provider.businessName},\n\nI found you on the Market Sphere Group app.\n${providerWebUrl(provider)}\n',
                           ),
-                          icon: const Icon(Icons.mail_outline),
+                          icon: const Icon(Icons.alternate_email_rounded),
                           label: const Text('Email provider'),
                         ),
                       if (provider.contactPhone != null) ...[

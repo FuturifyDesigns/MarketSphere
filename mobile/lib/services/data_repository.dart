@@ -12,7 +12,7 @@ class DataRepository {
   final Map<String, Future<dynamic>> _inflight = {};
 
   static const _listingSelect =
-      'id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, owner_name, owner_phone, owner_email, showcase_columns(id, slug, title)';
+      'id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, owner_name, owner_phone, owner_email, column_id, showcase_columns(id, slug, title)';
 
   static const _providerSelect =
       'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone';
@@ -27,17 +27,60 @@ class DataRepository {
     return future;
   }
 
-  Future<List<ShowcaseListing>> fetchShowcaseListings({int limit = 40}) {
+  Future<List<ShowcaseColumn>> fetchColumns() async {
+    if (_net.isOffline) return const [];
+    try {
+      final rows = await _db
+          .from('showcase_columns')
+          .select('id, slug, title, tagline')
+          .eq('active', true)
+          .order('sort_order', ascending: true);
+      final columns = (rows as List)
+          .map((row) => ShowcaseColumn.fromJson(Map<String, dynamic>.from(row as Map)))
+          .toList();
+
+      Map<String, int> counts = {};
+      try {
+        final countRows = await _db.rpc('showcase_published_counts');
+        for (final row in (countRows as List)) {
+          final map = Map<String, dynamic>.from(row as Map);
+          final id = map['column_id']?.toString();
+          if (id == null) continue;
+          counts[id] = (map['listing_count'] as num?)?.toInt() ?? 0;
+        }
+      } catch (_) {
+        // RPC may be missing on older projects.
+      }
+
+      return columns
+          .map((c) => c.copyWith(listingCount: counts[c.id] ?? c.listingCount))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<ShowcaseListing>> fetchShowcaseListings({
+    int limit = 40,
+    String? columnId,
+  }) {
     final capped = limit.clamp(1, 60);
-    return _singleFlight('listings:$capped', () async {
+    final col = columnId?.trim() ?? '';
+    return _singleFlight('listings:$capped:$col', () async {
       if (_net.isOffline) {
-        return _cache.offlineListingFeed(limit: capped);
+        final cached = await _cache.offlineListingFeed(limit: capped);
+        if (col.isEmpty) return cached;
+        return cached.where((l) => l.columnId == col).toList();
       }
       try {
-        final rows = await _db
+        var query = _db
             .from('showcase_listings')
             .select(_listingSelect)
-            .eq('status', 'published')
+            .eq('status', 'published');
+        if (col.isNotEmpty) {
+          query = query.eq('column_id', col);
+        }
+        final rows = await query
             .order('featured', ascending: false)
             .order('sort_order', ascending: true)
             .order('created_at', ascending: false)
@@ -47,10 +90,14 @@ class DataRepository {
             .map((row) => ShowcaseListing.fromJson(Map<String, dynamic>.from(row as Map)))
             .where((e) => isUuid(e.id))
             .toList();
-        await _cache.saveCatalogListings(list);
+        if (col.isEmpty) {
+          await _cache.saveCatalogListings(list);
+        }
         return list;
       } catch (_) {
-        return _cache.offlineListingFeed(limit: capped);
+        final cached = await _cache.offlineListingFeed(limit: capped);
+        if (col.isEmpty) return cached;
+        return cached.where((l) => l.columnId == col).toList();
       }
     });
   }
@@ -72,18 +119,6 @@ class DataRepository {
     } catch (_) {
       return _cache.findListing(id);
     }
-  }
-
-  Future<List<ShowcaseColumn>> fetchColumns() async {
-    if (_net.isOffline) return const [];
-    final rows = await _db
-        .from('showcase_columns')
-        .select('id, slug, title, tagline')
-        .eq('active', true)
-        .order('sort_order', ascending: true);
-    return (rows as List)
-        .map((row) => ShowcaseColumn.fromJson(Map<String, dynamic>.from(row as Map)))
-        .toList();
   }
 
   Future<List<ProviderItem>> fetchProviders({String? query, int limit = 40}) {
@@ -543,7 +578,7 @@ class DataRepository {
     final authErr = _assertActor(userId);
     if (authErr != null) return;
     final cleanToken = token.trim();
-    if (cleanToken.isEmpty || cleanToken.length > 512) return;
+    if (cleanToken.isEmpty || cleanToken.length > 4096) return;
     if (_net.isOffline) return;
     try {
       await _db.from('device_tokens').upsert({
@@ -562,6 +597,216 @@ class DataRepository {
       return 'Session mismatch. Please sign in again.';
     }
     return null;
+  }
+
+  // ── Customer / provider dashboard (enquiries + owned listing) ──
+
+  Future<List<EnquiryItem>> fetchCustomerEnquiries({int limit = 80}) async {
+    final uid = _uid;
+    if (uid == null) return const [];
+    try {
+      final rows = await _db
+          .from('enquiries')
+          .select('id, customer_id, provider_id, subject, message, status, created_at, providers(business_name)')
+          .eq('customer_id', uid)
+          .order('created_at', ascending: false)
+          .limit(limit.clamp(1, 100));
+      return (rows as List)
+          .map((row) => EnquiryItem.fromJson(Map<String, dynamic>.from(row as Map)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<String?> submitEnquiry({
+    required String providerId,
+    required String subject,
+    required String message,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return 'Sign in to send an enquiry.';
+    if (!isUuid(providerId)) return 'Invalid provider.';
+    final subjectErr = validateEnquirySubject(subject);
+    if (subjectErr != null) return subjectErr;
+    final messageErr = validateEnquiryMessage(message);
+    if (messageErr != null) return messageErr;
+    if (_net.isOffline) return 'Connect to the internet to send an enquiry.';
+    try {
+      await _db.from('enquiries').insert({
+        'customer_id': uid,
+        'provider_id': providerId,
+        'subject': subject.trim(),
+        'message': message.trim(),
+      });
+      return null;
+    } catch (e) {
+      return friendlyError(e, fallback: 'Could not send enquiry. Please try again.');
+    }
+  }
+
+  Future<OwnedProvider?> fetchOwnedProvider() async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final row = await _db
+          .from('providers')
+          .select(
+            'id, user_id, business_name, description, location, logo_url, cover_url, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))',
+          )
+          .eq('user_id', uid)
+          .maybeSingle();
+      if (row == null) return null;
+      return OwnedProvider.fromJson(Map<String, dynamic>.from(row));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<EnquiryItem>> fetchProviderEnquiries(String providerId, {int limit = 80}) async {
+    if (!isUuid(providerId)) return const [];
+    try {
+      final rows = await _db
+          .from('enquiries')
+          .select('id, customer_id, provider_id, subject, message, status, created_at, profiles(full_name, email)')
+          .eq('provider_id', providerId)
+          .order('created_at', ascending: false)
+          .limit(limit.clamp(1, 100));
+      return (rows as List)
+          .map((row) => EnquiryItem.fromJson(Map<String, dynamic>.from(row as Map)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<String?> updateEnquiryStatus({
+    required String enquiryId,
+    required String status,
+  }) async {
+    if (!isUuid(enquiryId)) return 'Invalid enquiry.';
+    if (!{'new', 'read', 'replied', 'closed'}.contains(status)) return 'Invalid status.';
+    try {
+      await _db.from('enquiries').update({'status': status}).eq('id', enquiryId);
+      return null;
+    } catch (e) {
+      return friendlyError(e, fallback: 'Could not update enquiry.');
+    }
+  }
+
+  Future<List<ServiceCategory>> fetchServiceCategories() async {
+    try {
+      final rows = await _db.from('categories').select('id, name, slug').order('sort_order');
+      return (rows as List)
+          .map((row) => ServiceCategory.fromJson(Map<String, dynamic>.from(row as Map)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<({OwnedProvider? provider, String? error})> saveOwnedProviderProfile({
+    required String businessName,
+    required String description,
+    String? location,
+    String? contactEmail,
+    String? contactPhone,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return (provider: null, error: 'Not signed in');
+    final nameErr = validateMeaningfulText(businessName, fieldLabel: 'Business name', optional: false, minLength: 2);
+    if (nameErr != null) return (provider: null, error: nameErr);
+    final descErr = validateMeaningfulText(description, fieldLabel: 'Description', optional: false, minLength: 20);
+    if (descErr != null) return (provider: null, error: descErr);
+    if (location != null && location.trim().isNotEmpty) {
+      final locErr = validateMeaningfulText(location, fieldLabel: 'Location', optional: false);
+      if (locErr != null) return (provider: null, error: locErr);
+    }
+    if (contactEmail != null && contactEmail.trim().isNotEmpty) {
+      final emailErr = validateEmail(contactEmail);
+      if (emailErr != null) return (provider: null, error: emailErr);
+    }
+
+    final payload = {
+      'business_name': businessName.trim(),
+      'description': description.trim(),
+      'location': location?.trim().isEmpty == true ? null : location?.trim(),
+      'contact_email': contactEmail?.trim().isEmpty == true ? null : contactEmail?.trim(),
+      'contact_phone': contactPhone?.trim().isEmpty == true ? null : contactPhone?.trim(),
+    };
+
+    try {
+      final existing = await fetchOwnedProvider();
+      if (existing == null) {
+        final row = await _db
+            .from('providers')
+            .insert({
+              ...payload,
+              'user_id': uid,
+              'status': 'approved',
+            })
+            .select(
+              'id, user_id, business_name, description, location, logo_url, cover_url, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))',
+            )
+            .single();
+        return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
+      }
+
+      final row = await _db
+          .from('providers')
+          .update(payload)
+          .eq('id', existing.id)
+          .select(
+            'id, user_id, business_name, description, location, logo_url, cover_url, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))',
+          )
+          .single();
+      return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
+    } catch (e) {
+      return (provider: null, error: friendlyError(e, fallback: 'Could not save business profile.'));
+    }
+  }
+
+  Future<({OwnedProviderService? service, String? error})> addOwnedProviderService({
+    required String providerId,
+    required String title,
+    String? description,
+    String? categoryId,
+  }) async {
+    if (!isUuid(providerId)) return (service: null, error: 'Invalid provider.');
+    final titleErr = validateMeaningfulText(title, fieldLabel: 'Service title', optional: false, minLength: 2);
+    if (titleErr != null) return (service: null, error: titleErr);
+    if (description != null && description.trim().isNotEmpty) {
+      final descErr = validateMeaningfulText(description, fieldLabel: 'Description');
+      if (descErr != null) return (service: null, error: descErr);
+    }
+    try {
+      final row = await _db
+          .from('provider_services')
+          .insert({
+            'provider_id': providerId,
+            'title': title.trim(),
+            'description': description?.trim().isEmpty == true ? null : description?.trim(),
+            'category_id': categoryId?.trim().isEmpty == true ? null : categoryId,
+          })
+          .select('id, provider_id, title, description, category_id, categories(name)')
+          .single();
+      return (
+        service: OwnedProviderService.fromJson(Map<String, dynamic>.from(row)),
+        error: null,
+      );
+    } catch (e) {
+      return (service: null, error: friendlyError(e, fallback: 'Could not add service.'));
+    }
+  }
+
+  Future<String?> deleteOwnedProviderService(String serviceId) async {
+    if (!isUuid(serviceId)) return 'Invalid service.';
+    try {
+      await _db.from('provider_services').delete().eq('id', serviceId);
+      return null;
+    } catch (e) {
+      return friendlyError(e, fallback: 'Could not remove service.');
+    }
   }
 
   /// Leadership team from CMS `site_content` (same source as the website About page).

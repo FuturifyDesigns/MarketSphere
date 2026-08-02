@@ -10,6 +10,8 @@ import '../../widgets/brand_app_bar.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 import '../auth/welcome_screen.dart';
+import '../dashboard/my_enquiries_screen.dart';
+import '../dashboard/provider_dashboard_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../saved/saved_screen.dart';
 import '../settings/about_screen.dart';
@@ -120,6 +122,21 @@ class ProfileScreen extends StatelessWidget {
                         icon: const Icon(Icons.edit_outlined),
                         label: const Text('Edit profile'),
                       ),
+                      if (profile.isProvider || profile.isAdmin) ...[
+                        const SizedBox(height: 10),
+                        FilledButton.tonalIcon(
+                          onPressed: () => pushFade(context, const ProviderDashboardScreen()),
+                          icon: const Icon(Icons.storefront_outlined),
+                          label: const Text('Provider dashboard'),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: () => pushFade(context, const MyEnquiriesScreen()),
+                          icon: const Icon(Icons.mail_outline_rounded),
+                          label: const Text('My enquiries'),
+                        ),
+                      ],
                     ],
                   )
                 : Column(
@@ -149,7 +166,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           Text(
-            'Saved & alerts',
+            'Dashboard',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: scheme.onSurface,
@@ -157,6 +174,18 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _card(context, [
+            if (auth.isSignedIn && profile != null && (profile.isProvider || profile.isAdmin))
+              _item(
+                Icons.dashboard_customize_outlined,
+                'Provider dashboard',
+                () => pushFade(context, const ProviderDashboardScreen()),
+              ),
+            if (auth.isSignedIn && profile != null && !profile.isProvider && !profile.isAdmin)
+              _item(
+                Icons.mail_outline_rounded,
+                'My enquiries',
+                () => pushFade(context, const MyEnquiriesScreen()),
+              ),
             _item(
               Icons.favorite_outline_rounded,
               'Saved favourites',

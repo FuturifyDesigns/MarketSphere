@@ -1,0 +1,577 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../config.dart';
+import '../../models/models.dart';
+import '../../services/data_repository.dart';
+import '../../utils/app_feedback.dart';
+import '../../utils/helpers.dart';
+import '../../utils/share_contact.dart';
+import '../../widgets/auth_widgets.dart';
+import '../../widgets/brand_app_bar.dart';
+import '../../widgets/common.dart';
+
+/// Provider dashboard hub — Profile / Services / Inbox (same functions as website).
+class ProviderDashboardScreen extends StatefulWidget {
+  const ProviderDashboardScreen({super.key, this.initialTab = 0});
+
+  final int initialTab;
+
+  @override
+  State<ProviderDashboardScreen> createState() => _ProviderDashboardScreenState();
+}
+
+class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabs;
+  OwnedProvider? _provider;
+  List<EnquiryItem> _enquiries = const [];
+  List<ServiceCategory> _categories = const [];
+  var _loading = true;
+  String? _error;
+
+  final _businessName = TextEditingController();
+  final _description = TextEditingController();
+  final _location = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
+  final _serviceTitle = TextEditingController();
+  final _serviceDescription = TextEditingController();
+  String? _serviceCategoryId;
+  var _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    _businessName.dispose();
+    _description.dispose();
+    _location.dispose();
+    _email.dispose();
+    _phone.dispose();
+    _serviceTitle.dispose();
+    _serviceDescription.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final repo = context.read<DataRepository>();
+    try {
+      final results = await Future.wait([
+        repo.fetchOwnedProvider(),
+        repo.fetchServiceCategories(),
+      ]);
+      final provider = results[0] as OwnedProvider?;
+      final categories = results[1] as List<ServiceCategory>;
+      List<EnquiryItem> enquiries = const [];
+      if (provider != null) {
+        enquiries = await repo.fetchProviderEnquiries(provider.id);
+      }
+      if (!mounted) return;
+      _applyProvider(provider);
+      setState(() {
+        _provider = provider;
+        _categories = categories;
+        _enquiries = enquiries;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Could not load provider dashboard.';
+      });
+    }
+  }
+
+  void _applyProvider(OwnedProvider? provider) {
+    _businessName.text = provider?.businessName ?? '';
+    _description.text = provider?.description ?? '';
+    _location.text = provider?.location ?? '';
+    _email.text = provider?.contactEmail ?? '';
+    final phone = provider?.contactPhone ?? '';
+    _phone.text = phone.replaceFirst(RegExp(r'^\+267\s*'), '');
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() => _saving = true);
+    final result = await context.read<DataRepository>().saveOwnedProviderProfile(
+          businessName: _businessName.text,
+          description: _description.text,
+          location: _location.text,
+          contactEmail: _email.text,
+          contactPhone: _phone.text.isEmpty ? null : formatPhone('+267', _phone.text),
+        );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (result.error != null) {
+      showErrorPopup(context, result.error!);
+      return;
+    }
+    setState(() => _provider = result.provider);
+    _applyProvider(result.provider);
+    showSuccessPopup(context, 'Business profile saved');
+  }
+
+  Future<void> _addService() async {
+    var provider = _provider;
+    if (provider == null) {
+      final created = await context.read<DataRepository>().saveOwnedProviderProfile(
+            businessName: _businessName.text.trim().isEmpty ? 'My Business' : _businessName.text,
+            description: _description.text.trim().length >= 20
+                ? _description.text
+                : 'Professional services listed on Market Sphere Group.',
+            location: _location.text,
+            contactEmail: _email.text,
+            contactPhone: _phone.text.isEmpty ? null : formatPhone('+267', _phone.text),
+          );
+      if (created.error != null || created.provider == null) {
+        if (!mounted) return;
+        showErrorPopup(context, created.error ?? 'Create your business profile first.');
+        return;
+      }
+      provider = created.provider!;
+      setState(() => _provider = provider);
+    }
+
+    setState(() => _saving = true);
+    final result = await context.read<DataRepository>().addOwnedProviderService(
+          providerId: provider.id,
+          title: _serviceTitle.text,
+          description: _serviceDescription.text,
+          categoryId: _serviceCategoryId,
+        );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (result.error != null) {
+      showErrorPopup(context, result.error!);
+      return;
+    }
+    final service = result.service!;
+    setState(() {
+      _provider = provider!.copyWith(services: [...provider.services, service]);
+      _serviceTitle.clear();
+      _serviceDescription.clear();
+      _serviceCategoryId = null;
+    });
+    showSuccessPopup(context, 'Service added');
+  }
+
+  Future<void> _deleteService(OwnedProviderService service) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove service?'),
+        content: Text('Remove “${service.title}” from your listing?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final err = await context.read<DataRepository>().deleteOwnedProviderService(service.id);
+    if (!mounted) return;
+    if (err != null) {
+      showErrorPopup(context, err);
+      return;
+    }
+    setState(() {
+      _provider = _provider?.copyWith(
+        services: _provider!.services.where((s) => s.id != service.id).toList(),
+      );
+    });
+  }
+
+  Future<void> _setEnquiryStatus(EnquiryItem item, String status) async {
+    final err = await context.read<DataRepository>().updateEnquiryStatus(
+          enquiryId: item.id,
+          status: status,
+        );
+    if (!mounted) return;
+    if (err != null) {
+      showErrorPopup(context, err);
+      return;
+    }
+    setState(() {
+      _enquiries = _enquiries
+          .map((e) => e.id == item.id
+              ? EnquiryItem(
+                  id: e.id,
+                  customerId: e.customerId,
+                  providerId: e.providerId,
+                  subject: e.subject,
+                  message: e.message,
+                  status: status,
+                  createdAt: e.createdAt,
+                  providerBusinessName: e.providerBusinessName,
+                  customerName: e.customerName,
+                  customerEmail: e.customerEmail,
+                )
+              : e)
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final newCount = _enquiries.where((e) => e.isNew).length;
+
+    return Scaffold(
+      appBar: BrandAppBar(
+        title: 'Provider dashboard',
+        subtitle: _provider?.businessName ?? 'Manage your Market Sphere listing',
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        actions: [
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: Color(AppConfig.colorGold)))
+          : _error != null
+              ? LiveEmptyState(
+                  title: 'Dashboard unavailable',
+                  body: _error!,
+                  actionLabel: 'Retry',
+                  onAction: _load,
+                  icon: Icons.cloud_off_rounded,
+                )
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                      child: Row(
+                        children: [
+                          _StatPill(
+                            label: 'Services',
+                            value: '${_provider?.services.length ?? 0}',
+                          ),
+                          const SizedBox(width: 8),
+                          _StatPill(
+                            label: 'New messages',
+                            value: '$newCount',
+                          ),
+                          const SizedBox(width: 8),
+                          _StatPill(
+                            label: 'Status',
+                            value: enquiryStatusLabel(_provider?.status ?? 'not_created'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TabBar(
+                      controller: _tabs,
+                      labelColor: const Color(AppConfig.colorGold),
+                      unselectedLabelColor: scheme.onSurfaceVariant,
+                      indicatorColor: const Color(AppConfig.colorGold),
+                      tabs: [
+                        const Tab(text: 'Profile'),
+                        const Tab(text: 'Services'),
+                        Tab(text: newCount > 0 ? 'Inbox ($newCount)' : 'Inbox'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabs,
+                        children: [
+                          _profileTab(scheme),
+                          _servicesTab(scheme),
+                          _inboxTab(scheme),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  Widget _profileTab(ColorScheme scheme) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      children: [
+        Text(
+          'Business details',
+          style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface, fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Same listing fields as the website provider dashboard. Logo and gallery uploads stay on the website for best quality.',
+          style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
+        ),
+        const SizedBox(height: 16),
+        TextField(controller: _businessName, decoration: const InputDecoration(labelText: 'Business name')),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _description,
+          minLines: 4,
+          maxLines: 7,
+          decoration: const InputDecoration(labelText: 'Description'),
+        ),
+        const SizedBox(height: 12),
+        TextField(controller: _location, decoration: const InputDecoration(labelText: 'Location')),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _email,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(labelText: 'Contact email'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(labelText: 'Phone', prefixText: '+267 '),
+        ),
+        const SizedBox(height: 18),
+        FilledButton(
+          onPressed: _saving ? null : _saveProfile,
+          child: Text(_saving ? 'Saving…' : 'Save business profile'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: () => launchUrl(
+            Uri.parse('${AppConfig.siteUrl}dashboard/provider'),
+            mode: LaunchMode.externalApplication,
+          ),
+          icon: const Icon(Icons.open_in_new_rounded),
+          label: const Text('Open website for photos & gallery'),
+        ),
+      ],
+    );
+  }
+
+  Widget _servicesTab(ColorScheme scheme) {
+    final services = _provider?.services ?? const <OwnedProviderService>[];
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      children: [
+        Text(
+          'Your services',
+          style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface, fontSize: 16),
+        ),
+        const SizedBox(height: 10),
+        if (services.isEmpty)
+          Text('No services yet. Add one below.', style: TextStyle(color: scheme.onSurfaceVariant))
+        else
+          ...services.map(
+            (service) => Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(service.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        if (service.categoryName != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            service.categoryName!,
+                            style: const TextStyle(color: Color(AppConfig.colorGold), fontSize: 12),
+                          ),
+                        ],
+                        if (service.description != null) ...[
+                          const SizedBox(height: 6),
+                          Text(service.description!, style: TextStyle(color: scheme.onSurfaceVariant)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _deleteService(service),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        const SizedBox(height: 18),
+        const Text('Add service', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        const SizedBox(height: 12),
+        TextField(controller: _serviceTitle, decoration: const InputDecoration(labelText: 'Service title')),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String?>(
+          // ignore: deprecated_member_use
+          value: _serviceCategoryId,
+          decoration: const InputDecoration(labelText: 'Category (optional)'),
+          items: [
+            const DropdownMenuItem<String?>(value: null, child: Text('No category')),
+            ..._categories.map(
+              (c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
+            ),
+          ],
+          onChanged: (v) => setState(() => _serviceCategoryId = v),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _serviceDescription,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Description (optional)'),
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: _saving ? null : _addService,
+          child: Text(_saving ? 'Adding…' : 'Add service'),
+        ),
+      ],
+    );
+  }
+
+  Widget _inboxTab(ColorScheme scheme) {
+    final dateFmt = DateFormat.yMMMd().add_jm();
+    if (_provider == null) {
+      return const LiveEmptyState(
+        title: 'Create your business profile first',
+        body: 'Save your profile tab, then enquiries from customers will appear here.',
+        icon: Icons.inbox_outlined,
+      );
+    }
+    if (_enquiries.isEmpty) {
+      return const LiveEmptyState(
+        title: 'Inbox is empty',
+        body: 'When customers send enquiries from the app or website, they land here.',
+        icon: Icons.inbox_outlined,
+      );
+    }
+    return RefreshIndicator(
+      color: const Color(AppConfig.colorGold),
+      onRefresh: _load,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        itemCount: _enquiries.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final item = _enquiries[index];
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: item.isNew
+                    ? const Color(AppConfig.colorGold).withValues(alpha: 0.55)
+                    : scheme.outlineVariant.withValues(alpha: 0.65),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(item.subject, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    ),
+                    StatusChip(
+                      label: enquiryStatusLabel(item.status),
+                      tone: item.isNew ? ChipTone.gold : ChipTone.muted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.customerName?.trim().isNotEmpty == true
+                      ? item.customerName!
+                      : (item.customerEmail ?? 'Customer'),
+                  style: const TextStyle(color: Color(AppConfig.colorGold), fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Text(item.message, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4)),
+                const SizedBox(height: 8),
+                Text(
+                  dateFmt.format(item.createdAt.toLocal()),
+                  style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (item.customerEmail != null)
+                      OutlinedButton.icon(
+                        onPressed: () => launchMailto(
+                          email: item.customerEmail!,
+                          subject: 'Re: ${item.subject}',
+                        ),
+                        icon: const Icon(Icons.reply_rounded, size: 18),
+                        label: const Text('Reply by email'),
+                      ),
+                    if (item.isNew)
+                      FilledButton.tonal(
+                        onPressed: () => _setEnquiryStatus(item, 'read'),
+                        child: const Text('Mark read'),
+                      ),
+                    if (item.status != 'replied')
+                      FilledButton(
+                        onPressed: () => _setEnquiryStatus(item, 'replied'),
+                        child: const Text('Mark replied'),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  const _StatPill({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(AppConfig.colorGold).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(AppConfig.colorGold).withValues(alpha: 0.28)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: Color(AppConfig.colorMuted), fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

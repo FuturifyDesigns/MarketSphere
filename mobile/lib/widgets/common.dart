@@ -9,32 +9,38 @@ class AppNetworkImage extends StatelessWidget {
     required this.url,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.backgroundColor,
   });
 
   final String? url;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final fallback = backgroundColor ?? scheme.surfaceContainerHighest;
     final image = url == null || url!.isEmpty
         ? ColoredBox(
-            color: scheme.surfaceContainerHighest,
+            color: fallback,
             child: Center(child: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant)),
           )
-        : CachedNetworkImage(
-            imageUrl: url!,
-            fit: fit,
-            width: double.infinity,
-            height: double.infinity,
-            alignment: Alignment.center,
-            fadeInDuration: const Duration(milliseconds: 220),
-            memCacheWidth: 1200,
-            placeholder: (context, imageUrl) => ColoredBox(color: scheme.surfaceContainerHighest),
-            errorWidget: (context, imageUrl, error) => ColoredBox(
-              color: scheme.surfaceContainerHighest,
-              child: Center(child: Icon(Icons.broken_image_outlined, color: scheme.onSurfaceVariant)),
+        : ColoredBox(
+            color: fallback,
+            child: CachedNetworkImage(
+              imageUrl: url!,
+              fit: fit,
+              width: double.infinity,
+              height: double.infinity,
+              alignment: Alignment.center,
+              fadeInDuration: const Duration(milliseconds: 220),
+              memCacheWidth: 1200,
+              placeholder: (context, imageUrl) => ColoredBox(color: fallback),
+              errorWidget: (context, imageUrl, error) => ColoredBox(
+                color: fallback,
+                child: Center(child: Icon(Icons.broken_image_outlined, color: scheme.onSurfaceVariant)),
+              ),
             ),
           );
 

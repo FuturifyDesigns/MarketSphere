@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 import 'config.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'services/alert_notification_service.dart';
 import 'services/connectivity_service.dart';
@@ -32,6 +35,15 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('[firebase] init skipped/failed: $e');
+    }
+  }
 
   // Prefer --dart-define / --dart-define-from-file so secrets are not APK assets.
   // Optional debug-only dotenv if a developer still lists `.env` under assets locally.

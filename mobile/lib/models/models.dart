@@ -53,6 +53,7 @@ class ShowcaseListing {
     this.ownerName,
     this.ownerPhone,
     this.ownerEmail,
+    this.columnId,
     this.columnTitle,
     this.columnSlug,
   });
@@ -70,6 +71,7 @@ class ShowcaseListing {
   final String? ownerName;
   final String? ownerPhone;
   final String? ownerEmail;
+  final String? columnId;
   final String? columnTitle;
   final String? columnSlug;
 
@@ -89,7 +91,9 @@ class ShowcaseListing {
         'owner_name': ownerName,
         'owner_phone': ownerPhone,
         'owner_email': ownerEmail,
+        'column_id': columnId,
         'showcase_columns': {
+          'id': columnId,
           'title': columnTitle,
           'slug': columnSlug,
         },
@@ -119,6 +123,7 @@ class ShowcaseListing {
       ownerName: json['owner_name'] as String?,
       ownerPhone: json['owner_phone'] as String?,
       ownerEmail: json['owner_email'] as String?,
+      columnId: (json['column_id'] as String?) ?? colMap?['id'] as String?,
       columnTitle: colMap?['title'] as String?,
       columnSlug: colMap?['slug'] as String?,
     );
@@ -231,12 +236,24 @@ class ShowcaseColumn {
     required this.slug,
     required this.title,
     this.tagline,
+    this.listingCount = 0,
   });
 
   final String id;
   final String slug;
   final String title;
   final String? tagline;
+  final int listingCount;
+
+  ShowcaseColumn copyWith({int? listingCount}) {
+    return ShowcaseColumn(
+      id: id,
+      slug: slug,
+      title: title,
+      tagline: tagline,
+      listingCount: listingCount ?? this.listingCount,
+    );
+  }
 
   factory ShowcaseColumn.fromJson(Map<String, dynamic> json) {
     return ShowcaseColumn(
@@ -244,6 +261,7 @@ class ShowcaseColumn {
       slug: (json['slug'] as String?) ?? '',
       title: (json['title'] as String?) ?? 'Column',
       tagline: json['tagline'] as String?,
+      listingCount: (json['listing_count'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -386,5 +404,191 @@ class TeamMember {
     final base = siteBase.endsWith('/') ? siteBase : '$siteBase/';
     final path = raw.startsWith('/') ? raw.substring(1) : raw;
     return '$base$path';
+  }
+}
+
+class EnquiryItem {
+  const EnquiryItem({
+    required this.id,
+    this.customerId,
+    required this.providerId,
+    required this.subject,
+    required this.message,
+    required this.status,
+    required this.createdAt,
+    this.providerBusinessName,
+    this.customerName,
+    this.customerEmail,
+  });
+
+  final String id;
+  final String? customerId;
+  final String providerId;
+  final String subject;
+  final String message;
+  final String status;
+  final DateTime createdAt;
+  final String? providerBusinessName;
+  final String? customerName;
+  final String? customerEmail;
+
+  bool get isNew => status == 'new';
+
+  factory EnquiryItem.fromJson(Map<String, dynamic> json) {
+    final providers = json['providers'];
+    final profiles = json['profiles'];
+    String? businessName;
+    String? customerName;
+    String? customerEmail;
+    if (providers is Map) {
+      businessName = providers['business_name'] as String?;
+    }
+    if (profiles is Map) {
+      customerName = profiles['full_name'] as String?;
+      customerEmail = profiles['email'] as String?;
+    }
+    return EnquiryItem(
+      id: json['id'] as String,
+      customerId: json['customer_id'] as String?,
+      providerId: json['provider_id'] as String,
+      subject: (json['subject'] as String?) ?? '',
+      message: (json['message'] as String?) ?? '',
+      status: (json['status'] as String?) ?? 'new',
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      providerBusinessName: businessName,
+      customerName: customerName,
+      customerEmail: customerEmail,
+    );
+  }
+}
+
+class ServiceCategory {
+  const ServiceCategory({
+    required this.id,
+    required this.name,
+    this.slug,
+  });
+
+  final String id;
+  final String name;
+  final String? slug;
+
+  factory ServiceCategory.fromJson(Map<String, dynamic> json) {
+    return ServiceCategory(
+      id: json['id'] as String,
+      name: (json['name'] as String?) ?? 'Category',
+      slug: json['slug'] as String?,
+    );
+  }
+}
+
+class OwnedProviderService {
+  const OwnedProviderService({
+    required this.id,
+    required this.providerId,
+    required this.title,
+    this.description,
+    this.categoryId,
+    this.categoryName,
+  });
+
+  final String id;
+  final String providerId;
+  final String title;
+  final String? description;
+  final String? categoryId;
+  final String? categoryName;
+
+  factory OwnedProviderService.fromJson(Map<String, dynamic> json) {
+    final categories = json['categories'];
+    String? categoryName;
+    if (categories is Map) {
+      categoryName = categories['name'] as String?;
+    }
+    return OwnedProviderService(
+      id: json['id'] as String,
+      providerId: json['provider_id'] as String,
+      title: (json['title'] as String?) ?? 'Service',
+      description: json['description'] as String?,
+      categoryId: json['category_id'] as String?,
+      categoryName: categoryName,
+    );
+  }
+}
+
+class OwnedProvider {
+  const OwnedProvider({
+    required this.id,
+    required this.userId,
+    required this.businessName,
+    this.description,
+    this.location,
+    this.logoUrl,
+    this.coverUrl,
+    this.contactEmail,
+    this.contactPhone,
+    required this.status,
+    this.services = const [],
+  });
+
+  final String id;
+  final String userId;
+  final String businessName;
+  final String? description;
+  final String? location;
+  final String? logoUrl;
+  final String? coverUrl;
+  final String? contactEmail;
+  final String? contactPhone;
+  final String status;
+  final List<OwnedProviderService> services;
+
+  OwnedProvider copyWith({
+    String? businessName,
+    String? description,
+    String? location,
+    String? logoUrl,
+    String? coverUrl,
+    String? contactEmail,
+    String? contactPhone,
+    String? status,
+    List<OwnedProviderService>? services,
+  }) {
+    return OwnedProvider(
+      id: id,
+      userId: userId,
+      businessName: businessName ?? this.businessName,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      logoUrl: logoUrl ?? this.logoUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
+      contactEmail: contactEmail ?? this.contactEmail,
+      contactPhone: contactPhone ?? this.contactPhone,
+      status: status ?? this.status,
+      services: services ?? this.services,
+    );
+  }
+
+  factory OwnedProvider.fromJson(Map<String, dynamic> json) {
+    final servicesRaw = json['provider_services'];
+    final services = servicesRaw is List
+        ? servicesRaw
+            .whereType<Map>()
+            .map((e) => OwnedProviderService.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+        : const <OwnedProviderService>[];
+    return OwnedProvider(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      businessName: (json['business_name'] as String?) ?? 'My Business',
+      description: json['description'] as String?,
+      location: json['location'] as String?,
+      logoUrl: json['logo_url'] as String?,
+      coverUrl: json['cover_url'] as String?,
+      contactEmail: json['contact_email'] as String?,
+      contactPhone: json['contact_phone'] as String?,
+      status: (json['status'] as String?) ?? 'pending',
+      services: services,
+    );
   }
 }

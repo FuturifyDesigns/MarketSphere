@@ -368,6 +368,7 @@ class LocalCacheService {
       // Contact details are not persisted offline (shared-device / logout risk).
       ownerPhone: null,
       ownerEmail: null,
+      columnId: listing.columnId,
       columnTitle: listing.columnTitle,
       columnSlug: listing.columnSlug,
     );

@@ -15,6 +15,8 @@ import '../../widgets/common.dart';
 import '../../widgets/listing_slideshow.dart';
 import '../../widgets/trust_widgets.dart';
 import '../browse/provider_detail_screen.dart';
+import '../dashboard/my_enquiries_screen.dart';
+import '../dashboard/provider_dashboard_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../saved/saved_screen.dart';
 import '../settings/settings_screen.dart';
@@ -135,6 +137,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     : profile.isAdmin
                                         ? 'Signed in as Admin'
                                         : 'Signed in as Customer',
+                                    : profile.isAdmin
+                                        ? 'Signed in as Admin'
+                                        : 'Signed in as Customer',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
@@ -159,10 +164,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             profile == null
                                 ? 'Showcase listings and verified providers — updated live from the website.'
                                 : profile.isProvider
-                                    ? 'Your provider account is connected. Keep your listing fresh on the website and stay reachable here.'
-                                    : 'Showcase listings and verified providers — updated live from the website.',
+                                    ? 'Manage your listing, services, and enquiry inbox from Account → Provider dashboard.'
+                                    : 'Browse listings, save providers, and track enquiries from your dashboard.',
                             style: const TextStyle(color: Color(0xFFD8C9A8), height: 1.45),
                           ),
+                          if (profile != null && profile.isProvider) ...[
+                            const SizedBox(height: 14),
+                            FilledButton.tonal(
+                              onPressed: () => pushFade(context, const ProviderDashboardScreen()),
+                              child: const Text('Open provider dashboard'),
+                            ),
+                          ],
+                          if (profile != null && !profile.isProvider && !profile.isAdmin) ...[
+                            const SizedBox(height: 14),
+                            OutlinedButton(
+                              onPressed: () => pushFade(context, const MyEnquiriesScreen()),
+                              child: const Text('My enquiries'),
+                            ),
+                          ],
                         ],
                       ),
                     ),

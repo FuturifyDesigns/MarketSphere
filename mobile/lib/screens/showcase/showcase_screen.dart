@@ -5,12 +5,13 @@ import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/data_repository.dart';
 import '../../utils/helpers.dart';
-import '../../widgets/auth_gate.dart';
+import '../../utils/page_transitions.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
-import '../../widgets/listing_slideshow.dart';
-import 'listing_detail_screen.dart';
+import '../../widgets/common.dart';
+import 'column_listings_screen.dart';
 
+/// Showcase hub — same field/column idea as the website.
 class ShowcaseScreen extends StatefulWidget {
   const ShowcaseScreen({super.key});
 
@@ -19,114 +20,59 @@ class ShowcaseScreen extends StatefulWidget {
 }
 
 class _ShowcaseScreenState extends State<ShowcaseScreen> {
-  final _search = TextEditingController();
-  Future<List<ShowcaseListing>>? _future;
-  String? _dealFilter;
+  Future<List<ShowcaseColumn>>? _future;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _future ??= context.read<DataRepository>().fetchShowcaseListings();
-  }
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
+    _future ??= context.read<DataRepository>().fetchColumns();
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _future = context.read<DataRepository>().fetchShowcaseListings();
+      _future = context.read<DataRepository>().fetchColumns();
     });
     await _future;
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         BrandAppBar(
           title: 'Showcase',
-          subtitle: 'Live listings from the website',
+          subtitle: 'Explore fields — same columns as the website',
           actions: [
             IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh_rounded)),
           ],
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-          child: TextField(
-            controller: _search,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              hintText: 'Search listings…',
-              prefixIcon: Icon(Icons.search_rounded),
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 42,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              _FilterChip(
-                label: 'All',
-                selected: _dealFilter == null,
-                onTap: () => setState(() => _dealFilter = null),
-              ),
-              ...dealTypeLabels.entries.map(
-                (e) => Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: _FilterChip(
-                    label: e.value,
-                    selected: _dealFilter == e.key,
-                    onTap: () => setState(() => _dealFilter = e.key),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
         Expanded(
-          child: FutureBuilder<List<ShowcaseListing>>(
+          child: FutureBuilder<List<ShowcaseColumn>>(
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator(color: Color(AppConfig.colorGold)));
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(AppConfig.colorGold)),
+                );
               }
               if (snapshot.hasError) {
                 return LiveEmptyState(
-                  title: 'Couldn’t load showcase',
-                  body: 'Pull to retry when you’re back online.',
+                  title: 'Couldn’t load showcase fields',
+                  body: 'Check your connection and try again.',
                   actionLabel: 'Retry',
                   onAction: _refresh,
                   icon: Icons.wifi_off_rounded,
                 );
               }
 
-              final q = _search.text.trim().toLowerCase();
-              var items = snapshot.data ?? [];
-              if (_dealFilter != null) {
-                items = items.where((l) => l.dealType == _dealFilter).toList();
-              }
-              if (q.isNotEmpty) {
-                items = items
-                    .where(
-                      (l) =>
-                          l.title.toLowerCase().contains(q) ||
-                          (l.location?.toLowerCase().contains(q) ?? false) ||
-                          (l.summary?.toLowerCase().contains(q) ?? false),
-                    )
-                    .toList();
-              }
-
-              if (items.isEmpty) {
+              final columns = snapshot.data ?? [];
+              if (columns.isEmpty) {
                 return const LiveEmptyState(
-                  title: 'No matches yet',
-                  body: 'Try another filter or search term.',
-                  icon: Icons.filter_alt_outlined,
+                  title: 'No showcase fields yet',
+                  body: 'Fields will appear here once they are published on the website.',
+                  icon: Icons.grid_view_rounded,
                 );
               }
 
@@ -134,16 +80,112 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                 color: const Color(AppConfig.colorGold),
                 onRefresh: _refresh,
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
-                  itemCount: items.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                  itemCount: columns.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
-                    final listing = items[index];
-                    return ShowcaseListingCard(
-                      listing: listing,
-                      onTap: () => openIfSignedIn(
+                    final column = columns[index];
+                    final fieldLabel =
+                        'Field ${(index + 1).toString().padLeft(2, '0')} of ${columns.length.toString().padLeft(2, '0')}';
+                    return PressableScale(
+                      onTap: () => pushFade(
                         context,
-                        ListingDetailScreen(listingId: listing.id, initial: listing),
+                        ColumnListingsScreen(column: column),
+                      ),
+                      child: Container(
+                        height: 178,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: scheme.outlineVariant.withValues(alpha: 0.65),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.22),
+                              blurRadius: 18,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            AppNetworkImage(url: showcaseColumnCoverUrl(column.slug)),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.15),
+                                    Colors.black.withValues(alpha: 0.78),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fieldLabel,
+                                    style: TextStyle(
+                                      color: const Color(AppConfig.colorGoldLight)
+                                          .withValues(alpha: 0.9),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    column.title,
+                                    style: const TextStyle(
+                                      color: Color(AppConfig.colorText),
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    column.tagline?.trim().isNotEmpty == true
+                                        ? column.tagline!.trim()
+                                        : 'Explore ${column.title}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: scheme.onSurface.withValues(alpha: 0.86),
+                                      fontSize: 13.5,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '${column.listingCount} live listing${column.listingCount == 1 ? '' : 's'}',
+                                        style: const TextStyle(
+                                          color: Color(AppConfig.colorBronze),
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12.5,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: Color(AppConfig.colorGold),
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -153,36 +195,6 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      selectedColor: const Color(AppConfig.colorGold),
-      backgroundColor: const Color(0xFF242A33),
-      checkmarkColor: const Color(AppConfig.colorNight),
-      side: BorderSide(
-        color: selected
-            ? const Color(AppConfig.colorGold)
-            : const Color(AppConfig.colorMuted).withValues(alpha: 0.45),
-      ),
-      labelStyle: TextStyle(
-        color: selected ? const Color(AppConfig.colorNight) : const Color(AppConfig.colorText),
-        fontWeight: FontWeight.w700,
-        fontSize: 12,
-      ),
     );
   }
 }

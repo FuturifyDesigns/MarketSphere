@@ -133,6 +133,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   background: PhotoSlideshow(
                     urls: listing.imageUrls,
+                    title: listing.title,
                     height: 320,
                     borderRadius: BorderRadius.zero,
                     dwell: const Duration(milliseconds: 2600),
