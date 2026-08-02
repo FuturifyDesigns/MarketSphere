@@ -9,6 +9,7 @@ import '../../models/models.dart';
 import '../../services/data_repository.dart';
 import '../../state/auth_controller.dart';
 import '../../state/engagement_controller.dart';
+import '../../utils/helpers.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/auth_gate.dart';
 import '../../widgets/auth_widgets.dart';
@@ -42,18 +43,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<({List<ShowcaseListing> listings, List<ProviderItem> providers})> _load() async {
     final repo = context.read<DataRepository>();
+    // Listings drive the feed; providers must never break it.
+    final listings = await repo.fetchShowcaseListings(limit: 20).timeout(
+          const Duration(seconds: 15),
+        );
+    List<ProviderItem> providers;
     try {
-      final results = await Future.wait([
-        repo.fetchShowcaseListings(limit: 20),
-        repo.fetchProviders(limit: 12),
-      ]).timeout(const Duration(seconds: 12));
-      return (
-        listings: results[0] as List<ShowcaseListing>,
-        providers: results[1] as List<ProviderItem>,
-      );
-    } on TimeoutException {
-      return (listings: <ShowcaseListing>[], providers: <ProviderItem>[]);
+      providers = await repo.fetchProviders(limit: 12).timeout(
+            const Duration(seconds: 15),
+          );
+    } catch (_) {
+      providers = const [];
     }
+    return (listings: listings, providers: providers);
   }
 
   Future<void> _refresh() async {
@@ -212,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: LiveEmptyState(
                       title: 'Couldn’t load the feed',
-                      body: 'Check your connection and try again.',
+                      body: describeLoadError(snapshot.error),
                       actionLabel: 'Retry',
                       onAction: _refresh,
                       icon: Icons.wifi_off_rounded,

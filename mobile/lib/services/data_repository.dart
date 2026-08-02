@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -5,6 +8,31 @@ import '../models/models.dart';
 import '../utils/helpers.dart';
 import 'connectivity_service.dart';
 import 'local_cache_service.dart';
+
+/// Network/query failure with no cached fallback, so the UI can show why.
+class DataFetchException implements Exception {
+  DataFetchException(this.what, this.cause);
+
+  final String what;
+  final Object cause;
+
+  String get detail {
+    final c = cause;
+    if (c is PostgrestException) {
+      return [c.code, c.message]
+          .whereType<String>()
+          .where((e) => e.isNotEmpty)
+          .join(' · ');
+    }
+    if (c is AuthException) return c.message;
+    if (c is TimeoutException) return 'Request timed out';
+    if (c is SocketException) return 'No network route to Supabase';
+    return c.toString();
+  }
+
+  @override
+  String toString() => 'Could not load $what: $detail';
+}
 
 class DataRepository {
   SupabaseClient get _db => Supabase.instance.client;
@@ -123,7 +151,9 @@ class DataRepository {
         }
         return withCounts.isNotEmpty ? withCounts : cached;
       } catch (e) {
-        if (kDebugMode) debugPrint('[repo] fetchColumns failed: $e');
+        debugPrint('[repo] fetchColumns failed: $e');
+        // Surface the failure when there is nothing cached to show.
+        if (cached.isEmpty) throw DataFetchException('showcase fields', e);
         return cached;
       }
     });
@@ -155,7 +185,8 @@ class DataRepository {
         }
         return list;
       } catch (e) {
-        if (kDebugMode) debugPrint('[repo] fetchShowcaseListings failed: $e');
+        debugPrint('[repo] fetchShowcaseListings failed: $e');
+        if (cachedForCol.isEmpty) throw DataFetchException('listings', e);
         return cachedForCol;
       }
     });
@@ -254,7 +285,8 @@ class DataRepository {
         }
         return list.isNotEmpty ? list : cached;
       } catch (e) {
-        if (kDebugMode) debugPrint('[repo] fetchProviders failed: $e');
+        debugPrint('[repo] fetchProviders failed: $e');
+        if (cached.isEmpty) throw DataFetchException('providers', e);
         return cached;
       }
     });

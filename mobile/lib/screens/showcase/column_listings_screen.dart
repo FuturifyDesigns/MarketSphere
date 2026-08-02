@@ -162,7 +162,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                   if (snapshot.hasError) {
                     return LiveEmptyState(
                       title: 'Couldn’t load listings',
-                      body: 'Pull to retry when you’re back online.',
+                      body: describeLoadError(snapshot.error),
                       actionLabel: 'Retry',
                       onAction: _refresh,
                       icon: Icons.wifi_off_rounded,

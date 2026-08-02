@@ -1,4 +1,5 @@
 import '../config.dart';
+import '../services/data_repository.dart';
 
 const dealTypeLabels = <String, String>{
   'sale': 'For sale',
@@ -138,6 +139,14 @@ final _uuidRe = RegExp(
 bool isUuid(String? value) {
   final v = value?.trim() ?? '';
   return _uuidRe.hasMatch(v);
+}
+
+/// Human-readable reason a feed failed, so empty screens are never silent.
+String describeLoadError(Object? error) {
+  if (error == null) return 'Check your connection and try again.';
+  final detail = error is DataFetchException ? error.detail : error.toString();
+  final trimmed = detail.length > 200 ? '${detail.substring(0, 200)}…' : detail;
+  return 'Check your connection and try again.\n\n$trimmed';
 }
 
 String? sanitizePreferredArea(String? value) {

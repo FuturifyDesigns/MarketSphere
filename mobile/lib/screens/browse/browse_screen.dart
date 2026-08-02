@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/data_repository.dart';
+import '../../utils/helpers.dart';
 import '../../widgets/auth_gate.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
@@ -77,7 +78,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
               if (snapshot.hasError) {
                 return LiveEmptyState(
                   title: 'Couldn’t load providers',
-                  body: 'Check your connection and try again.',
+                  body: describeLoadError(snapshot.error),
                   actionLabel: 'Retry',
                   onAction: _refresh,
                   icon: Icons.wifi_off_rounded,

@@ -66,7 +66,7 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
               if (snapshot.hasError) {
                 return LiveEmptyState(
                   title: 'Couldn’t load showcase fields',
-                  body: 'Check your connection and try again.',
+                  body: describeLoadError(snapshot.error),
                   actionLabel: 'Retry',
                   onAction: _refresh,
                   icon: Icons.wifi_off_rounded,
