@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../config.dart';
 import '../../models/models.dart';
@@ -30,6 +30,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   List<EnquiryItem> _enquiries = const [];
   List<ServiceCategory> _categories = const [];
   var _loading = true;
+  var _saving = false;
+  var _mediaBusy = false;
   String? _error;
 
   final _businessName = TextEditingController();
@@ -40,7 +42,6 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   final _serviceTitle = TextEditingController();
   final _serviceDescription = TextEditingController();
   String? _serviceCategoryId;
-  var _saving = false;
 
   @override
   void initState() {
@@ -123,6 +124,74 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
     setState(() => _provider = result.provider);
     _applyProvider(result.provider);
     showSuccessPopup(context, 'Business profile saved');
+  }
+
+  Future<XFile?> _pickImage({required int maxWidth, required int quality}) {
+    return ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: maxWidth.toDouble(),
+      imageQuality: quality,
+    );
+  }
+
+  Future<void> _runMedia(
+    Future<({OwnedProvider? provider, String? error})> Function() action, {
+    required String success,
+  }) async {
+    if (_provider == null) {
+      showErrorPopup(context, 'Save your business profile first, then add photos.');
+      return;
+    }
+    setState(() => _mediaBusy = true);
+    final result = await action();
+    if (!mounted) return;
+    setState(() => _mediaBusy = false);
+    if (result.error != null) {
+      showErrorPopup(context, result.error!);
+      return;
+    }
+    setState(() => _provider = result.provider);
+    _applyProvider(result.provider);
+    showSuccessPopup(context, success);
+  }
+
+  Future<void> _uploadLogo() async {
+    final file = await _pickImage(maxWidth: 768, quality: 88);
+    if (file == null || !mounted) return;
+    final repo = context.read<DataRepository>();
+    await _runMedia(() => repo.uploadOwnedProviderLogo(file.path), success: 'Logo updated');
+  }
+
+  Future<void> _uploadCover() async {
+    final file = await _pickImage(maxWidth: 1920, quality: 90);
+    if (file == null || !mounted) return;
+    final repo = context.read<DataRepository>();
+    await _runMedia(() => repo.uploadOwnedProviderCover(file.path), success: 'Cover photo updated');
+  }
+
+  Future<void> _uploadGallery() async {
+    final file = await _pickImage(maxWidth: 1920, quality: 90);
+    if (file == null || !mounted) return;
+    final repo = context.read<DataRepository>();
+    await _runMedia(() => repo.addOwnedProviderGalleryImage(file.path), success: 'Gallery photo added');
+  }
+
+  Future<void> _removeLogo() async {
+    final repo = context.read<DataRepository>();
+    await _runMedia(repo.removeOwnedProviderLogo, success: 'Logo removed');
+  }
+
+  Future<void> _removeCover() async {
+    final repo = context.read<DataRepository>();
+    await _runMedia(repo.removeOwnedProviderCover, success: 'Cover photo removed');
+  }
+
+  Future<void> _removeGallery(String url) async {
+    final repo = context.read<DataRepository>();
+    await _runMedia(
+      () => repo.removeOwnedProviderGalleryImage(url),
+      success: 'Gallery photo removed',
+    );
   }
 
   Future<void> _addService() async {
@@ -302,16 +371,115 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   }
 
   Widget _profileTab(ColorScheme scheme) {
+    final provider = _provider;
+    final gallery = provider?.galleryUrls ?? const <String>[];
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       children: [
+        Text(
+          'Photos & branding',
+          style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface, fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Upload your logo, cover, and gallery — same storage as the website (up to 6 gallery photos).',
+          style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
+        ),
+        const SizedBox(height: 14),
+        _mediaCard(
+          scheme: scheme,
+          title: 'Logo',
+          subtitle: 'Square mark shown on your provider card',
+          url: provider?.logoUrl,
+          height: 120,
+          onUpload: _mediaBusy ? null : _uploadLogo,
+          onRemove: (provider?.logoUrl != null && !_mediaBusy) ? _removeLogo : null,
+        ),
+        const SizedBox(height: 12),
+        _mediaCard(
+          scheme: scheme,
+          title: 'Cover photo',
+          subtitle: 'Wide banner at the top of your profile',
+          url: provider?.coverUrl,
+          height: 150,
+          onUpload: _mediaBusy ? null : _uploadCover,
+          onRemove: (provider?.coverUrl != null && !_mediaBusy) ? _removeCover : null,
+        ),
+        const SizedBox(height: 12),
+        Text('Gallery', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 108,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              ...gallery.map(
+                (url) => Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: SizedBox(
+                          width: 108,
+                          height: 108,
+                          child: AppNetworkImage(url: url, fit: BoxFit.cover),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _mediaBusy ? null : () => _removeGallery(url),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (gallery.length < 6)
+                OutlinedButton(
+                  onPressed: _mediaBusy ? null : _uploadGallery,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(108, 108),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: _mediaBusy
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate_outlined),
+                            SizedBox(height: 6),
+                            Text('Add', style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
         Text(
           'Business details',
           style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface, fontSize: 16),
         ),
         const SizedBox(height: 6),
         Text(
-          'Same listing fields as the website provider dashboard. Logo and gallery uploads stay on the website for best quality.',
+          'Same listing fields as the website provider dashboard.',
           style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
         ),
         const SizedBox(height: 16),
@@ -342,16 +510,63 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
           onPressed: _saving ? null : _saveProfile,
           child: Text(_saving ? 'Saving…' : 'Save business profile'),
         ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: () => launchUrl(
-            Uri.parse('${AppConfig.siteUrl}dashboard/provider'),
-            mode: LaunchMode.externalApplication,
-          ),
-          icon: const Icon(Icons.open_in_new_rounded),
-          label: const Text('Open website for photos & gallery'),
-        ),
       ],
+    );
+  }
+
+  Widget _mediaCard({
+    required ColorScheme scheme,
+    required String title,
+    required String subtitle,
+    required String? url,
+    required double height,
+    required VoidCallback? onUpload,
+    required VoidCallback? onRemove,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.65)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text(subtitle, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5)),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: height,
+              width: double.infinity,
+              child: url != null && url.isNotEmpty
+                  ? AppNetworkImage(url: url, fit: BoxFit.cover)
+                  : ColoredBox(
+                      color: const Color(0xFF1A1F27),
+                      child: Center(
+                        child: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              FilledButton.tonal(
+                onPressed: onUpload,
+                child: Text(url == null || url.isEmpty ? 'Upload' : 'Replace'),
+              ),
+              if (onRemove != null) ...[
+                const SizedBox(width: 8),
+                TextButton(onPressed: onRemove, child: const Text('Remove')),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 

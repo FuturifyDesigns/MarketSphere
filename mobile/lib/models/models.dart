@@ -533,6 +533,7 @@ class OwnedProvider {
     this.location,
     this.logoUrl,
     this.coverUrl,
+    this.galleryUrls = const [],
     this.contactEmail,
     this.contactPhone,
     required this.status,
@@ -546,6 +547,7 @@ class OwnedProvider {
   final String? location;
   final String? logoUrl;
   final String? coverUrl;
+  final List<String> galleryUrls;
   final String? contactEmail;
   final String? contactPhone;
   final String status;
@@ -557,6 +559,7 @@ class OwnedProvider {
     String? location,
     String? logoUrl,
     String? coverUrl,
+    List<String>? galleryUrls,
     String? contactEmail,
     String? contactPhone,
     String? status,
@@ -570,6 +573,7 @@ class OwnedProvider {
       location: location ?? this.location,
       logoUrl: logoUrl ?? this.logoUrl,
       coverUrl: coverUrl ?? this.coverUrl,
+      galleryUrls: galleryUrls ?? this.galleryUrls,
       contactEmail: contactEmail ?? this.contactEmail,
       contactPhone: contactPhone ?? this.contactPhone,
       status: status ?? this.status,
@@ -585,6 +589,7 @@ class OwnedProvider {
             .map((e) => OwnedProviderService.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : const <OwnedProviderService>[];
+    final gallery = json['gallery_urls'];
     return OwnedProvider(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -593,6 +598,7 @@ class OwnedProvider {
       location: json['location'] as String?,
       logoUrl: json['logo_url'] as String?,
       coverUrl: json['cover_url'] as String?,
+      galleryUrls: gallery is List ? gallery.map((e) => e.toString()).toList() : const [],
       contactEmail: json['contact_email'] as String?,
       contactPhone: json['contact_phone'] as String?,
       status: (json['status'] as String?) ?? 'pending',

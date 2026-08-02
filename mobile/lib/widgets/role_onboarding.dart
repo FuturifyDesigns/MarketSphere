@@ -113,6 +113,10 @@ class _RoleOnboardingHostState extends State<RoleOnboardingHost> {
   Widget build(BuildContext context) {
     // Keep coach card clear of the bottom nav (~68).
     const navClearance = 76.0;
+    final last = _step >= _steps.length - 1;
+    final continueLabel = last
+        ? (_role == 'provider' ? 'Finish' : 'Start')
+        : 'Continue';
 
     return Stack(
       children: [
@@ -124,136 +128,151 @@ class _RoleOnboardingHostState extends State<RoleOnboardingHost> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, navClearance),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: 440,
-                    maxHeight: MediaQuery.sizeOf(context).height * 0.42,
-                  ),
-                  child: Material(
-                    color: const Color(0xF2171B22),
-                    elevation: 12,
-                    shadowColor: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(AppConfig.colorGold).withValues(alpha: 0.3),
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: SizedBox(
+                    height: MediaQuery.sizeOf(context).height * 0.42,
+                    width: double.infinity,
+                    child: Material(
+                      color: const Color(0xF2171B22),
+                      elevation: 12,
+                      shadowColor: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(AppConfig.colorGold).withValues(alpha: 0.3),
+                          ),
                         ),
-                      ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                         child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: const Color(AppConfig.colorGold).withValues(alpha: 0.14),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    _iconFor(_current.icon),
-                                    size: 20,
-                                    color: const Color(AppConfig.colorGold),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    _role == 'provider' ? 'Provider tour' : 'Customer tour',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.35,
-                                      color: const Color(AppConfig.colorGold).withValues(alpha: 0.9),
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: _finish,
-                                  style: TextButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    foregroundColor: const Color(0xFFB9AE96),
-                                  ),
-                                  child: const Text('Skip'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: List.generate(_steps.length, (i) {
-                                final active = i <= _step;
-                                return Expanded(
-                                  child: Container(
-                                    height: 3,
-                                    margin: EdgeInsets.only(right: i == _steps.length - 1 ? 0 : 3),
-                                    decoration: BoxDecoration(
-                                      color: active
-                                          ? const Color(AppConfig.colorGold)
-                                          : const Color(0xFF2A313A),
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _current.title,
-                              style: GoogleFonts.barlowCondensed(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFF7F0E4),
-                                height: 1.15,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              _current.description,
-                              style: const TextStyle(
-                                color: Color(0xFFB9AE96),
-                                height: 1.4,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                            if (_current.bullets.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              ..._current.bullets.map(
-                                (b) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                            Expanded(
+                              child: SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      const Padding(
-                                        padding: EdgeInsets.only(top: 2),
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: const Color(AppConfig.colorGold)
+                                              .withValues(alpha: 0.14),
+                                          shape: BoxShape.circle,
+                                        ),
                                         child: Icon(
-                                          Icons.check_circle_outline,
-                                          size: 14,
-                                          color: Color(AppConfig.colorGold),
+                                          _iconFor(_current.icon),
+                                          size: 20,
+                                          color: const Color(AppConfig.colorGold),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
-                                          b,
-                                          style: const TextStyle(
-                                            color: Color(0xFFD8C9A8),
-                                            height: 1.3,
-                                            fontSize: 12.5,
+                                          _role == 'provider'
+                                              ? 'Provider tour'
+                                              : 'Customer tour',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.35,
+                                            color: const Color(AppConfig.colorGold)
+                                                .withValues(alpha: 0.9),
                                           ),
                                         ),
                                       ),
+                                      TextButton(
+                                        onPressed: _finish,
+                                        style: TextButton.styleFrom(
+                                          visualDensity: VisualDensity.compact,
+                                          foregroundColor: const Color(0xFFB9AE96),
+                                        ),
+                                        child: const Text('Skip'),
+                                      ),
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: List.generate(_steps.length, (i) {
+                                      final active = i <= _step;
+                                      return Expanded(
+                                        child: Container(
+                                          height: 3,
+                                          margin: EdgeInsets.only(
+                                            right: i == _steps.length - 1 ? 0 : 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: active
+                                                ? const Color(AppConfig.colorGold)
+                                                : const Color(0xFF2A313A),
+                                            borderRadius: BorderRadius.circular(99),
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _current.title,
+                                    style: GoogleFonts.barlowCondensed(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFFF7F0E4),
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _current.description,
+                                    style: const TextStyle(
+                                      color: Color(0xFFB9AE96),
+                                      height: 1.4,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                  if (_current.bullets.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    ..._current.bullets.map(
+                                      (b) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 4),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Padding(
+                                              padding: EdgeInsets.only(top: 2),
+                                              child: Icon(
+                                                Icons.check_circle_outline,
+                                                size: 14,
+                                                color: Color(AppConfig.colorGold),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                b,
+                                                style: const TextStyle(
+                                                  color: Color(0xFFD8C9A8),
+                                                  height: 1.3,
+                                                  fontSize: 12.5,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ],
-                            const SizedBox(height: 12),
-                            Row(
+                            ),
+                          ),
+                          // Always pinned — was easy to miss when scrolled under long copy.
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+                            child: Row(
                               children: [
                                 Text(
                                   '${_step + 1} / ${_steps.length}',
@@ -267,19 +286,17 @@ class _RoleOnboardingHostState extends State<RoleOnboardingHost> {
                                 FilledButton(
                                   onPressed: _next,
                                   style: FilledButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
                                   ),
-                                  child: Text(
-                                    _step >= _steps.length - 1
-                                        ? (_role == 'provider' ? 'Finish' : 'Start')
-                                        : 'Next',
-                                  ),
+                                  child: Text(continueLabel),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -287,6 +304,7 @@ class _RoleOnboardingHostState extends State<RoleOnboardingHost> {
               ),
             ),
           ),
+        ),
       ],
     );
   }

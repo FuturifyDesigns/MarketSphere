@@ -846,15 +846,16 @@ class DataRepository {
     }
   }
 
+  static const _ownedProviderSelect =
+      'id, user_id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))';
+
   Future<OwnedProvider?> fetchOwnedProvider() async {
     final uid = _uid;
     if (uid == null) return null;
     try {
       final row = await _db
           .from('providers')
-          .select(
-            'id, user_id, business_name, description, location, logo_url, cover_url, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))',
-          )
+          .select(_ownedProviderSelect)
           .eq('user_id', uid)
           .maybeSingle();
       if (row == null) return null;
@@ -946,9 +947,7 @@ class DataRepository {
               'user_id': uid,
               'status': 'approved',
             })
-            .select(
-              'id, user_id, business_name, description, location, logo_url, cover_url, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))',
-            )
+            .select(_ownedProviderSelect)
             .single();
         return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
       }
@@ -957,14 +956,163 @@ class DataRepository {
           .from('providers')
           .update(payload)
           .eq('id', existing.id)
-          .select(
-            'id, user_id, business_name, description, location, logo_url, cover_url, contact_email, contact_phone, status, provider_services(id, provider_id, title, description, category_id, categories(name))',
-          )
+          .select(_ownedProviderSelect)
           .single();
       return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
     } catch (e) {
       return (provider: null, error: friendlyError(e, fallback: 'Could not save business profile.'));
     }
+  }
+
+  static const _maxGallery = 6;
+
+  Future<({OwnedProvider? provider, String? error})> uploadOwnedProviderLogo(String filePath) async {
+    return _uploadOwnedMedia(
+      filePath: filePath,
+      bucket: 'provider-logos',
+      objectName: 'logo',
+      field: 'logo_url',
+    );
+  }
+
+  Future<({OwnedProvider? provider, String? error})> uploadOwnedProviderCover(String filePath) async {
+    return _uploadOwnedMedia(
+      filePath: filePath,
+      bucket: 'provider-gallery',
+      objectName: 'cover',
+      field: 'cover_url',
+    );
+  }
+
+  Future<({OwnedProvider? provider, String? error})> addOwnedProviderGalleryImage(String filePath) async {
+    final existing = await fetchOwnedProvider();
+    if (existing == null) {
+      return (provider: null, error: 'Save your business profile before uploading photos.');
+    }
+    if (existing.galleryUrls.length >= _maxGallery) {
+      return (provider: null, error: 'You can add up to $_maxGallery gallery photos.');
+    }
+    try {
+      final bytes = await File(filePath).readAsBytes();
+      final name = 'gallery-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path = '${existing.id}/$name';
+      await _db.storage.from('provider-gallery').uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+          );
+      final url = _db.storage.from('provider-gallery').getPublicUrl(path);
+      final next = [...existing.galleryUrls, url];
+      final row = await _db
+          .from('providers')
+          .update({'gallery_urls': next})
+          .eq('id', existing.id)
+          .select(_ownedProviderSelect)
+          .single();
+      return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
+    } catch (e) {
+      return (provider: null, error: friendlyError(e, fallback: 'Could not upload gallery photo.'));
+    }
+  }
+
+  Future<({OwnedProvider? provider, String? error})> removeOwnedProviderLogo() async {
+    return _clearOwnedMediaField(field: 'logo_url', bucket: 'provider-logos', hintPath: 'logo');
+  }
+
+  Future<({OwnedProvider? provider, String? error})> removeOwnedProviderCover() async {
+    return _clearOwnedMediaField(field: 'cover_url', bucket: 'provider-gallery', hintPath: 'cover');
+  }
+
+  Future<({OwnedProvider? provider, String? error})> removeOwnedProviderGalleryImage(String url) async {
+    final existing = await fetchOwnedProvider();
+    if (existing == null) return (provider: null, error: 'Provider not found.');
+    try {
+      final next = existing.galleryUrls.where((u) => u != url).toList();
+      await _tryRemoveStorageUrl(url, bucket: 'provider-gallery');
+      final row = await _db
+          .from('providers')
+          .update({'gallery_urls': next})
+          .eq('id', existing.id)
+          .select(_ownedProviderSelect)
+          .single();
+      return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
+    } catch (e) {
+      return (provider: null, error: friendlyError(e, fallback: 'Could not remove gallery photo.'));
+    }
+  }
+
+  Future<({OwnedProvider? provider, String? error})> _uploadOwnedMedia({
+    required String filePath,
+    required String bucket,
+    required String objectName,
+    required String field,
+  }) async {
+    final existing = await fetchOwnedProvider();
+    if (existing == null) {
+      return (provider: null, error: 'Save your business profile before uploading photos.');
+    }
+    try {
+      final bytes = await File(filePath).readAsBytes();
+      final path = '${existing.id}/$objectName';
+      await _db.storage.from(bucket).uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+          );
+      // Bust CDN/cache so the new image shows immediately.
+      final url =
+          '${_db.storage.from(bucket).getPublicUrl(path)}?t=${DateTime.now().millisecondsSinceEpoch}';
+      final previous = field == 'logo_url' ? existing.logoUrl : existing.coverUrl;
+      if (previous != null && previous.isNotEmpty && !previous.contains('/$objectName')) {
+        await _tryRemoveStorageUrl(previous, bucket: bucket);
+      }
+      final row = await _db
+          .from('providers')
+          .update({field: url})
+          .eq('id', existing.id)
+          .select(_ownedProviderSelect)
+          .single();
+      return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
+    } catch (e) {
+      return (provider: null, error: friendlyError(e, fallback: 'Could not upload photo.'));
+    }
+  }
+
+  Future<({OwnedProvider? provider, String? error})> _clearOwnedMediaField({
+    required String field,
+    required String bucket,
+    required String hintPath,
+  }) async {
+    final existing = await fetchOwnedProvider();
+    if (existing == null) return (provider: null, error: 'Provider not found.');
+    try {
+      final previous = field == 'logo_url' ? existing.logoUrl : existing.coverUrl;
+      if (previous != null && previous.isNotEmpty) {
+        await _tryRemoveStorageUrl(previous, bucket: bucket);
+      }
+      final row = await _db
+          .from('providers')
+          .update({field: null})
+          .eq('id', existing.id)
+          .select(_ownedProviderSelect)
+          .single();
+      return (provider: OwnedProvider.fromJson(Map<String, dynamic>.from(row)), error: null);
+    } catch (e) {
+      return (provider: null, error: friendlyError(e, fallback: 'Could not remove photo.'));
+    }
+  }
+
+  Future<void> _tryRemoveStorageUrl(String url, {required String bucket}) async {
+    try {
+      final uri = Uri.tryParse(url);
+      if (uri == null) return;
+      final marker = '/object/public/$bucket/';
+      final idx = uri.path.indexOf(marker);
+      if (idx < 0) return;
+      final path = uri.path.substring(idx + marker.length);
+      if (path.isEmpty) return;
+      await _db.storage.from(bucket).remove([path]);
+    } catch (_) {}
   }
 
   Future<({OwnedProviderService? service, String? error})> addOwnedProviderService({
