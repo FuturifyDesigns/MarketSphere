@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import '../config.dart';
 import '../services/data_repository.dart';
 
@@ -144,8 +147,19 @@ bool isUuid(String? value) {
 /// Human-readable reason a feed failed, so empty screens are never silent.
 String describeLoadError(Object? error) {
   if (error == null) return 'Check your connection and try again.';
-  final detail = error is DataFetchException ? error.detail : error.toString();
-  final trimmed = detail.length > 200 ? '${detail.substring(0, 200)}…' : detail;
+  final raw = error is DataFetchException ? error.detail : error.toString();
+
+  if (error is TimeoutException || raw.contains('TimeoutException')) {
+    return 'Your phone reached no answer from our servers.\n\n'
+        'This is usually mobile data or Wi-Fi that is connected but not passing '
+        'traffic. Try another network, then run Settings → Connection test.';
+  }
+  if (error is SocketException || raw.contains('SocketException')) {
+    return 'No internet connection on this phone.\n\n'
+        'Turn Wi-Fi or mobile data back on and pull down to refresh.';
+  }
+
+  final trimmed = raw.length > 200 ? '${raw.substring(0, 200)}…' : raw;
   return 'Check your connection and try again.\n\n$trimmed';
 }
 

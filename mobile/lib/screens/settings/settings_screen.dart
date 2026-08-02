@@ -9,6 +9,7 @@ import '../../state/engagement_controller.dart';
 import '../../utils/app_feedback.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/role_onboarding.dart';
+import 'connection_test_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -142,6 +143,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+              leading: const Icon(Icons.wifi_tethering_rounded),
+              title: const Text('Connection test', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(
+                'Check why listings or providers are not loading',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ConnectionTestScreen()),
+              ),
+            ),
+          ),
           const SizedBox(height: 18),
           Text(
             'Favourites and recently viewed listings are cached on this phone for weak-signal browsing.',

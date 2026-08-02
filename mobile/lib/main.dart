@@ -20,6 +20,7 @@ import 'services/connectivity_service.dart';
 import 'services/data_repository.dart';
 import 'services/deep_link_service.dart';
 import 'services/env_config.dart';
+import 'services/http_timeout_client.dart';
 import 'services/miss_you_service.dart';
 import 'services/push_service.dart';
 import 'services/secure_session_storage.dart';
@@ -82,6 +83,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: supabaseUrl,
     publishableKey: supabaseAnonKey,
+    httpClient: TimeoutHttpClient(),
     authOptions: FlutterAuthClientOptions(
       localStorage: SecureSessionLocalStorage(persistSessionKey: sessionKey),
       pkceAsyncStorage: SecureGotrueAsyncStorage(),

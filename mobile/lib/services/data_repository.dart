@@ -42,6 +42,7 @@ class DataRepository {
 
   static const _netTimeout = Duration(seconds: 10);
   static const _statsTimeout = Duration(seconds: 3);
+  static const _cacheTimeout = Duration(seconds: 4);
 
   /// Full select (detail-ready). Falls back to [_listingSelectSlim] on schema/embed errors.
   static const _listingSelect =
@@ -65,6 +66,24 @@ class DataRepository {
 
   Future<T> _timeout<T>(Future<T> future, {Duration timeout = _netTimeout}) {
     return future.timeout(timeout);
+  }
+
+  /// Local storage must never stall a feed (platform channels can wedge).
+  Future<T> _cacheRead<T>(Future<T> Function() run, T fallback) async {
+    try {
+      return await run().timeout(_cacheTimeout);
+    } catch (e) {
+      debugPrint('[repo] cache read failed/slow: $e');
+      return fallback;
+    }
+  }
+
+  Future<void> _cacheWrite(Future<void> Function() run) async {
+    try {
+      await run().timeout(_cacheTimeout);
+    } catch (e) {
+      debugPrint('[repo] cache write failed/slow: $e');
+    }
   }
 
   bool _isJwtError(Object error) {
@@ -108,7 +127,10 @@ class DataRepository {
 
   Future<List<ShowcaseColumn>> fetchColumns() {
     return _singleFlight('columns', () async {
-      final cached = await _cache.catalogColumns();
+      final cached = await _cacheRead<List<ShowcaseColumn>>(
+        () => _cache.catalogColumns(),
+        const [],
+      );
 
       try {
         final rowsFuture = _publicRead(
@@ -147,7 +169,7 @@ class DataRepository {
             .map((c) => c.copyWith(listingCount: counts[c.id] ?? c.listingCount))
             .toList();
         if (withCounts.isNotEmpty) {
-          await _cache.saveCatalogColumns(withCounts);
+          await _cacheWrite(() => _cache.saveCatalogColumns(withCounts));
         }
         return withCounts.isNotEmpty ? withCounts : cached;
       } catch (e) {
@@ -166,7 +188,10 @@ class DataRepository {
     final capped = limit.clamp(1, 60);
     final col = columnId?.trim() ?? '';
     return _singleFlight('listings:$capped:$col', () async {
-      final cached = await _cache.offlineListingFeed(limit: capped);
+      final cached = await _cacheRead<List<ShowcaseListing>>(
+        () => _cache.offlineListingFeed(limit: capped),
+        const [],
+      );
       final cachedForCol =
           col.isEmpty ? cached : cached.where((l) => l.columnId == col).toList();
 
@@ -176,12 +201,12 @@ class DataRepository {
         if (col.isEmpty) {
           // Never wipe a good cache with a short/empty home preview.
           if (list.isNotEmpty && (list.length >= cached.length || capped >= 30)) {
-            await _cache.saveCatalogListings(list);
+            await _cacheWrite(() => _cache.saveCatalogListings(list));
           } else if (list.isNotEmpty) {
-            await _cache.mergeCatalogListings(list);
+            await _cacheWrite(() => _cache.mergeCatalogListings(list));
           }
         } else if (list.isNotEmpty) {
-          await _cache.mergeCatalogListings(list);
+          await _cacheWrite(() => _cache.mergeCatalogListings(list));
         }
         return list;
       } catch (e) {
@@ -247,7 +272,10 @@ class DataRepository {
     final capped = limit.clamp(1, 60);
     final q = query?.trim() ?? '';
     return _singleFlight('providers:$capped:${q.toLowerCase()}', () async {
-      final cached = await _cache.offlineProviderFeed(limit: capped, query: query);
+      final cached = await _cacheRead<List<ProviderItem>>(
+        () => _cache.offlineProviderFeed(limit: capped, query: query),
+        const [],
+      );
 
       try {
         final rows = await _publicRead(() async {
@@ -278,9 +306,9 @@ class DataRepository {
 
         if (list.isNotEmpty) {
           if (q.isEmpty && (list.length >= cached.length || capped >= 30)) {
-            await _cache.saveCatalogProviders(list);
+            await _cacheWrite(() => _cache.saveCatalogProviders(list));
           } else {
-            await _cache.mergeCatalogProviders(list);
+            await _cacheWrite(() => _cache.mergeCatalogProviders(list));
           }
         }
         return list.isNotEmpty ? list : cached;
