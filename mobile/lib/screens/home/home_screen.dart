@@ -22,6 +22,7 @@ import '../dashboard/my_enquiries_screen.dart';
 import '../dashboard/provider_dashboard_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../saved/saved_screen.dart';
+import '../settings/connection_test_screen.dart';
 import '../settings/settings_screen.dart';
 import '../showcase/listing_detail_screen.dart';
 
@@ -43,14 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<({List<ShowcaseListing> listings, List<ProviderItem> providers})> _load() async {
     final repo = context.read<DataRepository>();
-    // Listings drive the feed; providers must never break it.
+    // Listings drive the feed; providers must never break it. The repository
+    // already bounds every call, so these are only a last-resort backstop.
     final listings = await repo.fetchShowcaseListings(limit: 20).timeout(
-          const Duration(seconds: 15),
+          const Duration(seconds: 30),
         );
     List<ProviderItem> providers;
     try {
       providers = await repo.fetchProviders(limit: 12).timeout(
-            const Duration(seconds: 15),
+            const Duration(seconds: 30),
           );
     } catch (_) {
       providers = const [];
@@ -217,6 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       body: describeLoadError(snapshot.error),
                       actionLabel: 'Retry',
                       onAction: _refresh,
+                      secondaryLabel: 'Run connection test',
+                      onSecondary: () => pushFade(context, const ConnectionTestScreen()),
                       icon: Icons.wifi_off_rounded,
                     ),
                   );

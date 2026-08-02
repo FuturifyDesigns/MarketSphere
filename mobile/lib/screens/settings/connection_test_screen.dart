@@ -61,6 +61,19 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
     return e.toString();
   }
 
+  Future<String> _connect(String host, InternetAddressType type) async {
+    final addresses = await InternetAddress.lookup(host, type: type);
+    if (addresses.isEmpty) return 'Not offered by DNS (skipped)';
+    final socket = await Socket.connect(
+      addresses.first,
+      443,
+      timeout: const Duration(seconds: 8),
+    );
+    final address = socket.remoteAddress.address;
+    socket.destroy();
+    return 'Reached $address:443';
+  }
+
   Future<void> _run() async {
     setState(() {
       _running = true;
@@ -86,12 +99,33 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
       ),
       await _time('DNS lookup', () async {
         final records = await InternetAddress.lookup(host);
-        return records.map((r) => r.address).take(2).join(', ');
+        final v4 = records.where((r) => r.type == InternetAddressType.IPv4).length;
+        final v6 = records.where((r) => r.type == InternetAddressType.IPv6).length;
+        if (records.isEmpty) throw const SocketException('No addresses returned');
+        return '$v4 IPv4, $v6 IPv6 · ${records.map((r) => r.address).take(3).join(', ')}';
       }),
-      await _time('HTTPS reachability', () async {
+      await _time('IPv4 connect', () => _connect(host, InternetAddressType.IPv4)),
+      await _time('IPv6 connect', () => _connect(host, InternetAddressType.IPv6)),
+      await _time('TLS handshake', () async {
         final socket = await SecureSocket.connect(host, 443);
+        final proto = socket.peerCertificate?.subject ?? 'certificate accepted';
         socket.destroy();
-        return 'TLS connection established';
+        return proto;
+      }),
+      await _time('Raw HTTPS request', () async {
+        final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+        try {
+          final req = await client.getUrl(
+            Uri.parse('$url/rest/v1/showcase_listings?select=id&limit=1'),
+          );
+          req.headers.set('apikey', EnvConfig.supabaseAnonKey);
+          req.headers.set('Authorization', 'Bearer ${EnvConfig.supabaseAnonKey}');
+          final res = await req.close();
+          await res.drain<void>();
+          return 'HTTP ${res.statusCode}';
+        } finally {
+          client.close(force: true);
+        }
       }),
       await _time('Session', () async {
         final session = client.auth.currentSession;

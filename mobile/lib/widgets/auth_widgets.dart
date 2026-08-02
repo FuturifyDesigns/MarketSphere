@@ -317,6 +317,8 @@ class LiveEmptyState extends StatelessWidget {
     required this.body,
     this.actionLabel,
     this.onAction,
+    this.secondaryLabel,
+    this.onSecondary,
     this.icon = Icons.auto_awesome_outlined,
   });
 
@@ -324,6 +326,8 @@ class LiveEmptyState extends StatelessWidget {
   final String body;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
   final IconData icon;
 
   @override
@@ -375,6 +379,10 @@ class LiveEmptyState extends StatelessWidget {
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: 16),
             FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+          ],
+          if (secondaryLabel != null && onSecondary != null) ...[
+            const SizedBox(height: 4),
+            TextButton(onPressed: onSecondary, child: Text(secondaryLabel!)),
           ],
         ],
       ),

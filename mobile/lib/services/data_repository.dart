@@ -242,9 +242,22 @@ class DataRepository {
     try {
       return await run(_listingSelect);
     } catch (e) {
-      if (kDebugMode) debugPrint('[repo] full listing select failed, trying slim: $e');
+      // Only a column/embed mismatch is worth a second round trip. Retrying a
+      // timeout just doubles the wait before the user sees the real cause.
+      if (!_isSchemaError(e)) rethrow;
+      debugPrint('[repo] full listing select failed, trying slim: $e');
       return run(_listingSelectSlim);
     }
+  }
+
+  bool _isSchemaError(Object error) {
+    if (error is! PostgrestException) return false;
+    const codes = {'PGRST200', 'PGRST204', '42703', '42P01'};
+    if (codes.contains(error.code)) return true;
+    final msg = error.message.toLowerCase();
+    return msg.contains('does not exist') ||
+        msg.contains('could not find') ||
+        msg.contains('relationship');
   }
 
   Future<ShowcaseListing?> fetchListing(String id) async {
