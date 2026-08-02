@@ -47,13 +47,11 @@ Future<void> main() async {
     }
   }
 
-  // Prefer --dart-define / --dart-define-from-file so secrets are not APK assets.
-  // Optional debug-only dotenv if a developer still lists `.env` under assets locally.
-  if (kDebugMode) {
-    try {
-      await dotenv.load(fileName: '.env');
-    } catch (_) {}
-  }
+  // Loads mobile/.env from assets (usual `flutter build apk --release`).
+  // Optional override: --dart-define-from-file=.env
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
 
   final supabaseUrl = EnvConfig.supabaseUrl;
   final supabaseAnonKey = EnvConfig.supabaseAnonKey;
@@ -61,9 +59,8 @@ Future<void> main() async {
     runApp(
       const _BootErrorApp(
         message:
-            'This APK was built without Supabase keys.\n\n'
-            'Rebuild with:\n'
-            'flutter build apk --release --dart-define-from-file=.env',
+            'Missing SUPABASE_URL / SUPABASE_ANON_KEY.\n\n'
+            'Put them in mobile/.env then rebuild.',
       ),
     );
     return;

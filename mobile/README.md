@@ -56,41 +56,18 @@ If you ever use browser OAuth again, add this to Supabase → Auth → URL Confi
 
 `com.marketspheregroup.market_sphere://login-callback/`
 
-## Run (debug)
+## Run / build
 
-Config is injected via dart-define (`.env` is **not** packaged as a Flutter asset):
+Keep keys in `mobile/.env` (gitignored). Then use your usual commands:
 
 ```bat
 cd mobile
 flutter pub get
-flutter run --dart-define-from-file=.env
+flutter run
+flutter build apk --release
 ```
 
-## Build (release)
-
-Preferred (obfuscated + dart-define):
-
-```bat
-cd mobile
-scripts\build-release.bat
-```
-
-Or manually:
-
-```bat
-flutter build apk --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=.env
-```
-
-Local-only APK without an upload keystore:
-
-```bat
-set ALLOW_DEBUG_SIGNING=1
-scripts\build-release.bat
-```
-
-(or `flutter build apk --release …` with Gradle property `-PallowDebugSigning=true` via `ORG_GRADLE_PROJECT_allowDebugSigning=true`)
-
-Archive `build/symbols` privately — needed to decode crash stacks.
+If Windows locks a build file (`classes.dex … used by another process`), close other Flutter/Android Studio builds and run `flutter clean`, then build again.
 
 ## App security (standard hardening)
 

@@ -1,8 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Reads config from `--dart-define` / `--dart-define-from-file` first,
-/// then falls back to `mobile/.env` (local debug). Prefer dart-define for
-/// release builds so keys are not shipped as a named Flutter asset.
+/// then falls back to packaged `mobile/.env` (asset).
 class EnvConfig {
   EnvConfig._();
 
