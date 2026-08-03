@@ -928,6 +928,15 @@ class DataRepository {
       final emailErr = validateEmail(contactEmail);
       if (emailErr != null) return (provider: null, error: emailErr);
     }
+    // Accept formatted (+267…) or local digits — validate the local number part.
+    if (contactPhone != null && contactPhone.trim().isNotEmpty) {
+      final digits = contactPhone.replaceAll(RegExp(r'\D'), '');
+      final local = digits.startsWith('267') && digits.length > 3
+          ? digits.substring(3)
+          : digits;
+      final phoneErr = validatePhoneLocalOptional(local);
+      if (phoneErr != null) return (provider: null, error: phoneErr);
+    }
 
     final payload = {
       'business_name': businessName.trim(),

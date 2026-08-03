@@ -42,6 +42,8 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   final _serviceTitle = TextEditingController();
   final _serviceDescription = TextEditingController();
   String? _serviceCategoryId;
+  final _profileFormKey = GlobalKey<FormState>();
+  final _serviceFormKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -107,6 +109,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   }
 
   Future<void> _saveProfile() async {
+    if (!_profileFormKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final result = await context.read<DataRepository>().saveOwnedProviderProfile(
           businessName: _businessName.text,
@@ -195,24 +198,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
   }
 
   Future<void> _addService() async {
-    var provider = _provider;
+    if (!_serviceFormKey.currentState!.validate()) return;
+    final provider = _provider;
     if (provider == null) {
-      final created = await context.read<DataRepository>().saveOwnedProviderProfile(
-            businessName: _businessName.text.trim().isEmpty ? 'My Business' : _businessName.text,
-            description: _description.text.trim().length >= 20
-                ? _description.text
-                : 'Professional services listed on Market Sphere Group.',
-            location: _location.text,
-            contactEmail: _email.text,
-            contactPhone: _phone.text.isEmpty ? null : formatPhone('+267', _phone.text),
-          );
-      if (created.error != null || created.provider == null) {
-        if (!mounted) return;
-        showErrorPopup(context, created.error ?? 'Create your business profile first.');
-        return;
-      }
-      provider = created.provider!;
-      setState(() => _provider = provider);
+      showErrorPopup(
+        context,
+        'Save a complete business profile on the Profile tab before adding services.',
+      );
+      return;
     }
 
     setState(() => _saving = true);
@@ -230,7 +223,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
     }
     final service = result.service!;
     setState(() {
-      _provider = provider!.copyWith(services: [...provider.services, service]);
+      _provider = provider.copyWith(services: [...provider.services, service]);
       _serviceTitle.clear();
       _serviceDescription.clear();
       _serviceCategoryId = null;
@@ -483,32 +476,65 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
           style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
         ),
         const SizedBox(height: 16),
-        TextField(controller: _businessName, decoration: const InputDecoration(labelText: 'Business name')),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _description,
-          minLines: 4,
-          maxLines: 7,
-          decoration: const InputDecoration(labelText: 'Description'),
-        ),
-        const SizedBox(height: 12),
-        TextField(controller: _location, decoration: const InputDecoration(labelText: 'Location')),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'Contact email'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _phone,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(labelText: 'Phone', prefixText: '+267 '),
-        ),
-        const SizedBox(height: 18),
-        FilledButton(
-          onPressed: _saving ? null : _saveProfile,
-          child: Text(_saving ? 'Saving…' : 'Save business profile'),
+        Form(
+          key: _profileFormKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _businessName,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Business name'),
+                validator: (v) => validateMeaningfulText(
+                  v,
+                  fieldLabel: 'Business name',
+                  optional: false,
+                  minLength: 2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _description,
+                minLines: 4,
+                maxLines: 7,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Description'),
+                validator: (v) => validateMeaningfulText(
+                  v,
+                  fieldLabel: 'Description',
+                  optional: false,
+                  minLength: 20,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _location,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Location'),
+                validator: (v) => validateMeaningfulText(v, fieldLabel: 'Location'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Contact email'),
+                validator: validateOptionalEmail,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Phone', prefixText: '+267 '),
+                validator: validatePhoneLocalOptional,
+              ),
+              const SizedBox(height: 18),
+              FilledButton(
+                onPressed: _saving ? null : _saveProfile,
+                child: Text(_saving ? 'Saving…' : 'Save business profile'),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -625,31 +651,50 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
         const SizedBox(height: 18),
         const Text('Add service', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
         const SizedBox(height: 12),
-        TextField(controller: _serviceTitle, decoration: const InputDecoration(labelText: 'Service title')),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String?>(
-          // ignore: deprecated_member_use
-          value: _serviceCategoryId,
-          decoration: const InputDecoration(labelText: 'Category (optional)'),
-          items: [
-            const DropdownMenuItem<String?>(value: null, child: Text('No category')),
-            ..._categories.map(
-              (c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
-            ),
-          ],
-          onChanged: (v) => setState(() => _serviceCategoryId = v),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _serviceDescription,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Description (optional)'),
-        ),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _saving ? null : _addService,
-          child: Text(_saving ? 'Adding…' : 'Add service'),
+        Form(
+          key: _serviceFormKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _serviceTitle,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Service title'),
+                validator: (v) => validateMeaningfulText(
+                  v,
+                  fieldLabel: 'Service title',
+                  optional: false,
+                  minLength: 2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                // ignore: deprecated_member_use
+                value: _serviceCategoryId,
+                decoration: const InputDecoration(labelText: 'Category (optional)'),
+                items: [
+                  const DropdownMenuItem<String?>(value: null, child: Text('No category')),
+                  ..._categories.map(
+                    (c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _serviceCategoryId = v),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _serviceDescription,
+                minLines: 2,
+                maxLines: 4,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(labelText: 'Description (optional)'),
+                validator: (v) => validateMeaningfulText(v, fieldLabel: 'Description'),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _saving ? null : _addService,
+                child: Text(_saving ? 'Adding…' : 'Add service'),
+              ),
+            ],
+          ),
         ),
       ],
     );

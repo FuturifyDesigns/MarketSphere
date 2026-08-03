@@ -7,6 +7,7 @@ import '../../state/app_settings_controller.dart';
 import '../../state/auth_controller.dart';
 import '../../state/engagement_controller.dart';
 import '../../utils/app_feedback.dart';
+import '../../utils/helpers.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/role_onboarding.dart';
 import 'connection_test_screen.dart';
@@ -107,9 +108,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: () async {
-                    await engagement.setPreferredArea(_area.text);
+                    final raw = _area.text.trim();
+                    final cleaned = sanitizePreferredArea(raw);
+                    if (raw.isNotEmpty && cleaned == null) {
+                      showErrorPopup(
+                        context,
+                        'Enter a real area name (letters), e.g. Gaborone.',
+                      );
+                      return;
+                    }
+                    await engagement.setPreferredArea(cleaned);
                     if (!context.mounted) return;
-                    showSuccessPopup(context, 'Preferred area saved on this device');
+                    _area.text = cleaned ?? '';
+                    showSuccessPopup(
+                      context,
+                      cleaned == null
+                          ? 'Preferred area cleared on this device'
+                          : 'Preferred area saved on this device',
+                    );
                   },
                   child: const Text('Save area'),
                 ),

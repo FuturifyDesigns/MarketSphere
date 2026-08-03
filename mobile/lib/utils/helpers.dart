@@ -116,6 +116,24 @@ String? validatePhoneLocalOptional(String? value) {
   return null;
 }
 
+/// Empty is allowed; if present must be a valid email.
+String? validateOptionalEmail(String? value) {
+  final v = (value ?? '').trim();
+  if (v.isEmpty) return null;
+  return validateEmail(v);
+}
+
+/// Optional review body — empty OK; garbage (symbols-only) is rejected.
+String? validateReviewBody(String? value) {
+  final v = (value ?? '').trim();
+  if (v.isEmpty) return null;
+  if (sanitizeReviewBody(v) == null) {
+    return 'Review needs real text — not just symbols or punctuation';
+  }
+  if (v.length > 1000) return 'Review is too long (max 1000 characters)';
+  return null;
+}
+
 String? validateConfirmPassword(String? value, String password) {
   if ((value ?? '').isEmpty) return 'Please confirm your password';
   if (value != password) return 'Passwords do not match';

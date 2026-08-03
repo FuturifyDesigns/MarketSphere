@@ -137,6 +137,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 24),
             TextFormField(
               controller: _name,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: const InputDecoration(labelText: 'Full name'),
               validator: validateFullName,
             ),
@@ -150,7 +151,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             TextFormField(
               controller: _phone,
               keyboardType: TextInputType.phone,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               decoration: const InputDecoration(labelText: 'Phone', prefixText: '+267 '),
+              validator: validatePhoneLocalOptional,
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),

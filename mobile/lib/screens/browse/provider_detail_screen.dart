@@ -105,11 +105,17 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
       return;
     }
     setState(() => _savingReview = true);
+    final bodyErr = validateReviewBody(_reviewBody.text);
+    if (bodyErr != null) {
+      setState(() => _savingReview = false);
+      showErrorPopup(context, bodyErr);
+      return;
+    }
     final err = await context.read<DataRepository>().upsertProviderReview(
           providerId: provider.id,
           customerId: auth.profile!.id,
           rating: _rating,
-          body: sanitizeReviewBody(_reviewBody.text),
+          body: _reviewBody.text,
         );
     if (!mounted) return;
     setState(() {
@@ -296,16 +302,27 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                         value: _rating,
                         onChanged: (v) => setState(() => _rating = v),
                       ),
-                      TextField(
+                      TextFormField(
                         controller: _reviewBody,
                         maxLines: 3,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         decoration: const InputDecoration(
                           hintText: 'Share your experience (optional)',
                         ),
+                        validator: validateReviewBody,
                       ),
                       const SizedBox(height: 10),
                       FilledButton(
-                        onPressed: _savingReview ? null : () => _submitReview(provider),
+                        onPressed: _savingReview
+                            ? null
+                            : () {
+                                final bodyErr = validateReviewBody(_reviewBody.text);
+                                if (bodyErr != null) {
+                                  showErrorPopup(context, bodyErr);
+                                  return;
+                                }
+                                _submitReview(provider);
+                              },
                         child: Text(_savingReview ? 'Saving…' : 'Submit review'),
                       ),
                       const SizedBox(height: 18),
