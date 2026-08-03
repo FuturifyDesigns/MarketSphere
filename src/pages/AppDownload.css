@@ -512,6 +512,20 @@
   font-size: 0.72rem;
 }
 
+.appdl-android__installed {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 22px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(201, 162, 75, 0.18);
+  border: 1px solid rgba(201, 162, 75, 0.4);
+  color: #e8d5a0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
 /* Browser card */
 .appdl-browser {
   width: min(360px, 86vw);
@@ -609,29 +623,7 @@
   font-weight: 600;
 }
 
-.appdl-android {
-  min-height: 480px;
-  padding: 36px 22px 22px;
-  text-align: center;
-  background: #12151b;
-  color: #f2ebe0;
-  position: relative;
-}
-
-.appdl-android__installed {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 22px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(201, 162, 75, 0.18);
-  border: 1px solid rgba(201, 162, 75, 0.4);
-  color: #e8d5a0;
-  font-weight: 700;
-  font-size: 0.85rem;
-}
-
+/* Exact-looking confirm email */
 .appdl-email {
   width: min(360px, 88vw);
   position: relative;
@@ -648,11 +640,7 @@
   bottom: 132px;
   transform: rotate(-35deg);
   z-index: 4;
-}
-
-/* Exact-looking confirm email */
-.appdl-email {
-  width: min(360px, 88vw);
+  pointer-events: none;
 }
 
 .appdl-email__chrome {
