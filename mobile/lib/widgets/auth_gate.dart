@@ -23,6 +23,16 @@ Future<void> openIfSignedIn(BuildContext context, Widget page) async {
   await pushFade(context, page);
 }
 
+/// Opens a cached listing/provider (recently viewed / offline). No sign-in gate.
+Future<void> openCachedDetail(BuildContext context, Widget page) async {
+  final auth = context.read<AuthController>();
+  if (auth.profile?.isBanned == true) {
+    showErrorPopup(context, 'This account is restricted.');
+    return;
+  }
+  await pushFade(context, page);
+}
+
 Future<void> showSignUpGate(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,

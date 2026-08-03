@@ -39,7 +39,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   Future<ShowcaseListing?> _load() async {
     final repo = context.read<DataRepository>();
     final engagement = context.read<EngagementController>();
-    final listing = widget.initial ?? await repo.fetchListing(widget.listingId);
+    // Never trust slim/offline `initial` alone when online — refresh full row
+    // (owner contacts, description) and only fall back to cache if network fails.
+    ShowcaseListing? listing;
+    try {
+      listing = await repo.fetchListing(widget.listingId);
+    } catch (_) {
+      listing = null;
+    }
+    listing ??= widget.initial;
     if (listing != null) {
       await engagement.recordListingView(listing);
     }
@@ -51,8 +59,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     String? successMessage,
   }) async {
     final auth = context.read<AuthController>();
-    if (!auth.isSignedIn || auth.profile == null) {
+    if (!auth.isSignedIn) {
       await showSignUpGate(context);
+      return;
+    }
+    if (auth.profile == null) {
+      await auth.refreshProfile();
+    }
+    if (!mounted) return;
+    if (auth.profile == null) {
+      showErrorPopup(context, 'Could not load your profile. Pull to refresh and try again.');
       return;
     }
     final err = await action(auth.profile!.id);

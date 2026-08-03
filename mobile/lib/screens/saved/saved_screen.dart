@@ -25,7 +25,7 @@ class SavedScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           Text(
-            'Saved items stay on this device so you can reopen them when signal is weak.',
+            'Saved and recently viewed items stay on this device so you can reopen them when signal is weak.',
             style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
           ),
           const SizedBox(height: 18),
@@ -37,7 +37,7 @@ class SavedScreen extends StatelessWidget {
               (listing) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: PressableScale(
-                  onTap: () => openIfSignedIn(
+                  onTap: () => openCachedDetail(
                     context,
                     ListingDetailScreen(listingId: listing.id, initial: listing),
                   ),
@@ -58,9 +58,9 @@ class SavedScreen extends StatelessWidget {
               (provider) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: PressableScale(
-                  onTap: () => openIfSignedIn(
+                  onTap: () => openCachedDetail(
                     context,
-                    ProviderDetailScreen(providerId: provider.id),
+                    ProviderDetailScreen(providerId: provider.id, initial: provider),
                   ),
                   child: _SavedTile(
                     title: provider.businessName,
@@ -78,27 +78,27 @@ class SavedScreen extends StatelessWidget {
           if (engagement.recentListings.isEmpty && engagement.recentProviders.isEmpty)
             Text('Nothing viewed yet.', style: TextStyle(color: scheme.onSurfaceVariant))
           else ...[
-            ...engagement.recentListings.take(8).map(
+            ...engagement.recentListings.take(12).map(
                   (listing) => ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.history_rounded, color: Color(AppConfig.colorGold)),
                     title: Text(listing.title),
                     subtitle: Text(listing.location ?? 'Listing'),
-                    onTap: () => openIfSignedIn(
+                    onTap: () => openCachedDetail(
                       context,
                       ListingDetailScreen(listingId: listing.id, initial: listing),
                     ),
                   ),
                 ),
-            ...engagement.recentProviders.take(8).map(
+            ...engagement.recentProviders.take(12).map(
                   (provider) => ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.storefront_outlined, color: Color(AppConfig.colorGold)),
                     title: Text(provider.businessName),
                     subtitle: Text(provider.location ?? 'Provider'),
-                    onTap: () => openIfSignedIn(
+                    onTap: () => openCachedDetail(
                       context,
-                      ProviderDetailScreen(providerId: provider.id),
+                      ProviderDetailScreen(providerId: provider.id, initial: provider),
                     ),
                   ),
                 ),

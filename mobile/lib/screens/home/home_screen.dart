@@ -24,6 +24,7 @@ import '../notifications/notifications_screen.dart';
 import '../saved/saved_screen.dart';
 import '../settings/connection_test_screen.dart';
 import '../settings/settings_screen.dart';
+import '../shell/main_shell.dart';
 import '../showcase/listing_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -247,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     padding: const EdgeInsets.only(right: 8),
                                     child: ActionChip(
                                       label: Text(l.title, overflow: TextOverflow.ellipsis),
-                                      onPressed: () => openIfSignedIn(
+                                      onPressed: () => openCachedDetail(
                                         context,
                                         ListingDetailScreen(listingId: l.id, initial: l),
                                       ),
@@ -260,9 +261,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: ActionChip(
                                       avatar: const Icon(Icons.verified_rounded, size: 16),
                                       label: Text(p.businessName, overflow: TextOverflow.ellipsis),
-                                      onPressed: () => openIfSignedIn(
+                                      onPressed: () => openCachedDetail(
                                         context,
-                                        ProviderDetailScreen(providerId: p.id),
+                                        ProviderDetailScreen(providerId: p.id, initial: p),
                                       ),
                                     ),
                                   ),
@@ -275,8 +276,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: 'Featured listings',
                       subtitle: 'Photos advance automatically',
                       action: TextButton(
-                        onPressed: () {},
-                        child: Text('Live', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700)),
+                        onPressed: () => MainShell.goToTab(1),
+                        child: Text('See all', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700)),
                       ),
                     ),
                     if (data.listings.isEmpty)
@@ -325,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             provider: provider,
                             onTap: () => openIfSignedIn(
                               context,
-                              ProviderDetailScreen(providerId: provider.id),
+                              ProviderDetailScreen(providerId: provider.id, initial: provider),
                             ),
                           ),
                         ),

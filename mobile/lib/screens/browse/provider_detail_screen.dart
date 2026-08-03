@@ -15,9 +15,10 @@ import '../../widgets/trust_widgets.dart';
 import '../dashboard/send_enquiry_sheet.dart';
 
 class ProviderDetailScreen extends StatefulWidget {
-  const ProviderDetailScreen({super.key, required this.providerId});
+  const ProviderDetailScreen({super.key, required this.providerId, this.initial});
 
   final String providerId;
+  final ProviderItem? initial;
 
   @override
   State<ProviderDetailScreen> createState() => _ProviderDetailScreenState();
@@ -46,7 +47,13 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
   Future<ProviderItem?> _load() async {
     final repo = context.read<DataRepository>();
     final engagement = context.read<EngagementController>();
-    final provider = await repo.fetchProvider(widget.providerId);
+    ProviderItem? provider;
+    try {
+      provider = await repo.fetchProvider(widget.providerId);
+    } catch (_) {
+      provider = null;
+    }
+    provider ??= widget.initial;
     if (provider != null) {
       await engagement.recordProviderView(provider);
     }
@@ -55,8 +62,16 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   Future<void> _toggleFavourite(ProviderItem provider) async {
     final auth = context.read<AuthController>();
-    if (!auth.isSignedIn || auth.profile == null) {
+    if (!auth.isSignedIn) {
       await showSignUpGate(context);
+      return;
+    }
+    if (auth.profile == null) {
+      await auth.refreshProfile();
+    }
+    if (!mounted) return;
+    if (auth.profile == null) {
+      showErrorPopup(context, 'Could not load your profile. Try again.');
       return;
     }
     final wasSaved = context.read<EngagementController>().isProviderSaved(provider.id);
@@ -77,8 +92,16 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   Future<void> _submitReview(ProviderItem provider) async {
     final auth = context.read<AuthController>();
-    if (!auth.isSignedIn || auth.profile == null) {
+    if (!auth.isSignedIn) {
       await showSignUpGate(context);
+      return;
+    }
+    if (auth.profile == null) {
+      await auth.refreshProfile();
+    }
+    if (!mounted) return;
+    if (auth.profile == null) {
+      showErrorPopup(context, 'Could not load your profile. Try again.');
       return;
     }
     setState(() => _savingReview = true);

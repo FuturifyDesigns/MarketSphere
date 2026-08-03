@@ -17,6 +17,13 @@ import '../showcase/showcase_screen.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
+  /// Other screens can request a tab switch (0 Home, 1 Showcase, 2 Browse, 3 Account).
+  static final requestedTab = ValueNotifier<int?>(null);
+
+  static void goToTab(int index) {
+    requestedTab.value = index.clamp(0, 3);
+  }
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -35,10 +42,19 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    MainShell.requestedTab.addListener(_onTabRequest);
+  }
+
+  void _onTabRequest() {
+    final next = MainShell.requestedTab.value;
+    if (next == null || !mounted) return;
+    MainShell.requestedTab.value = null;
+    setState(() => _index = next);
   }
 
   @override
   void dispose() {
+    MainShell.requestedTab.removeListener(_onTabRequest);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
