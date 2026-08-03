@@ -378,12 +378,12 @@ function renderStepVisual(index: number) {
             <p className="appdl-browser__brand">Market Sphere Group</p>
             <h4>Get the Android app</h4>
             <span className="appdl-browser__cta">
-              <Download size={14} /> Download APK
+              <Download size={14} /> Download App
             </span>
             <div className="appdl-browser__progress" aria-hidden>
               <i />
             </div>
-            <p className="appdl-browser__done">market-sphere.apk · Downloaded</p>
+            <p className="appdl-browser__done">Market Sphere · Downloaded</p>
           </div>
         </BrowserCard>
       )
