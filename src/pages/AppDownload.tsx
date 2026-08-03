@@ -462,15 +462,30 @@ function AppHomeMock() {
         </div>
       </div>
       <div className="appdl-app__tiles">
-        <div className="appdl-app__tile appdl-app__tile--wide">
+        <div
+          className="appdl-app__tile appdl-app__tile--wide"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.15), rgba(8,10,14,0.88)), url(${import.meta.env.BASE_URL}showcase/real-estate.webp)`,
+          }}
+        >
           <em>Plot · Gaborone</em>
           <strong>Broadhurst residential</strong>
         </div>
-        <div className="appdl-app__tile">
+        <div
+          className="appdl-app__tile"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.1), rgba(8,10,14,0.9)), url(${import.meta.env.BASE_URL}showcase/academic-tuition.webp)`,
+          }}
+        >
           <em>Tutoring</em>
           <strong>Math · Form 3</strong>
         </div>
-        <div className="appdl-app__tile">
+        <div
+          className="appdl-app__tile"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.1), rgba(8,10,14,0.9)), url(${import.meta.env.BASE_URL}showcase/music-education.webp)`,
+          }}
+        >
           <em>Music</em>
           <strong>Studio session</strong>
         </div>
@@ -489,7 +504,13 @@ function AndroidInstallMock() {
   return (
     <div className="appdl-android" data-live="install">
       <p className="appdl-android__label">Package installer</p>
-      <div className="appdl-android__icon" />
+      <img
+        className="appdl-android__icon"
+        src={`${import.meta.env.BASE_URL}${LOGO_PATH}`}
+        alt="Market Sphere Group"
+        width={72}
+        height={72}
+      />
       <h4>Market Sphere Group</h4>
       <p>Do you want to install this application?</p>
       <div className="appdl-android__actions">

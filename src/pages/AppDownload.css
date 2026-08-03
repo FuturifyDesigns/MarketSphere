@@ -391,7 +391,9 @@
 
 .appdl-app__tile {
   border-radius: 14px;
-  background: #171b22;
+  background-color: #171b22;
+  background-size: cover;
+  background-position: center;
   border: 1px solid rgba(196, 184, 154, 0.18);
   min-height: 84px;
   padding: 12px;
@@ -399,13 +401,11 @@
   flex-direction: column;
   justify-content: flex-end;
   gap: 4px;
+  overflow: hidden;
 }
 
 .appdl-app__tile--wide {
   grid-row: span 2;
-  background:
-    linear-gradient(180deg, rgba(201, 162, 75, 0.22), transparent 70%),
-    #171b22;
 }
 
 .appdl-app__tile em {
@@ -413,13 +413,16 @@
   font-size: 0.65rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #e8d5a0;
+  color: #f0e2b8;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.65);
 }
 
 .appdl-app__tile strong {
+  color: #faf6ec;
   font-size: 0.82rem;
-  color: #f7f0e4;
+  line-height: 1.2;
   font-weight: 700;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.75);
 }
 
 .appdl-app__nav {
@@ -460,12 +463,14 @@
 }
 
 .appdl-android__icon {
+  display: block;
   width: 72px;
   height: 72px;
   margin: 0 auto 16px;
   border-radius: 18px;
-  background:
-    radial-gradient(circle at 30% 30%, #e8d5a0, #c9a24b 55%, #6b5424);
+  object-fit: cover;
+  background: #1a1408;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .appdl-android h4 {
