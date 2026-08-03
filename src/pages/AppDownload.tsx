@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Download, ShieldCheck, Bell, MailOpen, Smartphone } from 'lucide-react'
@@ -49,11 +49,142 @@ const STEPS = [
   },
 ] as const
 
+function useLiveDemos(rootRef: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const ctx = gsap.context(() => {
+      root.querySelectorAll<HTMLElement>('[data-live="app-home"]').forEach((el) => {
+        const toast = el.querySelector<HTMLElement>('.appdl-toast')
+        const slides = gsap.utils.toArray<HTMLElement>('.appdl-app__slide', el)
+        const tiles = gsap.utils.toArray<HTMLElement>('.appdl-app__tile', el)
+        const nav = gsap.utils.toArray<HTMLElement>('.appdl-app__nav span', el)
+
+        if (toast) gsap.set(toast, { y: -48, autoAlpha: 0 })
+        if (slides.length) {
+          gsap.set(slides, { autoAlpha: 0 })
+          gsap.set(slides[0], { autoAlpha: 1 })
+        }
+
+        const tl = gsap.timeline({ repeat: -1, defaults: { ease: 'power2.inOut' } })
+        if (toast) {
+          tl.to(toast, { y: 0, autoAlpha: 1, duration: 0.45 }, 0.4)
+            .to(toast, { y: -48, autoAlpha: 0, duration: 0.4 }, 2.4)
+        }
+        slides.forEach((_, i) => {
+          const next = (i + 1) % slides.length
+          tl.to(slides[i], { autoAlpha: 0, duration: 0.45 }, `slide-${i}`)
+            .to(slides[next], { autoAlpha: 1, duration: 0.45 }, `slide-${i}`)
+            .to({}, { duration: 1.6 })
+        })
+        if (tiles.length) {
+          tl.to(tiles, { y: -4, stagger: 0.08, duration: 0.35, yoyo: true, repeat: 1 }, 0.8)
+        }
+        if (nav.length >= 2) {
+          tl.to(nav[0], { color: '#b9ae96', duration: 0.25 }, 3.2)
+            .to(nav[1], { color: '#c9a24b', duration: 0.25 }, 3.2)
+            .to(nav[1], { color: '#b9ae96', duration: 0.25 }, 4.6)
+            .to(nav[0], { color: '#c9a24b', duration: 0.25 }, 4.6)
+        }
+      })
+
+      root.querySelectorAll<HTMLElement>('[data-live="browser"]').forEach((el) => {
+        const cta = el.querySelector<HTMLElement>('.appdl-browser__cta')
+        const bar = el.querySelector<HTMLElement>('.appdl-browser__progress > i')
+        const done = el.querySelector<HTMLElement>('.appdl-browser__done')
+        if (!cta || !bar) return
+        gsap.set(bar, { scaleX: 0, transformOrigin: 'left center' })
+        if (done) gsap.set(done, { autoAlpha: 0, y: 8 })
+        gsap
+          .timeline({ repeat: -1, repeatDelay: 0.8 })
+          .to(cta, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 })
+          .to(bar, { scaleX: 1, duration: 1.4, ease: 'power1.inOut' }, '>-0.05')
+          .to(done!, { autoAlpha: 1, y: 0, duration: 0.35 }, '-=0.2')
+          .to({}, { duration: 1.1 })
+          .to([bar, done!], { autoAlpha: 0, duration: 0.25 })
+          .set(bar, { scaleX: 0, autoAlpha: 1 })
+          .set(done!, { y: 8 })
+      })
+
+      root.querySelectorAll<HTMLElement>('[data-live="install"]').forEach((el) => {
+        const ok = el.querySelector<HTMLElement>('.ok')
+        const check = el.querySelector<HTMLElement>('.appdl-android__installed')
+        if (!ok) return
+        if (check) gsap.set(check, { autoAlpha: 0, scale: 0.8 })
+        gsap
+          .timeline({ repeat: -1, repeatDelay: 1.2 })
+          .to(ok, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1 })
+          .to(check!, { autoAlpha: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)' }, '+=0.15')
+          .to({}, { duration: 1.4 })
+          .to(check!, { autoAlpha: 0, scale: 0.85, duration: 0.3 })
+      })
+
+      root.querySelectorAll<HTMLElement>('[data-live="email"]').forEach((el) => {
+        const card = el.querySelector<HTMLElement>('.appdl-email__card')
+        const btn = el.querySelector<HTMLElement>('.appdl-email__btn')
+        const cursor = el.querySelector<HTMLElement>('.appdl-email__cursor')
+        if (!card || !btn) return
+        if (cursor) gsap.set(cursor, { autoAlpha: 0, x: 40, y: 50 })
+        gsap.set(card, { y: 24, autoAlpha: 0 })
+        gsap
+          .timeline({ repeat: -1, repeatDelay: 1 })
+          .to(card, { y: 0, autoAlpha: 1, duration: 0.55, ease: 'power3.out' })
+          .to(cursor!, { autoAlpha: 1, x: 0, y: 0, duration: 0.55, ease: 'power2.out' }, '+=0.35')
+          .to(btn, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 }, '+=0.15')
+          .to(btn, { boxShadow: '0 0 0 10px rgba(201,162,75,0.25)', duration: 0.35 }, '<')
+          .to(btn, { boxShadow: '0 0 0 0 rgba(201,162,75,0)', duration: 0.45 })
+          .to({}, { duration: 1.2 })
+          .to([card, cursor!], { autoAlpha: 0, duration: 0.35 })
+          .set(card, { y: 24 })
+          .set(cursor!, { x: 40, y: 50 })
+      })
+
+      root.querySelectorAll<HTMLElement>('[data-live="notify"]').forEach((el) => {
+        const sheet = el.querySelector<HTMLElement>('.appdl-perm__sheet')
+        const toast = el.querySelector<HTMLElement>('.appdl-perm__toast')
+        const allow = el.querySelector<HTMLElement>('.ok')
+        if (!sheet) return
+        gsap.set(sheet, { y: 120, autoAlpha: 0 })
+        if (toast) gsap.set(toast, { y: -40, autoAlpha: 0 })
+        gsap
+          .timeline({ repeat: -1, repeatDelay: 1 })
+          .to(sheet, { y: 0, autoAlpha: 1, duration: 0.55, ease: 'power3.out' })
+          .to(allow!, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, '+=0.7')
+          .to(sheet, { y: 40, autoAlpha: 0, duration: 0.35 }, '+=0.2')
+          .to(toast!, { y: 0, autoAlpha: 1, duration: 0.4 }, '-=0.1')
+          .to({}, { duration: 1.4 })
+          .to(toast!, { y: -40, autoAlpha: 0, duration: 0.35 })
+      })
+
+      root.querySelectorAll<HTMLElement>('[data-live="verified"]').forEach((el) => {
+        const badge = el.querySelector<HTMLElement>('.appdl-verified__badge')
+        const lines = gsap.utils.toArray<HTMLElement>('h4, p, small', el)
+        gsap.set(badge, { scale: 0.6, autoAlpha: 0 })
+        gsap.set(lines, { y: 12, autoAlpha: 0 })
+        gsap
+          .timeline({ repeat: -1, repeatDelay: 1.4 })
+          .to(badge, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(1.7)' })
+          .to(lines, { y: 0, autoAlpha: 1, stagger: 0.1, duration: 0.4 }, '-=0.15')
+          .to({}, { duration: 2 })
+          .to([badge, ...lines], { autoAlpha: 0, duration: 0.35 })
+          .set(badge, { scale: 0.6 })
+          .set(lines, { y: 12 })
+      })
+    }, root)
+
+    return () => ctx.revert()
+  }, [rootRef])
+}
+
 export function AppDownload() {
   const rootRef = useRef<HTMLElement>(null)
   const pinRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
+
+  useLiveDemos(rootRef)
 
   useEffect(() => {
     const root = rootRef.current
@@ -85,7 +216,7 @@ export function AppDownload() {
       gsap.set(cards, { autoAlpha: 0.35, y: 36 })
       gsap.set(cards[0], { autoAlpha: 1, y: 0 })
 
-      const tween = gsap.to(track, {
+      gsap.to(track, {
         x: () => -getScrollLength(),
         ease: 'none',
         scrollTrigger: {
@@ -125,8 +256,6 @@ export function AppDownload() {
           once: true,
         },
       })
-
-      void tween
     }, root)
 
     return () => ctx.revert()
@@ -181,7 +310,7 @@ export function AppDownload() {
           <p className="appdl-setup__eyebrow">Setup guide</p>
           <h2 className="appdl-setup__heading">From download to daily use</h2>
           <p className="appdl-setup__sub">
-            Scroll to walk through each step left to right — real email and phone UI, matching what
+            Scroll to walk through each step left to right — live phone and email UI, matching what
             you will see.
           </p>
           <div className="appdl-setup__progress" role="tablist" aria-label="Setup steps">
@@ -246,12 +375,16 @@ function renderStepVisual(index: number) {
     case 0:
       return (
         <BrowserCard>
-          <div className="appdl-browser__page">
+          <div className="appdl-browser__page" data-live="browser">
             <p className="appdl-browser__brand">Market Sphere Group</p>
             <h4>Get the Android app</h4>
             <span className="appdl-browser__cta">
               <Download size={14} /> Download APK
             </span>
+            <div className="appdl-browser__progress" aria-hidden>
+              <i />
+            </div>
+            <p className="appdl-browser__done">market-sphere.apk · Downloaded</p>
           </div>
         </BrowserCard>
       )
@@ -309,7 +442,10 @@ function BrowserCard({ children }: { children: ReactNode }) {
 
 function AppHomeMock() {
   return (
-    <div className="appdl-app">
+    <div className="appdl-app" data-live="app-home">
+      <div className="appdl-toast">
+        <Bell size={12} /> New listing in Real Estate
+      </div>
       <header className="appdl-app__bar">
         <img src={`${import.meta.env.BASE_URL}${LOGO_PATH}`} alt="" />
         <div>
@@ -319,10 +455,25 @@ function AppHomeMock() {
       </header>
       <div className="appdl-app__hero-card">
         <span>Showcase</span>
-        <p>Featured listings near you</p>
+        <div className="appdl-app__slides">
+          <p className="appdl-app__slide">Featured listings near you</p>
+          <p className="appdl-app__slide">Providers ready to help</p>
+          <p className="appdl-app__slide">Alerts when something new lands</p>
+        </div>
       </div>
       <div className="appdl-app__tiles">
-        <div /><div /><div />
+        <div className="appdl-app__tile appdl-app__tile--wide">
+          <em>Plot · Gaborone</em>
+          <strong>Broadhurst residential</strong>
+        </div>
+        <div className="appdl-app__tile">
+          <em>Tutoring</em>
+          <strong>Math · Form 3</strong>
+        </div>
+        <div className="appdl-app__tile">
+          <em>Music</em>
+          <strong>Studio session</strong>
+        </div>
       </div>
       <nav className="appdl-app__nav">
         <span className="is-on">Home</span>
@@ -336,7 +487,7 @@ function AppHomeMock() {
 
 function AndroidInstallMock() {
   return (
-    <div className="appdl-android">
+    <div className="appdl-android" data-live="install">
       <p className="appdl-android__label">Package installer</p>
       <div className="appdl-android__icon" />
       <h4>Market Sphere Group</h4>
@@ -348,21 +499,26 @@ function AndroidInstallMock() {
       <div className="appdl-android__note">
         <ShieldCheck size={14} /> Source: Chrome · Allowed for this install
       </div>
+      <div className="appdl-android__installed">Installed · Open app</div>
     </div>
   )
 }
 
 function EmailConfirmMock() {
   return (
-    <div className="appdl-email" aria-hidden="true">
+    <div className="appdl-email" data-live="email" aria-hidden="true">
       <div className="appdl-email__chrome">
         <MailOpen size={14} /> Inbox · Market Sphere Group
       </div>
       <div className="appdl-email__card">
         <div className="appdl-email__head">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" width={48} height={48}
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt=""
+            width={48}
+            height={48}
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = `${import.meta.env.BASE_URL}${LOGO_PATH}`
+              ;(e.currentTarget as HTMLImageElement).src = `${import.meta.env.BASE_URL}${LOGO_PATH}`
             }}
           />
           <p>Market Sphere Group</p>
@@ -379,14 +535,18 @@ function EmailConfirmMock() {
         </div>
         <div className="appdl-email__foot">Master Your Field for Relevance</div>
       </div>
+      <div className="appdl-email__cursor" />
     </div>
   )
 }
 
 function NotificationPermissionMock() {
   return (
-    <div className="appdl-perm">
+    <div className="appdl-perm" data-live="notify">
       <div className="appdl-perm__scrim" />
+      <div className="appdl-perm__toast">
+        <Bell size={12} /> Notifications allowed
+      </div>
       <div className="appdl-perm__sheet">
         <Bell size={22} />
         <h4>Allow Market Sphere to send you notifications?</h4>
@@ -402,7 +562,7 @@ function NotificationPermissionMock() {
 
 function VerifiedMock() {
   return (
-    <div className="appdl-verified">
+    <div className="appdl-verified" data-live="verified">
       <div className="appdl-verified__badge">✓</div>
       <h4>You’re verified</h4>
       <p>Your email has been confirmed. Return to the Market Sphere app and sign in.</p>

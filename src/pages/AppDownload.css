@@ -4,13 +4,41 @@
   --appdl-gold: #c9a24b;
   --appdl-gold-soft: #e8d5a0;
   --appdl-text: #f7f0e4;
-  --appdl-muted: #c4b89a;
+  --appdl-muted: #d8c9a8;
   background:
     radial-gradient(ellipse 90% 55% at 10% 0%, rgba(201, 162, 75, 0.16), transparent 55%),
     radial-gradient(ellipse 70% 50% at 90% 20%, rgba(201, 162, 75, 0.08), transparent 50%),
     var(--appdl-night);
   color: var(--appdl-text);
   overflow-x: clip;
+}
+
+/* Beat global day-theme heading colors on this dark page */
+.appdl h1,
+.appdl h2,
+.appdl h3,
+.appdl h4,
+.appdl h5,
+.appdl h6,
+.appdl-hero__title,
+.appdl-step__title,
+.appdl-setup__heading,
+.appdl-foot h2,
+.appdl-browser__page h4,
+.appdl-android h4,
+.appdl-email__head h4,
+.appdl-perm__sheet h4,
+.appdl-verified h4 {
+  color: var(--appdl-text);
+}
+
+.appdl p,
+.appdl li,
+.appdl span,
+.appdl small,
+.appdl strong,
+.appdl em {
+  color: inherit;
 }
 
 .appdl-hero {
@@ -66,6 +94,7 @@
   line-height: 0.98;
   letter-spacing: 0.01em;
   max-width: 11ch;
+  color: #faf6ec;
 }
 
 .appdl-hero__lead {
@@ -131,6 +160,7 @@
   font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
+  color: #faf6ec;
 }
 
 .appdl-setup__sub {
@@ -216,6 +246,7 @@
   font-family: var(--font-display);
   font-size: clamp(1.8rem, 3vw, 2.6rem);
   line-height: 1.05;
+  color: #faf6ec;
 }
 
 .appdl-step__body {
@@ -273,6 +304,28 @@
   background:
     radial-gradient(ellipse at top left, rgba(201, 162, 75, 0.14), transparent 50%),
     #0e1116;
+  position: relative;
+  overflow: hidden;
+}
+
+.appdl-toast,
+.appdl-perm__toast {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #1c222b;
+  border: 1px solid rgba(201, 162, 75, 0.4);
+  color: #f7f0e4;
+  font-size: 0.72rem;
+  font-weight: 600;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
 .appdl-app__bar {
@@ -290,6 +343,7 @@
 .appdl-app__bar strong {
   display: block;
   font-size: 0.95rem;
+  color: #faf6ec;
 }
 
 .appdl-app__bar small {
@@ -304,7 +358,7 @@
   border: 1px solid rgba(201, 162, 75, 0.28);
 }
 
-.appdl-app__hero-card span {
+.appdl-app__hero-card > span {
   display: inline-block;
   color: #e8d5a0;
   font-size: 0.7rem;
@@ -313,11 +367,19 @@
   margin-bottom: 6px;
 }
 
-.appdl-app__hero-card p {
+.appdl-app__slides {
+  position: relative;
+  min-height: 2.6em;
+}
+
+.appdl-app__slide {
+  position: absolute;
+  inset: 0;
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.35rem;
   line-height: 1.1;
+  color: #faf6ec;
 }
 
 .appdl-app__tiles {
@@ -327,18 +389,37 @@
   flex: 1;
 }
 
-.appdl-app__tiles div {
+.appdl-app__tile {
   border-radius: 14px;
   background: #171b22;
   border: 1px solid rgba(196, 184, 154, 0.18);
   min-height: 84px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
-.appdl-app__tiles div:first-child {
+.appdl-app__tile--wide {
   grid-row: span 2;
   background:
-    linear-gradient(180deg, rgba(201, 162, 75, 0.18), transparent),
+    linear-gradient(180deg, rgba(201, 162, 75, 0.22), transparent 70%),
     #171b22;
+}
+
+.appdl-app__tile em {
+  font-style: normal;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e8d5a0;
+}
+
+.appdl-app__tile strong {
+  font-size: 0.82rem;
+  color: #f7f0e4;
+  font-weight: 700;
 }
 
 .appdl-app__nav {
@@ -369,6 +450,7 @@
   text-align: center;
   background: #12151b;
   color: #f2ebe0;
+  position: relative;
 }
 
 .appdl-android__label {
@@ -500,6 +582,72 @@
   border-radius: 999px;
   padding: 12px 18px;
   font-size: 0.9rem;
+  transform-origin: center;
+}
+
+.appdl-browser__progress {
+  margin-top: 18px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.appdl-browser__progress > i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #c9a24b, #e8d5a0);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.appdl-browser__done {
+  margin: 10px 0 0;
+  color: #e8d5a0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.appdl-android {
+  min-height: 480px;
+  padding: 36px 22px 22px;
+  text-align: center;
+  background: #12151b;
+  color: #f2ebe0;
+  position: relative;
+}
+
+.appdl-android__installed {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 22px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(201, 162, 75, 0.18);
+  border: 1px solid rgba(201, 162, 75, 0.4);
+  color: #e8d5a0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.appdl-email {
+  width: min(360px, 88vw);
+  position: relative;
+}
+
+.appdl-email__cursor {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50% 50% 50% 0;
+  background: #c9a24b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  right: 72px;
+  bottom: 132px;
+  transform: rotate(-35deg);
+  z-index: 4;
 }
 
 /* Exact-looking confirm email */
