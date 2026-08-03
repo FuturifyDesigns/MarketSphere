@@ -14,14 +14,14 @@ const STEPS = [
   {
     id: 'download',
     kicker: '01 · Download',
-    title: 'Get the Android APK',
+    title: 'Get the Android app',
     body: 'Tap Download on this page. Your phone saves Market Sphere as an installable file.',
   },
   {
     id: 'install',
     kicker: '02 · Install',
     title: 'Allow this install',
-    body: 'Android may ask to allow installs from your browser. Turn it on, then open the APK.',
+    body: 'Android may ask to allow installs from your browser. Turn it on, then open the app file.',
   },
   {
     id: 'open',
@@ -277,7 +277,7 @@ export function AppDownload() {
             </p>
             <div className="appdl-hero__actions">
               <a className="btn btn--primary btn--lg" href={APK_HREF} download="market-sphere.apk">
-                <Download size={18} aria-hidden /> Download APK
+                <Download size={18} aria-hidden /> Download App
               </a>
               <a className="btn btn--secondary btn--lg" href="#setup">
                 See setup steps
@@ -361,7 +361,7 @@ export function AppDownload() {
             </p>
           </div>
           <a className="btn btn--primary btn--lg" href={APK_HREF} download="market-sphere.apk">
-            <Download size={18} aria-hidden /> Download APK
+            <Download size={18} aria-hidden /> Download App
           </a>
         </div>
       </section>
