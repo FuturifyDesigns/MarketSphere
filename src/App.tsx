@@ -23,6 +23,7 @@ import { Services } from './pages/Services'
 import { Showcase, ShowcaseColumnPage, ShowcaseListingPage } from './pages/Showcase'
 import { Contact } from './pages/Contact'
 import { FAQ } from './pages/FAQ'
+import { AppDownload } from './pages/AppDownload'
 import { Browse } from './pages/Browse'
 import { ProviderProfile } from './pages/ProviderProfile'
 import { AuthGate } from './pages/AuthGate'
@@ -146,6 +147,7 @@ export default function App() {
                       />
                       <Route path="contact" element={<Contact />} />
                       <Route path="faq" element={<FAQ />} />
+                      <Route path="app" element={<AppDownload />} />
                       <Route path="privacy" element={<Privacy />} />
                       <Route path="terms" element={<Terms />} />
                       <Route

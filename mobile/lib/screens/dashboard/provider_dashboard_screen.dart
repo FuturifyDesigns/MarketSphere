@@ -483,7 +483,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
               TextFormField(
                 controller: _businessName,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(labelText: 'Business name'),
+                decoration: const InputDecoration(
+                  labelText: 'Business name',
+                  hintText: 'e.g. Quick Sounds Studio',
+                ),
                 validator: (v) => validateMeaningfulText(
                   v,
                   fieldLabel: 'Business name',
@@ -497,7 +500,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                 minLines: 4,
                 maxLines: 7,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'What you offer and who you serve (at least 20 characters)',
+                ),
                 validator: (v) => validateMeaningfulText(
                   v,
                   fieldLabel: 'Description',
@@ -509,7 +515,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
               TextFormField(
                 controller: _location,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(labelText: 'Location'),
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  hintText: 'e.g. Gaborone, Broadhurst',
+                ),
                 validator: (v) => validateMeaningfulText(v, fieldLabel: 'Location'),
               ),
               const SizedBox(height: 12),
@@ -517,7 +526,10 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(labelText: 'Contact email'),
+                decoration: const InputDecoration(
+                  labelText: 'Contact email',
+                  hintText: 'you@business.com',
+                ),
                 validator: validateOptionalEmail,
               ),
               const SizedBox(height: 12),
@@ -525,13 +537,20 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(labelText: 'Phone', prefixText: '+267 '),
+                decoration: const InputDecoration(
+                  labelText: 'Phone',
+                  prefixText: '+267 ',
+                  hintText: '7X XXX XXXX',
+                ),
                 validator: validatePhoneLocalOptional,
               ),
               const SizedBox(height: 18),
-              FilledButton(
-                onPressed: _saving ? null : _saveProfile,
-                child: Text(_saving ? 'Saving…' : 'Save business profile'),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _saving ? null : _saveProfile,
+                  child: Text(_saving ? 'Saving…' : 'Save business profile'),
+                ),
               ),
             ],
           ),
@@ -565,25 +584,51 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen>
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              height: height,
-              width: double.infinity,
-              child: url != null && url.isNotEmpty
-                  ? AppNetworkImage(url: url, fit: BoxFit.cover)
-                  : ColoredBox(
-                      color: const Color(0xFF1A1F27),
-                      child: Center(
-                        child: Icon(Icons.image_outlined, color: scheme.onSurfaceVariant),
-                      ),
-                    ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onUpload,
+                overlayColor: WidgetStatePropertyAll(
+                  const Color(AppConfig.colorGold).withValues(alpha: 0.12),
+                ),
+                child: SizedBox(
+                  height: height,
+                  width: double.infinity,
+                  child: url != null && url.isNotEmpty
+                      ? AppNetworkImage(url: url, fit: BoxFit.cover)
+                      : ColoredBox(
+                          color: const Color(0xFF1A1F27),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate_outlined, color: scheme.onSurfaceVariant, size: 28),
+                              const SizedBox(height: 8),
+                              Text(
+                                url == null || url.isEmpty ? 'Tap to upload' : 'Tap to replace',
+                                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              FilledButton.tonal(
-                onPressed: onUpload,
-                child: Text(url == null || url.isEmpty ? 'Upload' : 'Replace'),
+              Expanded(
+                child: FilledButton(
+                  onPressed: onUpload,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    backgroundColor: const Color(AppConfig.colorGold).withValues(alpha: 0.18),
+                    foregroundColor: const Color(AppConfig.colorGoldLight),
+                    side: BorderSide.none,
+                    overlayColor: const Color(AppConfig.colorGold).withValues(alpha: 0.16),
+                  ),
+                  child: Text(url == null || url.isEmpty ? 'Upload' : 'Replace'),
+                ),
               ),
               if (onRemove != null) ...[
                 const SizedBox(width: 8),

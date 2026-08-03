@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/data_repository.dart';
+import '../../state/engagement_controller.dart';
 import '../../utils/helpers.dart';
-import '../../widgets/auth_gate.dart';
+import '../../utils/page_transitions.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
@@ -45,6 +46,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final preferredArea = context.watch<EngagementController>().preferredArea;
 
     return Column(
       children: [
@@ -81,7 +83,12 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   icon: Icons.wifi_off_rounded,
                 );
               }
-              final items = snapshot.data ?? [];
+              final raw = snapshot.data ?? [];
+              final items = prioritizeByPreferredArea(
+                raw,
+                preferredArea,
+                (p) => p.location,
+              );
               if (items.isEmpty) {
                 return const LiveEmptyState(
                   title: 'No providers found',
@@ -99,7 +106,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   itemBuilder: (context, index) {
                     final provider = items[index];
                     return PressableScale(
-                      onTap: () => openIfSignedIn(
+                      onTap: () => pushFade(
                         context,
                         ProviderDetailScreen(providerId: provider.id),
                       ),

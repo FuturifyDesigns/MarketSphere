@@ -59,6 +59,7 @@ export function Footer() {
             <h4>Platform</h4>
             <Link to="/browse">Find Providers</Link>
             <Link to="/services">Services</Link>
+            <Link to="/app">Get the App</Link>
             <Link to="/register?role=provider">Become a Provider</Link>
             <Link to="/faq">FAQ</Link>
           </div>

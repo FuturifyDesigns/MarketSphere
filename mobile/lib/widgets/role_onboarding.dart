@@ -286,10 +286,14 @@ class _RoleOnboardingHostState extends State<RoleOnboardingHost> {
                                 FilledButton(
                                   onPressed: _next,
                                   style: FilledButton.styleFrom(
+                                    minimumSize: const Size(0, 44),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 20,
                                       vertical: 12,
                                     ),
+                                    side: BorderSide.none,
+                                    overlayColor:
+                                        const Color(AppConfig.colorNight).withValues(alpha: 0.14),
                                   ),
                                   child: Text(continueLabel),
                                 ),

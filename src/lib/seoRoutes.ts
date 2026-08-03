@@ -124,6 +124,13 @@ const CONTENT_ROUTES: RouteSeo[] = [
     indexable: true,
   },
   {
+    path: '/app',
+    title: 'Get the Android App | Market Sphere Group',
+    description:
+      'Download the Market Sphere Group Android app and follow a visual step-by-step setup — install, confirm email, and turn on notifications.',
+    indexable: true,
+  },
+  {
     path: '/privacy',
     title: 'Privacy Policy | Market Sphere Group',
     description: 'How Market Sphere Group collects, uses, and protects your personal information.',

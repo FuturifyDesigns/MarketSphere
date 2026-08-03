@@ -23,6 +23,12 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.navbar--inverse.navbar--scrolled {
+  background: rgba(14, 17, 22, 0.94);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgba(201, 162, 75, 0.22);
+}
+
 .navbar--inverse .navbar__name,
 .navbar--inverse .navbar__session-label,
 .navbar--inverse .navbar__session-name,

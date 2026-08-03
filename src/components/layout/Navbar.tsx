@@ -48,6 +48,7 @@ const NAV_LINKS = [
   { to: '/showcase', label: 'Showcase' },
   { to: '/browse', label: 'Providers' },
   { to: '/faq', label: 'FAQ' },
+  { to: '/app', label: 'Get the App' },
   { to: '/contact', label: 'Contact' },
 ]
 
@@ -73,6 +74,7 @@ export function Navbar() {
 
   const isHome = location.pathname === '/'
   const isProviderProfile = location.pathname.startsWith('/provider/')
+  const isAppPage = location.pathname === '/app' || location.pathname.startsWith('/app/')
 
   useEffect(() => {
     const onScroll = () => {
@@ -85,8 +87,12 @@ export function Navbar() {
   }, [location.pathname])
 
   const signedInName = profile?.full_name?.trim() || profile?.email || 'Account'
-  const useInverseNav = isProviderProfile && !scrolled
-  const useSolidNav = isProviderProfile ? scrolled : (scrolled || !isHome)
+  const useInverseNav = (isProviderProfile && !scrolled) || isAppPage
+  const useSolidNav = isAppPage
+    ? scrolled
+    : isProviderProfile
+      ? scrolled
+      : scrolled || !isHome
 
   const handleSignOut = async () => {
     setOpen(false)

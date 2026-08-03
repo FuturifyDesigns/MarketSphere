@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../services/alert_notification_service.dart';
-import '../../services/push_service.dart';
 import '../../services/update_check_service.dart';
 import '../../state/app_settings_controller.dart';
 import '../../state/auth_controller.dart';
@@ -11,7 +9,6 @@ import '../../utils/app_feedback.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/role_onboarding.dart';
-import 'connection_test_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -62,15 +59,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   secondary: const Icon(Icons.notifications_active_outlined),
                   title: const Text('Push notifications', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text(
-                    'New listings, provider enquiries, alerts, and miss-you reminders',
+                    'New listings (including as a guest), provider enquiries, alerts, and miss-you reminders',
                   ),
                   value: settings.pushEnabled,
                   onChanged: (v) async {
-                    await settings.setPushEnabled(v);
-                    AlertNotificationService.instance.setEnabled(v);
-                    if (v) {
-                      await PushService.instance.syncForUser(auth.profile?.id);
-                    }
+                    await settings.setPushEnabled(
+                      v,
+                      userId: auth.isAuthenticated ? auth.profile?.id : null,
+                    );
                     if (!context.mounted) return;
                     showSuccessPopup(
                       context,
@@ -95,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Text('Preferred area', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 const SizedBox(height: 6),
                 Text(
-                  'Used for “near you” style alerts and offline suggestions (e.g. Gaborone).',
+                  'Home, Browse, and Showcase put matching locations first (e.g. Gaborone).',
                   style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4),
                 ),
                 const SizedBox(height: 12),
@@ -107,33 +103,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () async {
-                    final raw = _area.text.trim();
-                    final cleaned = sanitizePreferredArea(raw);
-                    if (raw.isNotEmpty && cleaned == null) {
-                      showErrorPopup(
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      final raw = _area.text.trim();
+                      final cleaned = sanitizePreferredArea(raw);
+                      if (raw.isNotEmpty && cleaned == null) {
+                        showErrorPopup(
+                          context,
+                          'Enter a real area name (letters), e.g. Gaborone.',
+                        );
+                        return;
+                      }
+                      await engagement.setPreferredArea(cleaned);
+                      if (!context.mounted) return;
+                      _area.text = cleaned ?? '';
+                      showSuccessPopup(
                         context,
-                        'Enter a real area name (letters), e.g. Gaborone.',
+                        cleaned == null
+                            ? 'Preferred area cleared'
+                            : 'Preferred area saved — feeds will prioritise $cleaned',
                       );
-                      return;
-                    }
-                    await engagement.setPreferredArea(cleaned);
-                    if (!context.mounted) return;
-                    _area.text = cleaned ?? '';
-                    showSuccessPopup(
-                      context,
-                      cleaned == null
-                          ? 'Preferred area cleared on this device'
-                          : 'Preferred area saved on this device',
-                    );
-                  },
-                  child: const Text('Save area'),
+                    },
+                    child: const Text('Save area'),
+                  ),
                 ),
               ],
             ),
           ),
-          if (auth.isSignedIn &&
+          if (auth.isAuthenticated &&
               (auth.profile?.role == 'customer' || auth.profile?.role == 'provider')) ...[
             const SizedBox(height: 16),
             Container(
@@ -182,27 +181,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-              leading: const Icon(Icons.wifi_tethering_rounded),
-              title: const Text('Connection test', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text(
-                'Check why listings or providers are not loading',
-                style: TextStyle(color: scheme.onSurfaceVariant),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const ConnectionTestScreen()),
-              ),
-            ),
-          ),
           const SizedBox(height: 18),
           Text(
             'Favourites and recently viewed listings are cached on this phone for weak-signal browsing.',
@@ -214,3 +192,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

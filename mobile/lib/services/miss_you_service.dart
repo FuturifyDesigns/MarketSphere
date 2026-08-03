@@ -31,6 +31,10 @@ class MissYouService {
     ),
   ];
 
+  int get _slotCount => AppConfig.missYouTestMode
+      ? AppConfig.missYouTestAfterMinutes.length
+      : AppConfig.missYouAfterDays.length;
+
   Future<void> init() async {
     if (_ready) return;
 
@@ -42,14 +46,19 @@ class MissYouService {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         AppConfig.missYouChannelId,
         AppConfig.missYouChannelName,
         description: AppConfig.missYouChannelDescription,
         importance: Importance.defaultImportance,
+        playSound: true,
+        sound: const RawResourceAndroidNotificationSound(AppConfig.notificationSoundRaw),
+        audioAttributesUsage: AudioAttributesUsage.notification,
       ),
     );
     await android?.requestNotificationsPermission();
+    // Helps 1‑minute test schedules fire on time on Android 12+.
+    await android?.requestExactAlarmsPermission();
 
     _ready = true;
   }
@@ -62,7 +71,12 @@ class MissYouService {
 
   Future<void> cancelReminders() async {
     if (!_ready) await init();
-    for (var i = 0; i < AppConfig.missYouAfterDays.length; i++) {
+    // Cancel both production and test slots so toggling modes never leaves stragglers.
+    final maxSlots = [
+      AppConfig.missYouAfterDays.length,
+      AppConfig.missYouTestAfterMinutes.length,
+    ].reduce((a, b) => a > b ? a : b);
+    for (var i = 0; i < maxSlots; i++) {
       await _plugin.cancel(_notificationBaseId + i);
     }
   }
@@ -72,26 +86,30 @@ class MissYouService {
     await cancelReminders();
 
     final now = tz.TZDateTime.now(tz.local);
+    final test = AppConfig.missYouTestMode;
 
-    for (var i = 0; i < AppConfig.missYouAfterDays.length; i++) {
-      final days = AppConfig.missYouAfterDays[i];
+    for (var i = 0; i < _slotCount; i++) {
       final message = _messages[i % _messages.length];
-      final when = now.add(Duration(days: days));
-      // Prefer late morning local time.
-      final scheduled = tz.TZDateTime(
-        tz.local,
-        when.year,
-        when.month,
-        when.day,
-        10,
-        30,
-      );
+      final tz.TZDateTime scheduled;
+      if (test) {
+        final minutes = AppConfig.missYouTestAfterMinutes[i];
+        scheduled = now.add(Duration(minutes: minutes));
+      } else {
+        final days = AppConfig.missYouAfterDays[i];
+        final when = now.add(Duration(days: days));
+        // Prefer late morning local time.
+        var at = tz.TZDateTime(tz.local, when.year, when.month, when.day, 10, 30);
+        if (!at.isAfter(now)) {
+          at = at.add(const Duration(days: 1));
+        }
+        scheduled = at;
+      }
 
       await _plugin.zonedSchedule(
         _notificationBaseId + i,
-        message.$1,
+        test ? '[TEST] ${message.$1}' : message.$1,
         message.$2,
-        scheduled.isAfter(now) ? scheduled : scheduled.add(const Duration(days: 1)),
+        scheduled,
         NotificationDetails(
           android: AndroidNotificationDetails(
             AppConfig.missYouChannelId,
@@ -99,12 +117,16 @@ class MissYouService {
             channelDescription: AppConfig.missYouChannelDescription,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
+            playSound: true,
+            sound: const RawResourceAndroidNotificationSound(AppConfig.notificationSoundRaw),
             icon: '@mipmap/ic_launcher',
             color: const Color(AppConfig.colorGold),
             styleInformation: BigTextStyleInformation(message.$2),
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: test
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
       );
     }
   }

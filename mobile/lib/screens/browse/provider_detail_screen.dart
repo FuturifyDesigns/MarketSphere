@@ -62,16 +62,8 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   Future<void> _toggleFavourite(ProviderItem provider) async {
     final auth = context.read<AuthController>();
-    if (!auth.isSignedIn) {
+    if (!auth.isAuthenticated) {
       await showSignUpGate(context);
-      return;
-    }
-    if (auth.profile == null) {
-      await auth.refreshProfile();
-    }
-    if (!mounted) return;
-    if (auth.profile == null) {
-      showErrorPopup(context, 'Could not load your profile. Try again.');
       return;
     }
     final wasSaved = context.read<EngagementController>().isProviderSaved(provider.id);
@@ -92,16 +84,8 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
 
   Future<void> _submitReview(ProviderItem provider) async {
     final auth = context.read<AuthController>();
-    if (!auth.isSignedIn) {
+    if (!auth.isAuthenticated) {
       await showSignUpGate(context);
-      return;
-    }
-    if (auth.profile == null) {
-      await auth.refreshProfile();
-    }
-    if (!mounted) return;
-    if (auth.profile == null) {
-      showErrorPopup(context, 'Could not load your profile. Try again.');
       return;
     }
     setState(() => _savingReview = true);
@@ -240,7 +224,7 @@ class _ProviderDetailScreenState extends State<ProviderDetailScreen> {
                         ),
                       ],
                       const SizedBox(height: 22),
-                      if (auth.isSignedIn && auth.profile?.isProvider != true && auth.profile?.isAdmin != true) ...[
+                      if (auth.isAuthenticated && auth.profile?.isProvider != true && auth.profile?.isAdmin != true) ...[
                         FilledButton.icon(
                           onPressed: () => showSendEnquirySheet(
                             context,

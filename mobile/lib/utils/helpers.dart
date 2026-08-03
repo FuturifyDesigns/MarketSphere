@@ -170,7 +170,7 @@ String describeLoadError(Object? error) {
   if (error is TimeoutException || raw.contains('TimeoutException')) {
     return 'Your phone reached no answer from our servers.\n\n'
         'This is usually mobile data or Wi-Fi that is connected but not passing '
-        'traffic. Try another network, then run Settings → Connection test.';
+        'traffic. Try another network or pull down to refresh.';
   }
   if (error is SocketException || raw.contains('SocketException')) {
     return 'No internet connection on this phone.\n\n'
@@ -188,6 +188,38 @@ String? sanitizePreferredArea(String? value) {
   if (RegExp(r'[<>{}$]').hasMatch(v)) return null;
   if (!RegExp(r'\p{L}', unicode: true).hasMatch(v)) return null;
   return v;
+}
+
+/// Higher = better match for [preferredArea] against a listing/provider location.
+int preferredAreaMatchScore(String? location, String? preferredArea) {
+  final area = preferredArea?.trim().toLowerCase();
+  if (area == null || area.isEmpty) return 0;
+  final loc = location?.trim().toLowerCase() ?? '';
+  if (loc.isEmpty) return 0;
+  if (loc == area) return 3;
+  if (loc.contains(area) || area.contains(loc)) return 2;
+  final areaParts = area.split(RegExp(r'[\s,/|-]+')).where((p) => p.length >= 3);
+  for (final part in areaParts) {
+    if (loc.contains(part)) return 1;
+  }
+  return 0;
+}
+
+/// Soft prioritise items that match the user's preferred area (keeps all results).
+List<T> prioritizeByPreferredArea<T>(
+  List<T> items,
+  String? preferredArea,
+  String? Function(T item) locationOf,
+) {
+  final area = preferredArea?.trim();
+  if (area == null || area.isEmpty || items.length < 2) return items;
+  final ranked = [...items];
+  ranked.sort((a, b) {
+    final score = preferredAreaMatchScore(locationOf(b), area)
+        .compareTo(preferredAreaMatchScore(locationOf(a), area));
+    return score;
+  });
+  return ranked;
 }
 
 String? sanitizeReviewBody(String? value) {

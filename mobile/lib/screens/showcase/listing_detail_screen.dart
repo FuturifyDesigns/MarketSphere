@@ -59,16 +59,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     String? successMessage,
   }) async {
     final auth = context.read<AuthController>();
-    if (!auth.isSignedIn) {
+    if (!auth.isAuthenticated) {
       await showSignUpGate(context);
-      return;
-    }
-    if (auth.profile == null) {
-      await auth.refreshProfile();
-    }
-    if (!mounted) return;
-    if (auth.profile == null) {
-      showErrorPopup(context, 'Could not load your profile. Pull to refresh and try again.');
       return;
     }
     final err = await action(auth.profile!.id);

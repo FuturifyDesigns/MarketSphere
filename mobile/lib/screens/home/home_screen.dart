@@ -22,7 +22,6 @@ import '../dashboard/my_enquiries_screen.dart';
 import '../dashboard/provider_dashboard_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../saved/saved_screen.dart';
-import '../settings/connection_test_screen.dart';
 import '../settings/settings_screen.dart';
 import '../shell/main_shell.dart';
 import '../showcase/listing_detail_screen.dart';
@@ -64,7 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = context.watch<AuthController>().profile;
+    final auth = context.watch<AuthController>();
+    final profile = auth.isAuthenticated ? auth.profile : null;
     final engagement = context.watch<EngagementController>();
     final firstName = profile?.displayName.split(' ').first;
     final scheme = Theme.of(context).colorScheme;
@@ -211,19 +211,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (snapshot.hasError) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: LiveEmptyState(
+                    child:                     LiveEmptyState(
                       title: 'Couldn’t load the feed',
                       body: describeLoadError(snapshot.error),
                       actionLabel: 'Retry',
                       onAction: _refresh,
-                      secondaryLabel: 'Run connection test',
-                      onSecondary: () => pushFade(context, const ConnectionTestScreen()),
                       icon: Icons.wifi_off_rounded,
                     ),
                   );
                 }
 
                 final data = snapshot.data!;
+                final area = engagement.preferredArea;
+                final listings = prioritizeByPreferredArea(
+                  data.listings,
+                  area,
+                  (l) => l.location,
+                );
+                final providers = prioritizeByPreferredArea(
+                  data.providers,
+                  area,
+                  (p) => p.location,
+                );
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -274,13 +283,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                     SectionHeader(
                       title: 'Featured listings',
-                      subtitle: 'Photos advance automatically',
+                      subtitle: area == null
+                          ? 'Photos advance automatically'
+                          : 'Prioritising $area — photos advance automatically',
                       action: TextButton(
                         onPressed: () => MainShell.goToTab(1),
                         child: Text('See all', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700)),
                       ),
                     ),
-                    if (data.listings.isEmpty)
+                    if (listings.isEmpty)
                       const LiveEmptyState(
                         title: 'Showcase is warming up',
                         body: 'New listings appear here as soon as they’re published.',
@@ -292,13 +303,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ListView.separated(
                           padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                           scrollDirection: Axis.horizontal,
-                          itemCount: data.listings.length,
+                          itemCount: listings.length,
                           separatorBuilder: (context, index) => const SizedBox(width: 14),
                           itemBuilder: (context, index) {
-                            final listing = data.listings[index];
+                            final listing = listings[index];
                             return ListingSlideshowCard(
                               listing: listing,
-                              onTap: () => openIfSignedIn(
+                              onTap: () => pushFade(
                                 context,
                                 ListingDetailScreen(listingId: listing.id, initial: listing),
                               ),
@@ -307,11 +318,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     const SizedBox(height: 8),
-                    const SectionHeader(
+                    SectionHeader(
                       title: 'Providers',
-                      subtitle: 'Approved professionals',
+                      subtitle: area == null
+                          ? 'Approved professionals'
+                          : 'Near $area first — all approved professionals',
                     ),
-                    if (data.providers.isEmpty)
+                    if (providers.isEmpty)
                       LiveEmptyState(
                         title: 'Providers are onboarding',
                         body:
@@ -319,12 +332,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.storefront_outlined,
                       )
                     else
-                      ...data.providers.map(
+                      ...providers.map(
                         (provider) => Padding(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
                           child: _ProviderTile(
                             provider: provider,
-                            onTap: () => openIfSignedIn(
+                            onTap: () => pushFade(
                               context,
                               ProviderDetailScreen(providerId: provider.id, initial: provider),
                             ),

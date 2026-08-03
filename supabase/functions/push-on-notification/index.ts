@@ -1,15 +1,9 @@
-// Supabase Edge Function: fan-out FCM when a row is inserted into public.notifications.
+// Supabase Edge Function: fan-out FCM when a row is inserted into public.notifications,
+// or broadcast to an FCM topic (guest new-listing alerts).
 //
 // Deploy:
 //   supabase functions deploy push-on-notification --no-verify-jwt
 //   supabase secrets set FCM_SERVICE_ACCOUNT_JSON='<<paste Firebase service account JSON>>'
-//
-// Then Database Webhook (Dashboard → Database → Webhooks):
-//   Table: notifications, Event: INSERT
-//   URL: https://<project-ref>.supabase.co/functions/v1/push-on-notification
-//   HTTP Header: Authorization: Bearer <service_role_or_anon_as_needed>
-//
-// Prefer leaving verify JWT off for webhooks and check a shared secret header instead.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
 
@@ -89,11 +83,37 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return json.access_token as string
 }
 
+function fcmMessageBody(note: NotificationRow, target: { token?: string; topic?: string }) {
+  return {
+    message: {
+      ...(target.token ? { token: target.token } : {}),
+      ...(target.topic ? { topic: target.topic } : {}),
+      notification: {
+        title: note.title,
+        body: note.body,
+      },
+      data: {
+        type: note.type ?? 'info',
+        link: note.link ?? '',
+        notification_id: note.id ?? '',
+      },
+      android: {
+        priority: 'HIGH',
+        notification: {
+          channel_id: 'engagement_alerts_v3',
+          sound: 'notif_sound',
+          default_sound: false,
+        },
+      },
+    },
+  }
+}
+
 async function sendFcm(
   accessToken: string,
   projectId: string,
-  deviceToken: string,
   note: NotificationRow,
+  target: { token?: string; topic?: string },
 ) {
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
   const res = await fetch(url, {
@@ -102,26 +122,7 @@ async function sendFcm(
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      message: {
-        token: deviceToken,
-        notification: {
-          title: note.title,
-          body: note.body,
-        },
-        data: {
-          type: note.type ?? 'info',
-          link: note.link ?? '',
-          notification_id: note.id ?? '',
-        },
-        android: {
-          priority: 'HIGH',
-          notification: {
-            channel_id: 'engagement_alerts',
-          },
-        },
-      },
-    }),
+    body: JSON.stringify(fcmMessageBody(note, target)),
   })
   if (!res.ok) {
     const text = await res.text()
@@ -147,9 +148,29 @@ Deno.serve(async (req) => {
     const sa = JSON.parse(saRaw) as ServiceAccount
 
     const payload = await req.json()
-    // Supports Database Webhook shape: { type, table, record } or { record }
     const record = (payload.record ?? payload.new ?? payload) as NotificationRow
-    if (!record?.user_id || !record?.title) {
+    const broadcastTopic =
+      typeof payload.broadcast_topic === 'string' ? payload.broadcast_topic.trim() : ''
+
+    if (!record?.title) {
+      return new Response(JSON.stringify({ error: 'invalid notification payload' }), {
+        status: 400,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const accessToken = await getAccessToken(sa)
+
+    // Guest / broadcast path: one message to an FCM topic (e.g. new_listings).
+    if (broadcastTopic) {
+      const result = await sendFcm(accessToken, sa.project_id, record, { topic: broadcastTopic })
+      return new Response(
+        JSON.stringify({ sent: result.ok ? 1 : 0, topic: broadcastTopic, ok: result.ok }),
+        { headers: { ...cors, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (!record.user_id) {
       return new Response(JSON.stringify({ error: 'invalid notification payload' }), {
         status: 400,
         headers: { ...cors, 'Content-Type': 'application/json' },
@@ -177,10 +198,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    const accessToken = await getAccessToken(sa)
     let sent = 0
     for (const token of deviceTokens) {
-      const result = await sendFcm(accessToken, sa.project_id, token, record)
+      const result = await sendFcm(accessToken, sa.project_id, record, { token })
       if (result.ok) sent += 1
     }
 

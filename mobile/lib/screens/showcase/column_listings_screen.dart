@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/data_repository.dart';
+import '../../state/engagement_controller.dart';
 import '../../utils/helpers.dart';
-import '../../widgets/auth_gate.dart';
+import '../../utils/page_transitions.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
@@ -55,6 +56,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final preferredArea = context.watch<EngagementController>().preferredArea;
 
     return Scaffold(
       body: SafeArea(
@@ -184,6 +186,11 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                         )
                         .toList();
                   }
+                  items = prioritizeByPreferredArea(
+                    items,
+                    preferredArea,
+                    (l) => l.location,
+                  );
 
                   if (items.isEmpty) {
                     return LiveEmptyState(
@@ -209,7 +216,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                         final listing = items[index];
                         return ShowcaseListingCard(
                           listing: listing,
-                          onTap: () => openIfSignedIn(
+                          onTap: () => pushFade(
                             context,
                             ListingDetailScreen(listingId: listing.id, initial: listing),
                           ),
@@ -244,11 +251,12 @@ class _FilterChip extends StatelessWidget {
       selectedColor: const Color(AppConfig.colorGold),
       backgroundColor: const Color(0xFF242A33),
       checkmarkColor: const Color(AppConfig.colorNight),
-      side: BorderSide(
-        color: selected
-            ? const Color(AppConfig.colorGold)
-            : const Color(AppConfig.colorMuted).withValues(alpha: 0.45),
-      ),
+      side: BorderSide.none,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      pressElevation: 0,
+      elevation: 0,
+      shape: const StadiumBorder(),
       labelStyle: TextStyle(
         color: selected ? const Color(AppConfig.colorNight) : const Color(AppConfig.colorText),
         fontWeight: FontWeight.w700,

@@ -14,6 +14,11 @@ class AppConfig {
   /// Deep link for Supabase Google OAuth (add this URL in Supabase Auth redirect allow-list).
   static const String oauthRedirectUrl = 'com.marketspheregroup.market_sphere://login-callback/';
 
+  /// Email confirmation redirect for the Android app only (website uses /auth/verify).
+  /// Add the same URL in Supabase Auth → Redirect URLs.
+  static const String emailConfirmRedirectUrl =
+      'com.marketspheregroup.market_sphere://auth/verified';
+
   static const String registration = 'UIN BW00000887185';
   static const String headOffice = 'Gaborone, Botswana';
   static const String address =
@@ -42,8 +47,20 @@ class AppConfig {
   static const int colorTextSecondary = 0xFFD8C9A8;
   static const int colorMuted = 0xFFC4B89A;
 
+  /// TEMP test switch: when true, schedules reminders in minutes (not days).
+  /// Set back to `false` before shipping a public build.
+  static const bool missYouTestMode = false;
   static const List<int> missYouAfterDays = [2, 5, 10];
-  static const String missYouChannelId = 'miss_you';
+  /// Used only while [missYouTestMode] is true.
+  static const List<int> missYouTestAfterMinutes = [1, 2, 3];
+  /// Android `res/raw` name (no extension) for the custom notification chime.
+  static const String notificationSoundRaw = 'notif_sound';
+  /// Bumped when sound/channel settings change (Android locks channel sound forever).
+  static const String alertsChannelId = 'engagement_alerts_v3';
+  static const String alertsChannelName = 'Market Sphere alerts';
+  static const String alertsChannelDescription =
+      'New listings, price changes, availability, enquiries, and nearby providers.';
+  static const String missYouChannelId = 'miss_you_v3';
   static const String missYouChannelName = 'We miss you';
   static const String missYouChannelDescription =
       'Friendly reminders to come back to Market Sphere Group.';

@@ -112,21 +112,32 @@ Future<void> main() async {
         ? (auth.profile?.id ?? Supabase.instance.client.auth.currentUser?.id)
         : null;
     engagement.onAuthChanged(id);
-    if (id != null) {
+    if (settings.pushEnabled) {
+      // Guests (id == null) still sync — they join the new_listings FCM topic.
       PushService.instance.syncForUser(id);
     }
   });
 
   await AlertNotificationService.instance.init(enabled: settings.pushEnabled);
   // Never block first frame on FCM permission / token; sync in background.
-  unawaited(
-    PushService.instance.init(userId: auth.profile?.id).timeout(
-      const Duration(seconds: 12),
-      onTimeout: () {
-        if (kDebugMode) debugPrint('[push] init timed out; continuing boot');
-      },
-    ),
-  );
+  if (settings.pushEnabled) {
+    unawaited(
+      PushService.instance
+          .init(
+            userId: auth.isAuthenticated
+                ? auth.profile?.id
+                : null,
+          )
+          .timeout(
+        const Duration(seconds: 12),
+        onTimeout: () {
+          if (kDebugMode) debugPrint('[push] init timed out; continuing boot');
+        },
+      ),
+    );
+  } else {
+    PushService.instance.enabled = false;
+  }
 
   DeepLinkService.instance.attach(navigatorKey: _navigatorKey);
   await DeepLinkService.instance.start();

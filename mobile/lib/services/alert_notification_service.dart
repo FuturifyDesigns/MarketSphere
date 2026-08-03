@@ -10,10 +10,9 @@ class AlertNotificationService {
   AlertNotificationService._();
   static final AlertNotificationService instance = AlertNotificationService._();
 
-  static const channelId = 'engagement_alerts';
-  static const channelName = 'Market Sphere alerts';
-  static const channelDescription =
-      'New listings, price changes, availability, enquiries, and nearby providers.';
+  static const channelId = AppConfig.alertsChannelId;
+  static const channelName = AppConfig.alertsChannelName;
+  static const channelDescription = AppConfig.alertsChannelDescription;
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   var _ready = false;
@@ -30,11 +29,14 @@ class AlertNotificationService {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         channelId,
         channelName,
         description: channelDescription,
         importance: Importance.high,
+        playSound: true,
+        sound: const RawResourceAndroidNotificationSound(AppConfig.notificationSoundRaw),
+        audioAttributesUsage: AudioAttributesUsage.notification,
       ),
     );
 
@@ -59,6 +61,8 @@ class AlertNotificationService {
           channelDescription: channelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          playSound: true,
+          sound: const RawResourceAndroidNotificationSound(AppConfig.notificationSoundRaw),
           icon: '@mipmap/ic_launcher',
           color: const Color(AppConfig.colorGold),
           styleInformation: BigTextStyleInformation(note.body),

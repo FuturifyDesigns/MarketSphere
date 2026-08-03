@@ -2,6 +2,6 @@
   "version": "1.0.0",
   "build": 1,
   "apkUrl": "https://marketspheregroup.com/app/market-sphere.apk",
-  "notes": "Initial Android release with listings, showcase, and Google sign-in.",
+  "notes": "Android release — browse showcase, providers, push alerts, and miss-you reminders.",
   "force": false
 }

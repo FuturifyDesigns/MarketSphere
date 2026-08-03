@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config.dart';
 import '../models/models.dart';
 import '../services/app_secure_storage.dart';
 import '../services/env_config.dart';
@@ -26,13 +27,20 @@ class AuthController extends ChangeNotifier {
   Profile? get profile => _profile;
   bool get ready => _ready;
   bool get isSignedIn => Supabase.instance.client.auth.currentSession != null;
+  /// UI and gates must use this — never show "Signed in" from a stale profile alone.
+  bool get isAuthenticated => isSignedIn && _profile != null;
   String? get error => _error;
+
+  void _clearLocalAuth() {
+    _profile = null;
+    _error = null;
+  }
 
   Future<void> bootstrap() async {
     final client = Supabase.instance.client;
     client.auth.onAuthStateChange.listen((data) async {
       if (data.session == null) {
-        _profile = null;
+        _clearLocalAuth();
         notifyListeners();
         return;
       }
@@ -51,7 +59,7 @@ class AuthController extends ChangeNotifier {
         try {
           await client.auth.signOut(scope: SignOutScope.local);
         } catch (_) {}
-        _profile = null;
+        _clearLocalAuth();
       }
     }
 
@@ -60,15 +68,18 @@ class AuthController extends ChangeNotifier {
       if (_profile?.isBanned == true) {
         await signOut();
       }
+    } else {
+      _clearLocalAuth();
     }
     _ready = true;
     notifyListeners();
   }
 
   Future<void> refreshProfile() async {
+    final session = Supabase.instance.client.auth.currentSession;
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      _profile = null;
+    if (session == null || user == null) {
+      _clearLocalAuth();
       notifyListeners();
       return;
     }
@@ -316,6 +327,7 @@ class AuthController extends ChangeNotifier {
       final response = await Supabase.instance.client.auth.signUp(
         email: normalizedEmail,
         password: password,
+        emailRedirectTo: AppConfig.emailConfirmRedirectUrl,
         data: {
           'full_name': fullName.trim(),
           'phone': trimmedPhone.isEmpty ? null : trimmedPhone,
@@ -575,7 +587,7 @@ class AuthController extends ChangeNotifier {
   Future<void> signOut() async {
     await clearOAuthRole();
     await Supabase.instance.client.auth.signOut();
-    _profile = null;
+    _clearLocalAuth();
     notifyListeners();
   }
 }

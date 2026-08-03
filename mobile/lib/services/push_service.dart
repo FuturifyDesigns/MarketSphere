@@ -15,13 +15,17 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   } catch (_) {}
 }
 
-/// Registers FCM tokens in `device_tokens` and surfaces foreground pushes.
+/// Registers FCM tokens in `device_tokens` (signed-in) and topic `new_listings` (guests).
 ///
 /// Server fan-out: deploy `supabase/functions/push-on-notification` and set
 /// `FCM_SERVICE_ACCOUNT_JSON` (see mobile/docs/FIREBASE_PUSH_SETUP.md).
 class PushService {
   PushService._();
   static final PushService instance = PushService._();
+
+  /// Guests (and only guests) subscribe here so they get new-listing broadcasts
+  /// without a profile / notification row.
+  static const newListingsTopic = 'new_listings';
 
   var enabled = true;
   var _firebaseReady = false;
@@ -30,6 +34,8 @@ class PushService {
 
   Future<void> init({String? userId}) async {
     _activeUserId = userId;
+    if (!enabled) return;
+
     await _ensureFirebase();
     if (!_firebaseReady) {
       if (userId != null) {
@@ -52,22 +58,49 @@ class PushService {
       FirebaseMessaging.onMessage.listen(_onForegroundMessage);
       FirebaseMessaging.onMessageOpenedApp.listen(_onOpenedMessage);
       messaging.onTokenRefresh.listen((token) async {
+        if (!enabled) return;
         final uid = _activeUserId;
-        if (uid == null || !enabled) return;
-        await DataRepository().upsertDeviceToken(userId: uid, token: token);
+        if (uid != null) {
+          await DataRepository().upsertDeviceToken(userId: uid, token: token);
+        }
       });
     }
 
-    if (userId != null && enabled) {
+    if (userId != null) {
       await _registerToken(userId);
+      await _setGuestTopic(subscribed: false);
+    } else {
+      await _setGuestTopic(subscribed: true);
     }
   }
 
   Future<void> syncForUser(String? userId) async {
     _activeUserId = userId;
-    if (userId == null) return;
+    if (!enabled) return;
     await init(userId: userId);
     Supabase.instance.client.auth.currentSession;
+  }
+
+  /// Turns FCM registration on/off.
+  Future<void> setEnabled(bool value, {String? userId}) async {
+    enabled = value;
+    final uid = userId ?? _activeUserId;
+    if (!value) {
+      try {
+        await _ensureFirebase();
+        if (_firebaseReady) {
+          await _setGuestTopic(subscribed: false);
+          await FirebaseMessaging.instance.deleteToken();
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('[push] disable failed: $e');
+      }
+      if (uid != null) {
+        await DataRepository().deleteDeviceTokens(userId: uid);
+      }
+      return;
+    }
+    await init(userId: uid);
   }
 
   Future<void> _ensureFirebase() async {
@@ -97,6 +130,23 @@ class PushService {
       if (kDebugMode) {
         debugPrint('[push] getToken failed: $e');
       }
+    }
+  }
+
+  Future<void> _setGuestTopic({required bool subscribed}) async {
+    if (!_firebaseReady) return;
+    try {
+      // Ensure a token exists before topic subscribe (required on Android).
+      await FirebaseMessaging.instance.getToken();
+      if (subscribed) {
+        await FirebaseMessaging.instance.subscribeToTopic(newListingsTopic);
+        if (kDebugMode) debugPrint('[push] subscribed to $newListingsTopic');
+      } else {
+        await FirebaseMessaging.instance.unsubscribeFromTopic(newListingsTopic);
+        if (kDebugMode) debugPrint('[push] unsubscribed from $newListingsTopic');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[push] topic update failed: $e');
     }
   }
 

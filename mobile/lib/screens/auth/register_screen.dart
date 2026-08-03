@@ -91,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Check your email'),
-        content: const Text('We sent a confirmation link. After verifying, sign in.'),
+        content: const Text('We sent a confirmation link. After verifying in the app, sign in.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
         ],

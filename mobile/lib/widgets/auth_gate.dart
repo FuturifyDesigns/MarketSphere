@@ -12,9 +12,15 @@ import '../utils/page_transitions.dart';
 /// Opens [page] only when signed in. Guests see a signup prompt instead.
 Future<void> openIfSignedIn(BuildContext context, Widget page) async {
   final auth = context.read<AuthController>();
-  if (!auth.isSignedIn) {
-    await showSignUpGate(context);
-    return;
+  if (!auth.isAuthenticated) {
+    if (auth.isSignedIn && auth.profile == null) {
+      await auth.refreshProfile();
+    }
+    if (!context.mounted) return;
+    if (!auth.isAuthenticated) {
+      await showSignUpGate(context);
+      return;
+    }
   }
   if (auth.profile?.isBanned == true) {
     showErrorPopup(context, 'This account is restricted.');
@@ -88,7 +94,7 @@ class SignUpGateSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Sign up to unlock details',
+            'Sign up to continue',
             textAlign: TextAlign.center,
             style: GoogleFonts.barlowCondensed(
               fontSize: 26,
@@ -98,7 +104,7 @@ class SignUpGateSheet extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Create a free account to view full listing and provider details, contacts, and enquiries.',
+            'Create a free account to save favourites, send enquiries, and contact providers.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Color(AppConfig.colorTextSecondary),

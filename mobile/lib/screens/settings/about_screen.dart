@@ -145,25 +145,55 @@ class _AboutScreenState extends State<AboutScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: AppConfig.coreValues
-                .map(
-                  (value) => Chip(
-                    label: Text(
-                      value,
-                      style: const TextStyle(
-                        color: Color(AppConfig.colorNight),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    backgroundColor: const Color(AppConfig.colorGoldLight),
-                    side: BorderSide.none,
+            children: AppConfig.coreValues.map((value) {
+              return Chip(
+                avatar: Icon(
+                  _coreValueIcon(value),
+                  size: 16,
+                  color: const Color(AppConfig.colorNight),
+                ),
+                label: Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(AppConfig.colorNight),
+                    fontWeight: FontWeight.w600,
                   ),
-                )
-                .toList(),
+                ),
+                backgroundColor: const Color(AppConfig.colorGoldLight),
+                side: BorderSide.none,
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              );
+            }).toList(),
           ),
         ],
       ),
     );
+  }
+
+  IconData _coreValueIcon(String value) {
+    switch (value) {
+      case 'Botho':
+        return Icons.handshake_outlined;
+      case 'Professionalism':
+        return Icons.work_outline_rounded;
+      case 'Customer satisfaction':
+        return Icons.sentiment_satisfied_alt_outlined;
+      case 'Innovation':
+        return Icons.lightbulb_outline_rounded;
+      case 'Excellence':
+        return Icons.emoji_events_outlined;
+      case 'Empowerment':
+        return Icons.rocket_launch_outlined;
+      case 'Reliability':
+        return Icons.verified_user_outlined;
+      case 'Sustainable growth':
+        return Icons.eco_outlined;
+      default:
+        return Icons.star_outline_rounded;
+    }
   }
 
   Widget _block(BuildContext context, String title, String body) {

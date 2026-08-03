@@ -791,6 +791,14 @@ class DataRepository {
     } catch (_) {}
   }
 
+  Future<void> deleteDeviceTokens({required String userId}) async {
+    final authErr = _assertActor(userId);
+    if (authErr != null) return;
+    try {
+      await _db.from('device_tokens').delete().eq('user_id', userId);
+    } catch (_) {}
+  }
+
   String? _assertActor(String customerId) {
     final uid = _uid;
     if (uid == null) return 'Please sign in again.';

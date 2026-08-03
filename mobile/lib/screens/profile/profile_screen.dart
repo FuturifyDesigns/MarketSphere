@@ -25,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     final engagement = context.watch<EngagementController>();
-    final profile = auth.profile;
+    final profile = auth.isAuthenticated ? auth.profile : null;
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -67,7 +67,7 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            child: auth.isSignedIn && profile != null
+            child: profile != null
                 ? Column(
                     children: [
                       CircleAvatar(
@@ -117,24 +117,38 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      FilledButton.icon(
-                        onPressed: () => pushFade(context, const EditProfileScreen()),
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Edit profile'),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => pushFade(context, const EditProfileScreen()),
+                          style: FilledButton.styleFrom(side: BorderSide.none),
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text('Edit profile'),
+                        ),
                       ),
                       if (profile.isProvider || profile.isAdmin) ...[
                         const SizedBox(height: 10),
-                        FilledButton.tonalIcon(
-                          onPressed: () => pushFade(context, const ProviderDashboardScreen()),
-                          icon: const Icon(Icons.storefront_outlined),
-                          label: const Text('Provider dashboard'),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () => pushFade(context, const ProviderDashboardScreen()),
+                            style: FilledButton.styleFrom(
+                              side: BorderSide.none,
+                              overlayColor: const Color(AppConfig.colorNight).withValues(alpha: 0.1),
+                            ),
+                            icon: const Icon(Icons.storefront_outlined),
+                            label: const Text('Provider dashboard'),
+                          ),
                         ),
                       ] else ...[
                         const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          onPressed: () => pushFade(context, const MyEnquiriesScreen()),
-                          icon: const Icon(Icons.mail_outline_rounded),
-                          label: const Text('My enquiries'),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => pushFade(context, const MyEnquiriesScreen()),
+                            icon: const Icon(Icons.mail_outline_rounded),
+                            label: const Text('My enquiries'),
+                          ),
                         ),
                       ],
                     ],
@@ -174,13 +188,13 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _card(context, [
-            if (auth.isSignedIn && profile != null && (profile.isProvider || profile.isAdmin))
+            if (profile != null && (profile.isProvider || profile.isAdmin))
               _item(
                 Icons.dashboard_customize_outlined,
                 'Provider dashboard',
                 () => pushFade(context, const ProviderDashboardScreen()),
               ),
-            if (auth.isSignedIn && profile != null && !profile.isProvider && !profile.isAdmin)
+            if (profile != null && !profile.isProvider && !profile.isAdmin)
               _item(
                 Icons.mail_outline_rounded,
                 'My enquiries',
@@ -237,7 +251,7 @@ class ProfileScreen extends StatelessWidget {
               () => launchUrl(Uri.parse(AppConfig.siteUrl), mode: LaunchMode.externalApplication),
             ),
           ]),
-          if (auth.isSignedIn) ...[
+          if (profile != null) ...[
             const SizedBox(height: 22),
             FilledButton.tonal(
               onPressed: () async {

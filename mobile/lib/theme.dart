@@ -78,19 +78,31 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: const Color(AppConfig.colorGold),
           foregroundColor: const Color(AppConfig.colorNight),
-          minimumSize: const Size.fromHeight(52),
+          // Finite min width — Size.fromHeight uses infinity and breaks Row buttons.
+          minimumSize: const Size(88, 48),
+          side: BorderSide.none,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          overlayColor: const Color(AppConfig.colorNight).withValues(alpha: 0.12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: GoogleFonts.barlow(fontWeight: FontWeight.w700, fontSize: 16),
+        ).copyWith(
+          side: const WidgetStatePropertyAll(BorderSide.none),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(AppConfig.colorGoldLight),
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(88, 48),
           side: BorderSide(
             color: const Color(AppConfig.colorGold).withValues(alpha: 0.45),
           ),
           backgroundColor: const Color(0xFF151A20),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          overlayColor: const Color(AppConfig.colorGold).withValues(alpha: 0.12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: GoogleFonts.barlow(fontWeight: FontWeight.w600, fontSize: 16),
         ),
@@ -98,6 +110,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: const Color(AppConfig.colorGoldLight),
+          overlayColor: const Color(AppConfig.colorGold).withValues(alpha: 0.12),
           textStyle: GoogleFonts.barlow(fontWeight: FontWeight.w700),
         ),
       ),
@@ -111,7 +124,12 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           fontSize: 12,
         ),
-        side: BorderSide(color: muted.withValues(alpha: 0.35)),
+        side: BorderSide.none,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        selectedShadowColor: Colors.transparent,
+        pressElevation: 0,
+        elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       ),
       navigationBarTheme: NavigationBarThemeData(
