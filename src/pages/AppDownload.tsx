@@ -158,19 +158,18 @@ function useLiveDemos(rootRef: RefObject<HTMLElement | null>) {
           .to(toast!, { y: -40, autoAlpha: 0, duration: 0.35 })
       })
 
-      root.querySelectorAll<HTMLElement>('[data-live="verified"]').forEach((el) => {
-        const badge = el.querySelector<HTMLElement>('.appdl-verified__badge')
-        const lines = gsap.utils.toArray<HTMLElement>('h4, p, small', el)
-        gsap.set(badge, { scale: 0.6, autoAlpha: 0 })
-        gsap.set(lines, { y: 12, autoAlpha: 0 })
-        gsap
-          .timeline({ repeat: -1, repeatDelay: 1.4 })
-          .to(badge, { scale: 1, autoAlpha: 1, duration: 0.5, ease: 'back.out(1.7)' })
-          .to(lines, { y: 0, autoAlpha: 1, stagger: 0.1, duration: 0.4 }, '-=0.15')
-          .to({}, { duration: 2 })
-          .to([badge, ...lines], { autoAlpha: 0, duration: 0.35 })
-          .set(badge, { scale: 0.6 })
-          .set(lines, { y: 12 })
+      root.querySelectorAll<HTMLElement>('[data-live="splash"]').forEach((el) => {
+        const logo = el.querySelector<HTMLElement>('.appdl-splash__logo')
+        const lines = gsap.utils.toArray<HTMLElement>('strong, i, small', el)
+        if (logo) gsap.set(logo, { scale: 0.82, autoAlpha: 0 })
+        gsap.set(lines, { y: 14, autoAlpha: 0 })
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.2 })
+        if (logo) tl.to(logo, { scale: 1, autoAlpha: 1, duration: 0.55, ease: 'power2.out' })
+        tl.to(lines, { y: 0, autoAlpha: 1, stagger: 0.1, duration: 0.4 }, logo ? '-=0.1' : 0)
+          .to({}, { duration: 1.8 })
+          .to(logo ? [logo, ...lines] : lines, { autoAlpha: 0, duration: 0.35 })
+        if (logo) tl.set(logo, { scale: 0.82 })
+        tl.set(lines, { y: 14 })
       })
     }, root)
 
@@ -411,7 +410,7 @@ function renderStepVisual(index: number) {
     default:
       return (
         <PhoneChrome>
-          <VerifiedMock />
+          <SplashMock />
         </PhoneChrome>
       )
   }
@@ -465,25 +464,25 @@ function AppHomeMock() {
         <div
           className="appdl-app__tile appdl-app__tile--wide"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.15), rgba(8,10,14,0.88)), url(${import.meta.env.BASE_URL}showcase/real-estate.webp)`,
+            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.12), rgba(8,10,14,0.9)), url(${import.meta.env.BASE_URL}app/demo/listing-plot.png)`,
           }}
         >
           <em>Plot · Gaborone</em>
           <strong>Broadhurst residential</strong>
         </div>
         <div
-          className="appdl-app__tile"
+          className="appdl-app__tile appdl-app__tile--logo"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.1), rgba(8,10,14,0.9)), url(${import.meta.env.BASE_URL}showcase/academic-tuition.webp)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}app/demo/listing-tutoring.png)`,
           }}
         >
           <em>Tutoring</em>
-          <strong>Math · Form 3</strong>
+          <strong>Lion Tutoring</strong>
         </div>
         <div
           className="appdl-app__tile"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.1), rgba(8,10,14,0.9)), url(${import.meta.env.BASE_URL}showcase/music-education.webp)`,
+            backgroundImage: `linear-gradient(180deg, rgba(8,10,14,0.08), rgba(8,10,14,0.88)), url(${import.meta.env.BASE_URL}app/demo/listing-music.png)`,
           }}
         >
           <em>Music</em>
@@ -561,6 +560,23 @@ function EmailConfirmMock() {
   )
 }
 
+function SplashMock() {
+  return (
+    <div className="appdl-splash" data-live="splash">
+      <img
+        className="appdl-splash__logo"
+        src={`${import.meta.env.BASE_URL}${LOGO_PATH}`}
+        alt=""
+        width={96}
+        height={96}
+      />
+      <strong>MARKET SPHERE</strong>
+      <i />
+      <small>Master Your Field for Relevance</small>
+    </div>
+  )
+}
+
 function NotificationPermissionMock() {
   return (
     <div className="appdl-perm" data-live="notify">
@@ -577,17 +593,6 @@ function NotificationPermissionMock() {
           <span className="ok">Allow</span>
         </div>
       </div>
-    </div>
-  )
-}
-
-function VerifiedMock() {
-  return (
-    <div className="appdl-verified" data-live="verified">
-      <div className="appdl-verified__badge">✓</div>
-      <h4>You’re verified</h4>
-      <p>Your email has been confirmed. Return to the Market Sphere app and sign in.</p>
-      <small>You can close this screen.</small>
     </div>
   )
 }

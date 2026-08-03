@@ -19,16 +19,22 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<double> _fade;
-  late final Animation<double> _scale;
+  late final Animation<double> _logoFade;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _textFade;
+  late final Animation<Offset> _textSlide;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
-    _fade = CurvedAnimation(parent: _controller, curve: const Interval(0, 0.6, curve: Curves.easeOut));
-    _scale = Tween(begin: 0.88, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.7, curve: Curves.easeOutBack)),
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
+    _logoFade = CurvedAnimation(parent: _controller, curve: const Interval(0, 0.45, curve: Curves.easeOut));
+    _logoScale = Tween(begin: 0.82, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.55, curve: Curves.easeOutCubic)),
+    );
+    _textFade = CurvedAnimation(parent: _controller, curve: const Interval(0.35, 0.85, curve: Curves.easeOut));
+    _textSlide = Tween(begin: const Offset(0, 0.18), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.35, 0.9, curve: Curves.easeOutCubic)),
     );
     _controller.forward();
     unawaited(_boot());
@@ -37,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _boot() async {
     final auth = context.read<AuthController>();
     await Future.wait([
-      Future<void>.delayed(const Duration(milliseconds: 1400)),
+      Future<void>.delayed(const Duration(milliseconds: 1600)),
       Future(() async {
         final deadline = DateTime.now().add(const Duration(seconds: 8));
         while (!auth.ready && DateTime.now().isBefore(deadline)) {
@@ -73,47 +79,91 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             return Stack(
               fit: StackFit.expand,
               children: [
-                DecoratedBox(
+                const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
-                      center: const Alignment(0, -0.2),
-                      radius: 1.1,
+                      center: Alignment(0, -0.15),
+                      radius: 1.05,
                       colors: [
-                        Color.lerp(const Color(0xFF1A1408), const Color(0xFF3A2A10), _fade.value * 0.5)!,
-                        const Color(AppConfig.colorNight),
+                        Color(0xFF16110A),
+                        Color(AppConfig.colorNight),
                       ],
                     ),
                   ),
                 ),
                 Center(
-                  child: FadeTransition(
-                    opacity: _fade,
-                    child: ScaleTransition(
-                      scale: _scale,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset('assets/branding/logo-512.png', width: 148, height: 148),
-                          const SizedBox(height: 22),
-                          const Text(
-                            'MARKET SPHERE GROUP',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Color(AppConfig.colorGold),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 2.4,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FadeTransition(
+                        opacity: _logoFade,
+                        child: ScaleTransition(
+                          scale: _logoScale,
+                          child: Container(
+                            width: 112,
+                            height: 112,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(AppConfig.colorGold).withValues(alpha: 0.22 * _logoFade.value),
+                                  blurRadius: 36,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/branding/splash_logo.png',
+                                width: 112,
+                                height: 112,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            AppConfig.tagline,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xFFD8C9A8), fontSize: 13),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 28),
+                      FadeTransition(
+                        opacity: _textFade,
+                        child: SlideTransition(
+                          position: _textSlide,
+                          child: Column(
+                            children: [
+                              const Text(
+                                'MARKET SPHERE',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFFAF6EC),
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 3.2,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                width: 42,
+                                height: 2,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(2),
+                                  color: const Color(AppConfig.colorGold),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                AppConfig.tagline,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFD8C9A8),
+                                  fontSize: 13,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

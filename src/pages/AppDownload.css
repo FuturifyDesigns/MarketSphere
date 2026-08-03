@@ -404,8 +404,16 @@
   overflow: hidden;
 }
 
-.appdl-app__tile--wide {
-  grid-row: span 2;
+.appdl-app__tile--logo {
+  background-color: #f4f4f4;
+  background-size: 72% auto;
+  background-repeat: no-repeat;
+}
+
+.appdl-app__tile--logo em,
+.appdl-app__tile--logo strong {
+  color: #1a1a1a;
+  text-shadow: none;
 }
 
 .appdl-app__tile em {
@@ -796,6 +804,52 @@
 .appdl-perm__actions .ok {
   background: #c9a24b;
   color: #0e1116;
+}
+
+/* Branded splash mock */
+.appdl-splash {
+  min-height: 480px;
+  padding: 48px 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background:
+    radial-gradient(circle at 50% 38%, #16110a 0%, #0b0b0b 70%);
+}
+
+.appdl-splash__logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 28px;
+  box-shadow: 0 0 36px rgba(201, 162, 75, 0.22);
+}
+
+.appdl-splash strong {
+  display: block;
+  color: #faf6ec;
+  font-size: 1.05rem;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+
+.appdl-splash i {
+  display: block;
+  width: 42px;
+  height: 2px;
+  margin: 12px auto;
+  border-radius: 2px;
+  background: #c9a24b;
+}
+
+.appdl-splash small {
+  color: #d8c9a8;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
 }
 
 /* Verified screen mock */

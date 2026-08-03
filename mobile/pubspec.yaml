@@ -1,7 +1,7 @@
 name: market_sphere
 description: Market Sphere Group — native Android app sharing the website Supabase backend.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.10.7
@@ -58,10 +58,13 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#0B0B0B"
-  image: assets/branding/logo-512.png
+  image: assets/branding/splash_logo.png
+  branding: assets/branding/splash_branding.png
+  branding_mode: bottom
   android: true
   ios: false
   android_12:
     color: "#0B0B0B"
-    image: assets/branding/logo-512.png
+    image: assets/branding/splash_logo.png
     icon_background_color: "#0B0B0B"
+    branding: assets/branding/splash_branding.png
