@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../config.dart';
 import '../../services/miss_you_service.dart';
+import '../../services/update_check_service.dart';
 import '../../state/app_settings_controller.dart';
 import '../../state/engagement_controller.dart';
 import '../../widgets/offline_banner.dart';
@@ -43,6 +46,10 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     MainShell.requestedTab.addListener(_onTabRequest);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(UpdateCheckService.instance.checkAfterLaunch(context));
+    });
   }
 
   void _onTabRequest() {

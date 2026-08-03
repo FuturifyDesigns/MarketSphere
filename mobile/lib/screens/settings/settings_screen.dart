@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../services/alert_notification_service.dart';
 import '../../services/push_service.dart';
+import '../../services/update_check_service.dart';
 import '../../state/app_settings_controller.dart';
 import '../../state/auth_controller.dart';
 import '../../state/engagement_controller.dart';
@@ -159,6 +160,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.6)),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+              leading: const Icon(Icons.system_update_rounded),
+              title: const Text('Check for updates', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(
+                'See if a newer app build is available to download',
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => UpdateCheckService.instance.checkAndPrompt(
+                context,
+                interactive: true,
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(

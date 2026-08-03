@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/data_repository.dart';
+import '../../services/update_check_service.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
 
@@ -18,11 +20,13 @@ class AboutScreen extends StatefulWidget {
 
 class _AboutScreenState extends State<AboutScreen> {
   Future<List<TeamMember>>? _teamFuture;
+  Future<PackageInfo>? _packageFuture;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _teamFuture ??= context.read<DataRepository>().fetchTeamMembers(siteBase: AppConfig.siteUrl);
+    _packageFuture ??= PackageInfo.fromPlatform();
   }
 
   @override
@@ -47,7 +51,33 @@ class _AboutScreenState extends State<AboutScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(AppConfig.colorMuted)),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 8),
+          FutureBuilder<PackageInfo>(
+            future: _packageFuture,
+            builder: (context, snapshot) {
+              final info = snapshot.data;
+              final label = info == null
+                  ? 'App version …'
+                  : 'App version ${info.version} (${info.buildNumber})';
+              return Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => UpdateCheckService.instance.checkAndPrompt(
+                context,
+                interactive: true,
+              ),
+              icon: const Icon(Icons.system_update_rounded, size: 18),
+              label: const Text('Check for updates'),
+            ),
+          ),
+          const SizedBox(height: 10),
           _block(context, 'Overview', AppConfig.overview),
           const SizedBox(height: 14),
           _block(context, 'Head office', AppConfig.headOffice),

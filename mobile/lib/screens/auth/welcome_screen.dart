@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../config.dart';
+import '../../services/update_check_service.dart';
 import '../../utils/page_transitions.dart';
 import '../shell/main_shell.dart';
 import 'login_screen.dart';
@@ -27,6 +29,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     _intro = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..forward();
     _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))..repeat(reverse: true);
     _orbit = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(UpdateCheckService.instance.checkAfterLaunch(context));
+    });
   }
 
   @override

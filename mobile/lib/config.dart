@@ -5,6 +5,9 @@ class AppConfig {
   static const String appName = 'Market Sphere Group';
   static const String tagline = 'Master Your Field for Relevance';
   static const String siteUrl = 'https://marketspheregroup.com/';
+  /// Hosted JSON the app polls for newer APK builds (see /public/app/).
+  static const String appVersionUrl = '${siteUrl}app/version.json';
+  static const String appApkUrl = '${siteUrl}app/market-sphere.apk';
   static const String supportEmail = 'info@marketspheregroup.com';
   static const String supportPhone = '+267 74013060';
 
