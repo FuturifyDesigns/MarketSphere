@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +9,7 @@ import '../../services/data_repository.dart';
 import '../../state/engagement_controller.dart';
 import '../../utils/helpers.dart';
 import '../../utils/page_transitions.dart';
+import '../../utils/showcase_ambience.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
@@ -25,8 +28,15 @@ class ColumnListingsScreen extends StatefulWidget {
 
 class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   final _search = TextEditingController();
+  final _ambience = ShowcaseAmbienceController();
   Future<List<ShowcaseListing>>? _future;
   String? _dealFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_ambience.startIfMusicColumn(widget.column.slug));
+  }
 
   @override
   void didChangeDependencies() {
@@ -39,6 +49,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
 
   @override
   void dispose() {
+    unawaited(_ambience.dispose());
     _search.dispose();
     super.dispose();
   }

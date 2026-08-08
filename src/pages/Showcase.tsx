@@ -28,6 +28,7 @@ import { COMPANY } from '../lib/constants'
 import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto, showcaseWhatsAppLink } from '../lib/showcase'
 import { ShowcaseTextCover } from '../components/showcase/ShowcaseTextCover'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
+import { useShowcaseAmbience } from '../hooks/useShowcaseAmbience'
 import { supabase } from '../lib/supabase'
 import { cachedFetch, clearCached, onTabVisible } from '../lib/queryCache'
 import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
@@ -788,6 +789,8 @@ export function ShowcaseColumnPage() {
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
 
+  useShowcaseAmbience(slug)
+
   useEffect(() => {
     let cancelled = false
 
@@ -1014,6 +1017,8 @@ export function ShowcaseListingPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
+
+  useShowcaseAmbience(slug)
 
   useEffect(() => {
     let cancelled = false
