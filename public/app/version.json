@@ -1,7 +1,7 @@
 {
-  "version": "1.0.1",
-  "build": 3,
+  "version": "1.0.2",
+  "build": 4,
   "apkUrl": "https://marketspheregroup.com/app/market-sphere.apk",
-  "notes": "Music Education ambient piano loop. Browse showcase, providers, push alerts, and miss-you reminders.",
+  "notes": "Showcase Tenanted badge for rent listings. Soft piano in Music Education, browse showcase, providers, and push alerts.",
   "force": false
 }
