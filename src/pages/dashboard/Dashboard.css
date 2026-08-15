@@ -1341,7 +1341,35 @@
 .showcase-admin-row__actions {
   display: inline-flex;
   flex-shrink: 0;
+  align-items: center;
   gap: 0.2rem;
+}
+
+.showcase-admin-row__text-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 1.85rem;
+  padding: 0 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--card-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-gold) 12%, var(--card-bg));
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.showcase-admin-row__text-btn:hover {
+  border-color: color-mix(in srgb, var(--color-gold) 65%, var(--card-border));
+  background: color-mix(in srgb, var(--color-gold) 20%, var(--card-bg));
+}
+
+.showcase-admin-row__text-btn.is-closed {
+  border-color: color-mix(in srgb, #8b3a2f 35%, var(--card-border));
+  background: color-mix(in srgb, #8b3a2f 10%, var(--card-bg));
+  color: #8b3a2f;
 }
 
 .showcase-admin-row__icon-btn {

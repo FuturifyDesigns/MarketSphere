@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, CheckCircle2, ChevronLeft, ChevronRight, Crop, EyeOff, ImagePlus, LocateFixed, Pencil, Search, Store, Trash2, Upload } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Crop, EyeOff, ImagePlus, LocateFixed, Pencil, Search, Store, Trash2, Upload } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { resolveCurrentLocationLabel } from '../../lib/geolocation'
@@ -621,22 +621,22 @@ export function ShowcaseAdminPanel() {
                         {available ? (
                           <button
                             type="button"
-                            className="showcase-admin-row__icon-btn"
+                            className="showcase-admin-row__text-btn"
                             title={`Mark ${unavailableLabel}`}
                             aria-label={`Mark ${unavailableLabel}`}
                             onClick={() => void setAvailable(listing, false)}
                           >
-                            <Archive size={14} />
+                            Mark {unavailableLabel}
                           </button>
                         ) : (
                           <button
                             type="button"
-                            className="showcase-admin-row__icon-btn"
+                            className="showcase-admin-row__text-btn is-closed"
                             title={`Mark ${availableLabel}`}
                             aria-label={`Mark ${availableLabel}`}
                             onClick={() => void setAvailable(listing, true)}
                           >
-                            <CheckCircle2 size={14} />
+                            Mark {availableLabel}
                           </button>
                         )}
                         {listing.status !== 'published' ? (
@@ -830,7 +830,7 @@ export function ShowcaseAdminPanel() {
                 </option>
               </select>
               <span className="input-hint">
-                Labels change with deal type (e.g. Available/Sold for sale, Available/Rented for rent).
+                Labels change with deal type (e.g. Available/Sold for sale, Available/Tenanted for rent).
               </span>
             </div>
 

@@ -25,7 +25,7 @@ String availabilityLabel(String dealType, bool available) {
   }
   return switch (dealType) {
     'sale' => 'Sold',
-    'rent' => 'Rented',
+    'rent' || 'sale_rent' => 'Tenanted',
     'opportunity' => 'Closed',
     'project' => 'Completed',
     _ => 'Unavailable',

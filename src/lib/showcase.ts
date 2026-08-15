@@ -16,8 +16,8 @@ export const SHOWCASE_AVAILABILITY_LABELS: Record<
   { available: string; unavailable: string }
 > = {
   sale: { available: 'Available', unavailable: 'Sold' },
-  rent: { available: 'Available', unavailable: 'Rented' },
-  sale_rent: { available: 'Available', unavailable: 'Unavailable' },
+  rent: { available: 'Available', unavailable: 'Tenanted' },
+  sale_rent: { available: 'Available', unavailable: 'Tenanted' },
   opportunity: { available: 'Open', unavailable: 'Closed' },
   project: { available: 'Open', unavailable: 'Completed' },
   service: { available: 'Available', unavailable: 'Unavailable' },
