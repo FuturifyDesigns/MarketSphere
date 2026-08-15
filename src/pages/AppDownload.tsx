@@ -8,7 +8,7 @@ import './AppDownload.css'
 gsap.registerPlugin(ScrollTrigger)
 
 const APK_HREF = '/app/market-sphere.apk'
-const APP_VERSION = '1.0.2'
+const APP_VERSION = '1.0.3'
 
 const STEPS = [
   {

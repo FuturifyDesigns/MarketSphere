@@ -156,7 +156,7 @@ class _ConnectionTestScreenState extends State<ConnectionTestScreen> {
             .from('showcase_listings')
             .select(
               'id, title, summary, description, location, price_label, deal_type, '
-              'image_urls, available, featured, owner_name, owner_phone, owner_email, '
+              'image_urls, available, availability_status, featured, owner_name, owner_phone, owner_email, '
               'column_id, showcase_columns(id, slug, title)',
             )
             .eq('status', 'published')

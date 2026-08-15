@@ -49,6 +49,7 @@ class ShowcaseListing {
     required this.dealType,
     required this.imageUrls,
     required this.available,
+    this.availabilityStatus,
     required this.featured,
     this.ownerName,
     this.ownerPhone,
@@ -67,6 +68,7 @@ class ShowcaseListing {
   final String dealType;
   final List<String> imageUrls;
   final bool available;
+  final String? availabilityStatus;
   final bool featured;
   final String? ownerName;
   final String? ownerPhone;
@@ -87,6 +89,7 @@ class ShowcaseListing {
         'deal_type': dealType,
         'image_urls': imageUrls,
         'available': available,
+        'availability_status': availabilityStatus,
         'featured': featured,
         'owner_name': ownerName,
         'owner_phone': ownerPhone,
@@ -119,6 +122,7 @@ class ShowcaseListing {
       dealType: (json['deal_type'] as String?) ?? 'other',
       imageUrls: images is List ? images.map((e) => e.toString()).toList() : const [],
       available: json['available'] != false,
+      availabilityStatus: json['availability_status'] as String?,
       featured: json['featured'] == true,
       ownerName: json['owner_name'] as String?,
       ownerPhone: json['owner_phone'] as String?,

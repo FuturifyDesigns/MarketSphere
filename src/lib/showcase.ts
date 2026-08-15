@@ -1,4 +1,8 @@
-import type { ShowcaseDealType, ShowcaseListing } from './types'
+import type {
+  ShowcaseAvailabilityStatus,
+  ShowcaseDealType,
+  ShowcaseListing,
+} from './types'
 
 export const SHOWCASE_DEAL_LABELS: Record<ShowcaseDealType, string> = {
   sale: 'For sale',
@@ -10,23 +14,75 @@ export const SHOWCASE_DEAL_LABELS: Record<ShowcaseDealType, string> = {
   other: 'Listing',
 }
 
-/** Positive / negative availability wording based on deal type. */
-export const SHOWCASE_AVAILABILITY_LABELS: Record<
-  ShowcaseDealType,
-  { available: string; unavailable: string }
-> = {
-  sale: { available: 'Available', unavailable: 'Sold' },
-  rent: { available: 'Available', unavailable: 'Tenanted' },
-  sale_rent: { available: 'Available', unavailable: 'Tenanted' },
-  opportunity: { available: 'Open', unavailable: 'Closed' },
-  project: { available: 'Open', unavailable: 'Completed' },
-  service: { available: 'Available', unavailable: 'Unavailable' },
-  other: { available: 'Available', unavailable: 'Unavailable' },
+export const SHOWCASE_AVAILABILITY_STATUS_LABELS: Record<ShowcaseAvailabilityStatus, string> = {
+  available: 'Available',
+  sold: 'Sold',
+  tenanted: 'Tenanted',
+  closed: 'Closed',
+  completed: 'Completed',
+  unavailable: 'Unavailable',
 }
 
-export function showcaseAvailabilityLabel(dealType: ShowcaseDealType, available: boolean) {
-  const labels = SHOWCASE_AVAILABILITY_LABELS[dealType] || SHOWCASE_AVAILABILITY_LABELS.other
-  return available ? labels.available : labels.unavailable
+/** Which availability choices admins get for a deal type. */
+export function showcaseAvailabilityOptions(dealType: ShowcaseDealType): ShowcaseAvailabilityStatus[] {
+  if (dealType === 'sale' || dealType === 'rent' || dealType === 'sale_rent') {
+    return ['available', 'sold', 'tenanted']
+  }
+  if (dealType === 'opportunity') return ['available', 'closed']
+  if (dealType === 'project') return ['available', 'completed']
+  return ['available', 'unavailable']
+}
+
+export function resolveShowcaseAvailabilityStatus(listing: {
+  availability_status?: string | null
+  available?: boolean | null
+  deal_type?: ShowcaseDealType | string | null
+}): ShowcaseAvailabilityStatus {
+  const raw = listing.availability_status?.trim()
+  if (raw && raw in SHOWCASE_AVAILABILITY_STATUS_LABELS) {
+    return raw as ShowcaseAvailabilityStatus
+  }
+  if (listing.available === false) {
+    const dealType = listing.deal_type
+    if (dealType === 'sale') return 'sold'
+    if (dealType === 'rent' || dealType === 'sale_rent') return 'tenanted'
+    if (dealType === 'opportunity') return 'closed'
+    if (dealType === 'project') return 'completed'
+    return 'unavailable'
+  }
+  return 'available'
+}
+
+export function showcaseAvailabilityLabel(
+  listingOrDealType:
+    | ShowcaseDealType
+    | {
+        availability_status?: string | null
+        available?: boolean | null
+        deal_type?: ShowcaseDealType | string | null
+      },
+  available?: boolean,
+) {
+  if (typeof listingOrDealType === 'object') {
+    const status = resolveShowcaseAvailabilityStatus(listingOrDealType)
+    const dealType = listingOrDealType.deal_type
+    if (status === 'available' && (dealType === 'opportunity' || dealType === 'project')) {
+      return 'Open'
+    }
+    return SHOWCASE_AVAILABILITY_STATUS_LABELS[status]
+  }
+  return showcaseAvailabilityLabel({
+    deal_type: listingOrDealType,
+    available: available !== false,
+  })
+}
+
+export function showcaseIsClosed(listing: {
+  availability_status?: string | null
+  available?: boolean | null
+  deal_type?: ShowcaseDealType | string | null
+}) {
+  return resolveShowcaseAvailabilityStatus(listing) !== 'available'
 }
 
 export function showcaseHasOwnerContacts(listing: {
@@ -47,6 +103,7 @@ export type ShowcaseEnquiryListing = Pick<
   | 'price_label'
   | 'deal_type'
   | 'available'
+  | 'availability_status'
 > & {
   columnTitle?: string | null
   columnSlug?: string | null
@@ -72,7 +129,7 @@ export function showcaseListingEnquiryMessage(
     listing.deal_type in SHOWCASE_DEAL_LABELS
       ? SHOWCASE_DEAL_LABELS[listing.deal_type]
       : SHOWCASE_DEAL_LABELS.other
-  const availability = showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)
+  const availability = showcaseAvailabilityLabel(listing)
   const summary = trimBlock(listing.summary)
   const descriptionRaw = trimBlock(listing.description)
   const description = options?.maxDescriptionChars

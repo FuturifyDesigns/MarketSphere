@@ -49,10 +49,10 @@ class DataRepository {
 
   /// Full select (detail-ready). Falls back to [_listingSelectSlim] on schema/embed errors.
   static const _listingSelect =
-      'id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, owner_name, owner_phone, owner_email, column_id, showcase_columns(id, slug, title)';
+      'id, title, summary, description, location, price_label, deal_type, image_urls, available, availability_status, featured, owner_name, owner_phone, owner_email, column_id, showcase_columns(id, slug, title)';
 
   static const _listingSelectSlim =
-      'id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, column_id';
+      'id, title, summary, description, location, price_label, deal_type, image_urls, available, availability_status, featured, column_id';
 
   static const _providerSelect =
       'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone';

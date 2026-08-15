@@ -16,7 +16,24 @@ const dealTypeLabels = <String, String>{
 
 String dealTypeLabel(String dealType) => dealTypeLabels[dealType] ?? 'Listing';
 
-String availabilityLabel(String dealType, bool available) {
+String availabilityLabel({
+  required String dealType,
+  required bool available,
+  String? availabilityStatus,
+}) {
+  final status = (availabilityStatus ?? '').trim();
+  if (status.isNotEmpty) {
+    return switch (status) {
+      'sold' => 'Sold',
+      'tenanted' => 'Tenanted',
+      'closed' => 'Closed',
+      'completed' => 'Completed',
+      'unavailable' => 'Unavailable',
+      'available' =>
+        dealType == 'opportunity' || dealType == 'project' ? 'Open' : 'Available',
+      _ => status.replaceAll('_', ' '),
+    };
+  }
   if (available) {
     return switch (dealType) {
       'opportunity' || 'project' => 'Open',

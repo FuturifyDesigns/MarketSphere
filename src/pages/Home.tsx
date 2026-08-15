@@ -150,7 +150,7 @@ export function Home() {
             const { data, error } = await supabase
               .from('showcase_listings')
               .select(
-                'id, title, summary, location, price_label, deal_type, image_urls, available, featured, showcase_columns(id, slug, title, icon)',
+                'id, title, summary, location, price_label, deal_type, image_urls, available, availability_status, featured, showcase_columns(id, slug, title, icon)',
               )
               .eq('status', 'published')
               .order('featured', { ascending: false })

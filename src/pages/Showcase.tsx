@@ -25,7 +25,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
-import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto, showcaseWhatsAppLink } from '../lib/showcase'
+import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto, showcaseIsClosed, showcaseWhatsAppLink } from '../lib/showcase'
 import { ShowcaseTextCover } from '../components/showcase/ShowcaseTextCover'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { useShowcaseAmbience } from '../hooks/useShowcaseAmbience'
@@ -338,9 +338,9 @@ function ListingCard({
         />
         <span className="showcase-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
         <span
-          className={`showcase-card__availability${listing.available === false ? ' showcase-card__availability--closed' : ''}`}
+          className={`showcase-card__availability${showcaseIsClosed(listing) ? ' showcase-card__availability--closed' : ''}`}
         >
-          {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+          {showcaseAvailabilityLabel(listing)}
         </span>
         {listing.featured ? <span className="showcase-card__featured-badge">Featured</span> : null}
       </div>
@@ -826,7 +826,7 @@ export function ShowcaseColumnPage() {
       const { data: rows, error: listError } = await supabase
         .from('showcase_listings')
         .select(
-          'id, column_id, title, summary, description, location, price_label, deal_type, image_urls, available, featured, owner_name, owner_phone, owner_email, sort_order, created_at',
+          'id, column_id, title, summary, description, location, price_label, deal_type, image_urls, available, availability_status, featured, owner_name, owner_phone, owner_email, sort_order, created_at',
         )
         .eq('column_id', col.id)
         .eq('status', 'published')
@@ -1143,9 +1143,9 @@ export function ShowcaseListingPage() {
                   {SHOWCASE_DEAL_LABELS[listing.deal_type]}
                 </p>
                 <span
-                  className={`showcase-card__availability showcase-card__availability--inline${listing.available === false ? ' showcase-card__availability--closed' : ''}`}
+                  className={`showcase-card__availability showcase-card__availability--inline${showcaseIsClosed(listing) ? ' showcase-card__availability--closed' : ''}`}
                 >
-                  {showcaseAvailabilityLabel(listing.deal_type, listing.available !== false)}
+                  {showcaseAvailabilityLabel(listing)}
                 </span>
               </div>
               {listing.location ? (

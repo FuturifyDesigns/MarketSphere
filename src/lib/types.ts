@@ -123,6 +123,13 @@ export type ShowcaseDealType =
   | 'service'
   | 'other'
 export type ShowcaseListingStatus = 'draft' | 'published' | 'archived'
+export type ShowcaseAvailabilityStatus =
+  | 'available'
+  | 'sold'
+  | 'tenanted'
+  | 'closed'
+  | 'completed'
+  | 'unavailable'
 
 export interface ShowcaseColumn {
   id: string
@@ -150,6 +157,8 @@ export interface ShowcaseListing {
   image_urls: string[]
   status: ShowcaseListingStatus
   available: boolean
+  /** Admin-chosen status: available / sold / tenanted / etc. */
+  availability_status?: ShowcaseAvailabilityStatus | null
   featured: boolean
   owner_name: string | null
   owner_phone: string | null

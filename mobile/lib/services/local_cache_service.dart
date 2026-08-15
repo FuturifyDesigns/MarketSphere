@@ -405,6 +405,7 @@ class LocalCacheService {
       dealType: listing.dealType,
       imageUrls: listing.imageUrls.take(_maxImages).toList(),
       available: listing.available,
+      availabilityStatus: listing.availabilityStatus,
       featured: listing.featured,
       ownerName: listing.ownerName,
       // Contact details are not persisted offline (shared-device / logout risk).

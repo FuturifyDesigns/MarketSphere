@@ -297,7 +297,11 @@ class ShowcaseListingCard extends StatelessWidget {
                       children: [
                         StatusChip(label: dealTypeLabel(listing.dealType)),
                         StatusChip(
-                          label: availabilityLabel(listing.dealType, listing.available),
+                          label: availabilityLabel(
+                            dealType: listing.dealType,
+                            available: listing.available,
+                            availabilityStatus: listing.availabilityStatus,
+                          ),
                           tone: listing.available ? ChipTone.muted : ChipTone.danger,
                         ),
                       ],

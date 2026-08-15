@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
-  "build": 4,
+  "version": "1.0.3",
+  "build": 5,
   "apkUrl": "https://marketspheregroup.com/app/market-sphere.apk",
-  "notes": "Showcase Tenanted badge for rent listings. Soft piano in Music Education, browse showcase, providers, and push alerts.",
+  "notes": "Choose Available, Sold, or Tenanted on showcase listings (including sale & rent).",
   "force": false
 }

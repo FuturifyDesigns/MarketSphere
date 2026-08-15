@@ -1342,6 +1342,14 @@
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.2rem;
+}
+
+.showcase-admin-row__avail {
+  display: inline-flex;
+  flex-wrap: wrap;
   gap: 0.2rem;
 }
 
@@ -1350,10 +1358,10 @@
   align-items: center;
   height: 1.85rem;
   padding: 0 0.55rem;
-  border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--card-border));
+  border: 1px solid var(--card-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--color-gold) 12%, var(--card-bg));
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  color: var(--text-secondary);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -1362,13 +1370,19 @@
 }
 
 .showcase-admin-row__text-btn:hover {
-  border-color: color-mix(in srgb, var(--color-gold) 65%, var(--card-border));
-  background: color-mix(in srgb, var(--color-gold) 20%, var(--card-bg));
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--card-border));
 }
 
-.showcase-admin-row__text-btn.is-closed {
-  border-color: color-mix(in srgb, #8b3a2f 35%, var(--card-border));
-  background: color-mix(in srgb, #8b3a2f 10%, var(--card-bg));
+.showcase-admin-row__text-btn.is-active {
+  border-color: color-mix(in srgb, var(--color-gold) 65%, var(--card-border));
+  background: color-mix(in srgb, var(--color-gold) 18%, var(--card-bg));
+  color: var(--text-primary);
+}
+
+.showcase-admin-row__text-btn.is-closed.is-active {
+  border-color: color-mix(in srgb, #8b3a2f 45%, var(--card-border));
+  background: color-mix(in srgb, #8b3a2f 12%, var(--card-bg));
   color: #8b3a2f;
 }
 

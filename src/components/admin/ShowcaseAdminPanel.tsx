@@ -5,10 +5,22 @@ import { useToast } from '../../context/ToastContext'
 import { resolveCurrentLocationLabel } from '../../lib/geolocation'
 import { assertImageFile, urlToImageFile } from '../../lib/imageCrop'
 import { UPLOAD_LIMITS } from '../../lib/imageUpload'
-import { SHOWCASE_AVAILABILITY_LABELS, SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel } from '../../lib/showcase'
+import {
+  SHOWCASE_AVAILABILITY_STATUS_LABELS,
+  SHOWCASE_DEAL_LABELS,
+  resolveShowcaseAvailabilityStatus,
+  showcaseAvailabilityLabel,
+  showcaseAvailabilityOptions,
+} from '../../lib/showcase'
 import { uploadShowcaseImage } from '../../lib/showcaseUpload'
 import { supabase } from '../../lib/supabase'
-import type { ShowcaseColumn, ShowcaseDealType, ShowcaseListing, ShowcaseListingStatus } from '../../lib/types'
+import type {
+  ShowcaseAvailabilityStatus,
+  ShowcaseColumn,
+  ShowcaseDealType,
+  ShowcaseListing,
+  ShowcaseListingStatus,
+} from '../../lib/types'
 import {
   FIELD_HINTS,
   type FieldErrors,
@@ -41,7 +53,7 @@ type ListingForm = {
   price_label: string
   deal_type: ShowcaseDealType
   status: ShowcaseListingStatus
-  available: boolean
+  availability_status: ShowcaseAvailabilityStatus
   featured: boolean
   sort_order: number
   owner_name: string
@@ -71,7 +83,7 @@ const emptyForm = (columnId = ''): ListingForm => ({
   price_label: '',
   deal_type: 'sale',
   status: 'published',
-  available: true,
+  availability_status: 'available',
   featured: false,
   sort_order: 0,
   owner_name: '',
@@ -234,7 +246,7 @@ export function ShowcaseAdminPanel() {
       price_label: listing.price_label || '',
       deal_type: listing.deal_type,
       status: listing.status,
-      available: listing.available !== false,
+      availability_status: resolveShowcaseAvailabilityStatus(listing),
       featured: listing.featured,
       sort_order: listing.sort_order,
       owner_name: listing.owner_name || '',
@@ -406,7 +418,8 @@ export function ShowcaseAdminPanel() {
       price_label: form.price_label.trim() || null,
       deal_type: form.deal_type,
       status: form.status,
-      available: form.available,
+      availability_status: form.availability_status,
+      available: form.availability_status === 'available',
       featured: form.featured,
       sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
       owner_name: form.owner_name.trim() || null,
@@ -446,18 +459,25 @@ export function ShowcaseAdminPanel() {
     void load()
   }
 
-  const setAvailable = async (listing: ShowcaseListing, available: boolean) => {
+  const setAvailabilityStatus = async (
+    listing: ShowcaseListing,
+    availability_status: ShowcaseAvailabilityStatus,
+  ) => {
     const { error } = await supabase
       .from('showcase_listings')
-      .update({ available, updated_at: new Date().toISOString() })
+      .update({
+        availability_status,
+        available: availability_status === 'available',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', listing.id)
     if (error) {
       showToast(error.message || 'Could not update availability.', 'error')
       return
     }
-    showToast(`Marked ${showcaseAvailabilityLabel(listing.deal_type, available).toLowerCase()}.`)
+    showToast(`Marked ${SHOWCASE_AVAILABILITY_STATUS_LABELS[availability_status].toLowerCase()}.`)
     if (editingId === listing.id) {
-      setForm((prev) => ({ ...prev, available }))
+      setForm((prev) => ({ ...prev, availability_status }))
     }
     void load()
   }
@@ -592,9 +612,8 @@ export function ShowcaseAdminPanel() {
           <div className="showcase-admin-list" data-lenis-prevent data-modal-scroll>
             {pagedListings.map((listing) => {
               const dealType = listing.deal_type in SHOWCASE_DEAL_LABELS ? listing.deal_type : 'other'
-              const available = listing.available !== false
-              const unavailableLabel = SHOWCASE_AVAILABILITY_LABELS[dealType].unavailable
-              const availableLabel = SHOWCASE_AVAILABILITY_LABELS[dealType].available
+              const status = resolveShowcaseAvailabilityStatus(listing)
+              const options = showcaseAvailabilityOptions(dealType)
               return (
                 <article
                   key={listing.id}
@@ -618,27 +637,22 @@ export function ShowcaseAdminPanel() {
                         >
                           <Pencil size={14} />
                         </button>
-                        {available ? (
-                          <button
-                            type="button"
-                            className="showcase-admin-row__text-btn"
-                            title={`Mark ${unavailableLabel}`}
-                            aria-label={`Mark ${unavailableLabel}`}
-                            onClick={() => void setAvailable(listing, false)}
-                          >
-                            Mark {unavailableLabel}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="showcase-admin-row__text-btn is-closed"
-                            title={`Mark ${availableLabel}`}
-                            aria-label={`Mark ${availableLabel}`}
-                            onClick={() => void setAvailable(listing, true)}
-                          >
-                            Mark {availableLabel}
-                          </button>
-                        )}
+                        <div className="showcase-admin-row__avail" role="group" aria-label="Availability">
+                          {options.map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              className={`showcase-admin-row__text-btn${status === option ? ' is-active' : ''}${
+                                option !== 'available' ? ' is-closed' : ''
+                              }`}
+                              title={`Mark ${SHOWCASE_AVAILABILITY_STATUS_LABELS[option]}`}
+                              aria-pressed={status === option}
+                              onClick={() => void setAvailabilityStatus(listing, option)}
+                            >
+                              {SHOWCASE_AVAILABILITY_STATUS_LABELS[option]}
+                            </button>
+                          ))}
+                        </div>
                         {listing.status !== 'published' ? (
                           <button
                             type="button"
@@ -683,8 +697,8 @@ export function ShowcaseAdminPanel() {
                       >
                         {listing.status}
                       </span>
-                      <span className={`status-badge status-badge--${available ? 'approved' : 'rejected'}`}>
-                        {showcaseAvailabilityLabel(dealType, available)}
+                      <span className={`status-badge status-badge--${status === 'available' ? 'approved' : 'rejected'}`}>
+                        {showcaseAvailabilityLabel(listing)}
                       </span>
                       {listing.featured ? <span className="status-badge">Featured</span> : null}
                     </div>
@@ -805,7 +819,14 @@ export function ShowcaseAdminPanel() {
               <select
                 id="showcase-deal-type"
                 value={form.deal_type}
-                onChange={(e) => patchForm('deal_type', e.target.value as ShowcaseDealType)}
+                onChange={(e) => {
+                  const deal_type = e.target.value as ShowcaseDealType
+                  const options = showcaseAvailabilityOptions(deal_type)
+                  const availability_status = options.includes(form.availability_status)
+                    ? form.availability_status
+                    : options[0]
+                  setForm((prev) => ({ ...prev, deal_type, availability_status }))
+                }}
               >
                 {DEAL_TYPES.map((type) => (
                   <option key={type} value={type}>
@@ -819,18 +840,22 @@ export function ShowcaseAdminPanel() {
               <label htmlFor="showcase-availability">Availability</label>
               <select
                 id="showcase-availability"
-                value={form.available ? 'available' : 'unavailable'}
-                onChange={(e) => patchForm('available', e.target.value === 'available')}
+                value={form.availability_status}
+                onChange={(e) =>
+                  patchForm('availability_status', e.target.value as ShowcaseAvailabilityStatus)
+                }
               >
-                <option value="available">
-                  {SHOWCASE_AVAILABILITY_LABELS[form.deal_type].available}
-                </option>
-                <option value="unavailable">
-                  {SHOWCASE_AVAILABILITY_LABELS[form.deal_type].unavailable}
-                </option>
+                {showcaseAvailabilityOptions(form.deal_type).map((option) => (
+                  <option key={option} value={option}>
+                    {option === 'available' &&
+                    (form.deal_type === 'opportunity' || form.deal_type === 'project')
+                      ? 'Open'
+                      : SHOWCASE_AVAILABILITY_STATUS_LABELS[option]}
+                  </option>
+                ))}
               </select>
               <span className="input-hint">
-                Labels change with deal type (e.g. Available/Sold for sale, Available/Tenanted for rent).
+                For sale &amp; rent listings, choose Available, Sold, or Tenanted yourself.
               </span>
             </div>
 
