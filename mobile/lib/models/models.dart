@@ -278,6 +278,128 @@ class ShowcaseColumn {
   }
 }
 
+class ShowcaseAnnouncement {
+  const ShowcaseAnnouncement({
+    required this.id,
+    this.columnId,
+    this.columnTitle,
+    this.columnSlug,
+    required this.title,
+    required this.body,
+    required this.category,
+    this.badge,
+    this.imageUrl,
+    this.linkUrl,
+    this.linkLabel,
+    this.contactPhone,
+    this.contactEmail,
+    this.startsAt,
+    this.expiresAt,
+    this.pinned = false,
+    this.active = true,
+    this.createdAt,
+  });
+
+  final String id;
+  final String? columnId;
+  final String? columnTitle;
+  final String? columnSlug;
+  final String title;
+  final String body;
+  final String category;
+  final String? badge;
+  final String? imageUrl;
+  final String? linkUrl;
+  final String? linkLabel;
+  final String? contactPhone;
+  final String? contactEmail;
+  final DateTime? startsAt;
+  final DateTime? expiresAt;
+  final bool pinned;
+  final bool active;
+  final DateTime? createdAt;
+
+  bool get isExpired {
+    if (expiresAt == null) return false;
+    return expiresAt!.isBefore(DateTime.now());
+  }
+
+  bool get hasStarted {
+    if (startsAt == null) return true;
+    return !startsAt!.isAfter(DateTime.now());
+  }
+
+  String get categoryLabel {
+    switch (category) {
+      case 'job':
+        return 'Job Opening';
+      case 'advertisement':
+        return 'Advertisement';
+      case 'event':
+        return 'Event';
+      case 'notice':
+        return 'Notice';
+      default:
+        return 'Announcement';
+    }
+  }
+
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'column_id': columnId,
+        'title': title,
+        'body': body,
+        'category': category,
+        'badge': badge,
+        'image_url': imageUrl,
+        'link_url': linkUrl,
+        'link_label': linkLabel,
+        'contact_phone': contactPhone,
+        'contact_email': contactEmail,
+        'starts_at': startsAt?.toIso8601String(),
+        'expires_at': expiresAt?.toIso8601String(),
+        'pinned': pinned,
+        'active': active,
+        'created_at': createdAt?.toIso8601String(),
+        'showcase_columns': {
+          'id': columnId,
+          'title': columnTitle,
+          'slug': columnSlug,
+        },
+      };
+
+  factory ShowcaseAnnouncement.fromJson(Map<String, dynamic> json) {
+    final column = json['showcase_columns'];
+    Map<String, dynamic>? colMap;
+    if (column is Map<String, dynamic>) {
+      colMap = column;
+    } else if (column is List && column.isNotEmpty && column.first is Map) {
+      colMap = Map<String, dynamic>.from(column.first as Map);
+    }
+
+    return ShowcaseAnnouncement(
+      id: json['id'] as String,
+      columnId: (json['column_id'] as String?) ?? colMap?['id'] as String?,
+      columnTitle: colMap?['title'] as String?,
+      columnSlug: colMap?['slug'] as String?,
+      title: (json['title'] as String?) ?? 'Announcement',
+      body: (json['body'] as String?) ?? '',
+      category: (json['category'] as String?) ?? 'general',
+      badge: json['badge'] as String?,
+      imageUrl: json['image_url'] as String?,
+      linkUrl: json['link_url'] as String?,
+      linkLabel: json['link_label'] as String?,
+      contactPhone: json['contact_phone'] as String?,
+      contactEmail: json['contact_email'] as String?,
+      startsAt: json['starts_at'] != null ? DateTime.tryParse(json['starts_at'] as String) : null,
+      expiresAt: json['expires_at'] != null ? DateTime.tryParse(json['expires_at'] as String) : null,
+      pinned: json['pinned'] == true,
+      active: json['active'] != false,
+      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
+    );
+  }
+}
+
 class ProviderReview {
   const ProviderReview({
     required this.id,

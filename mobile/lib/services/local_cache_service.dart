@@ -50,6 +50,7 @@ class LocalCacheService {
   static const _catalogListingsKey = 'cache_catalog_listings_v2';
   static const _catalogProvidersKey = 'cache_catalog_providers_v2';
   static const _catalogColumnsKey = 'cache_catalog_columns_v1';
+  static const _catalogAnnouncementsKey = 'cache_catalog_announcements_v1';
   static const _recentListingsKey = 'cache_recent_listings_v2';
   static const _recentProvidersKey = 'cache_recent_providers_v2';
   static const _favListingsKeyPrefix = 'cache_fav_listings_v2_';
@@ -113,6 +114,36 @@ class LocalCacheService {
     final prefs = await _prefs;
     final payload = columns.map((c) => c.toCacheJson()).toList();
     await prefs.setString(_catalogColumnsKey, jsonEncode(payload));
+  }
+
+  Future<List<ShowcaseAnnouncement>> catalogAnnouncements({String? columnId}) async {
+    final prefs = await _prefs;
+    final key = columnId != null
+        ? '${_catalogAnnouncementsKey}_$columnId'
+        : _catalogAnnouncementsKey;
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw) as List;
+      return decoded
+          .map((e) => ShowcaseAnnouncement.fromJson(Map<String, dynamic>.from(e as Map)))
+          .where((a) => isUuid(a.id) && a.hasStarted && !a.isExpired)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveCatalogAnnouncements(
+    List<ShowcaseAnnouncement> announcements, {
+    String? columnId,
+  }) async {
+    final prefs = await _prefs;
+    final key = columnId != null
+        ? '${_catalogAnnouncementsKey}_$columnId'
+        : _catalogAnnouncementsKey;
+    final payload = announcements.take(_maxCatalog).map((a) => a.toCacheJson()).toList();
+    await prefs.setString(key, jsonEncode(payload));
   }
 
   Future<void> saveCatalogListings(List<ShowcaseListing> listings) async {

@@ -14,7 +14,15 @@ import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
 import '../../widgets/listing_slideshow.dart';
+import '../../widgets/showcase_announcement_card.dart';
 import 'listing_detail_screen.dart';
+
+class _ColumnContent {
+  const _ColumnContent(this.listings, this.announcements);
+
+  final List<ShowcaseListing> listings;
+  final List<ShowcaseAnnouncement> announcements;
+}
 
 /// Listings inside one showcase field/column (website `/showcase/{slug}`).
 class ColumnListingsScreen extends StatefulWidget {
@@ -29,8 +37,20 @@ class ColumnListingsScreen extends StatefulWidget {
 class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   final _search = TextEditingController();
   final _ambience = ShowcaseAmbienceController();
-  Future<List<ShowcaseListing>>? _future;
+  Future<_ColumnContent>? _future;
   String? _dealFilter;
+
+  Future<_ColumnContent> _load() async {
+    final repo = context.read<DataRepository>();
+    final results = await Future.wait([
+      repo.fetchShowcaseListings(columnId: widget.column.id, limit: 300),
+      repo.fetchAnnouncements(columnId: widget.column.id, limit: 20),
+    ]);
+    return _ColumnContent(
+      results[0] as List<ShowcaseListing>,
+      results[1] as List<ShowcaseAnnouncement>,
+    );
+  }
 
   @override
   void initState() {
@@ -41,10 +61,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _future ??= context.read<DataRepository>().fetchShowcaseListings(
-          columnId: widget.column.id,
-          limit: 300,
-        );
+    _future ??= _load();
   }
 
   @override
@@ -56,10 +73,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
 
   Future<void> _refresh() async {
     setState(() {
-      _future = context.read<DataRepository>().fetchShowcaseListings(
-            columnId: widget.column.id,
-            limit: 300,
-          );
+      _future = _load();
     });
     await _future;
   }
@@ -164,7 +178,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: FutureBuilder<List<ShowcaseListing>>(
+              child: FutureBuilder<_ColumnContent>(
                 future: _future,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState != ConnectionState.done) {
@@ -183,7 +197,8 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                   }
 
                   final q = _search.text.trim().toLowerCase();
-                  var items = snapshot.data ?? [];
+                  final announcements = snapshot.data!.announcements;
+                  var items = snapshot.data!.listings;
                   if (_dealFilter != null) {
                     items = items.where((l) => l.dealType == _dealFilter).toList();
                   }
@@ -203,7 +218,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                     (l) => l.location,
                   );
 
-                  if (items.isEmpty) {
+                  if (items.isEmpty && announcements.isEmpty) {
                     return LiveEmptyState(
                       title: 'No listings in this field',
                       body: 'Try another filter, or check back when new listings go live.',
@@ -221,10 +236,29 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                     onRefresh: _refresh,
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
-                      itemCount: items.length,
+                      itemCount: items.length + (announcements.isEmpty ? 0 : 1),
                       separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        final listing = items[index];
+                        if (announcements.isNotEmpty && index == 0) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Announcements & opportunities in ${widget.column.title}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 12),
+                              ...announcements.map(
+                                (item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: ShowcaseAnnouncementCard(announcement: item),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        final listingIndex = index - (announcements.isEmpty ? 0 : 1);
+                        final listing = items[listingIndex];
                         return ShowcaseListingCard(
                           listing: listing,
                           onTap: () => pushFade(

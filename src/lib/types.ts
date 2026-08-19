@@ -14,7 +14,6 @@ export interface Profile {
   banned_by: string | null
   created_at: string
 }
-
 export type NotificationType =
   | 'enquiry_new'
   | 'enquiry_sent'
@@ -163,6 +162,36 @@ export interface ShowcaseListing {
   owner_name: string | null
   owner_phone: string | null
   owner_email: string | null
+  sort_order: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  showcase_columns?: Pick<ShowcaseColumn, 'id' | 'slug' | 'title' | 'icon'> | null
+}
+
+export type ShowcaseAnnouncementCategory =
+  | 'job'
+  | 'advertisement'
+  | 'event'
+  | 'notice'
+  | 'general'
+
+export interface ShowcaseAnnouncement {
+  id: string
+  column_id: string | null
+  title: string
+  body: string
+  category: ShowcaseAnnouncementCategory
+  badge: string | null
+  image_url: string | null
+  link_url: string | null
+  link_label: string | null
+  contact_phone: string | null
+  contact_email: string | null
+  starts_at: string
+  expires_at: string | null
+  pinned: boolean
+  active: boolean
   sort_order: number
   created_by: string | null
   created_at: string

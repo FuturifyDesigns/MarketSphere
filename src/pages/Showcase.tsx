@@ -25,14 +25,15 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
-import { SHOWCASE_DEAL_LABELS, showcaseAvailabilityLabel, showcaseContactMailto, showcaseIsClosed, showcaseWhatsAppLink } from '../lib/showcase'
+import { SHOWCASE_DEAL_LABELS, isAnnouncementActive, showcaseAvailabilityLabel, showcaseContactMailto, showcaseIsClosed, showcaseWhatsAppLink } from '../lib/showcase'
 import { ShowcaseTextCover } from '../components/showcase/ShowcaseTextCover'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { useShowcaseAmbience } from '../hooks/useShowcaseAmbience'
 import { supabase } from '../lib/supabase'
 import { cachedFetch, clearCached, onTabVisible } from '../lib/queryCache'
-import type { ShowcaseColumn, ShowcaseListing } from '../lib/types'
+import type { ShowcaseAnnouncement, ShowcaseColumn, ShowcaseListing } from '../lib/types'
 import { ShowcaseOwnerContacts } from '../components/showcase/ShowcaseOwnerContacts'
+import { ShowcaseAnnouncementBanner } from '../components/showcase/ShowcaseAnnouncementBanner'
 import { EditableSection } from '../components/cms/EditableSection'
 import { EditableText } from '../components/cms/EditableText'
 import { CmsExtraSections } from '../components/cms/CmsExtraSections'
@@ -390,6 +391,7 @@ export function Showcase() {
   const transitionTimelineRef = useRef<gsap.core.Timeline | null>(null)
   const [columns, setColumns] = useState<ShowcaseColumn[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [spotlightAnnouncements, setSpotlightAnnouncements] = useState<ShowcaseAnnouncement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [openingSlug, setOpeningSlug] = useState<string | null>(null)
@@ -398,7 +400,7 @@ export function Showcase() {
     let cancelled = false
 
     const load = async () => {
-      const [colsRes, countsRes] = await Promise.all([
+      const [colsRes, countsRes, annRes] = await Promise.all([
         cachedFetch(
           'showcase:columns:v1',
           async () => {
@@ -426,6 +428,14 @@ export function Showcase() {
           },
           60_000,
         ),
+        supabase
+          .from('showcase_announcements')
+          .select('*, showcase_columns(id, slug, title, icon)')
+          .eq('active', true)
+          .eq('pinned', true)
+          .order('sort_order')
+          .order('created_at', { ascending: false })
+          .limit(4),
       ])
 
       if (cancelled) return
@@ -435,6 +445,12 @@ export function Showcase() {
         setError('Could not load showcase columns. Please try again.')
         setLoading(false)
         return
+      }
+
+      if (!annRes.error && annRes.data) {
+        setSpotlightAnnouncements(
+          (annRes.data as unknown as ShowcaseAnnouncement[]).filter(isAnnouncementActive),
+        )
       }
 
       const nextCounts: Record<string, number> = {}
@@ -673,6 +689,18 @@ export function Showcase() {
         </div>
       </EditableSection>
 
+      {spotlightAnnouncements.length > 0 ? (
+        <section className="section showcase-spotlight-announcements-section" style={{ paddingBottom: '0' }}>
+          <div className="container">
+            <ShowcaseAnnouncementBanner
+              announcements={spotlightAnnouncements}
+              title="Featured Announcements & Opportunities"
+              showColumnName
+            />
+          </div>
+        </section>
+      ) : null}
+
       <section id="showcase-columns" className="section showcase-columns-section">
         <div className="container">
           <EditableSection
@@ -785,6 +813,7 @@ export function ShowcaseColumnPage() {
   const pageRef = useRef<HTMLDivElement | null>(null)
   const [column, setColumn] = useState<ShowcaseColumn | null>(null)
   const [listings, setListings] = useState<ShowcaseListing[]>([])
+  const [announcements, setAnnouncements] = useState<ShowcaseAnnouncement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
@@ -823,22 +852,33 @@ export function ShowcaseColumnPage() {
         return
       }
 
-      const { data: rows, error: listError } = await supabase
-        .from('showcase_listings')
-        .select(
-          'id, column_id, title, summary, description, location, price_label, deal_type, image_urls, available, availability_status, featured, owner_name, owner_phone, owner_email, sort_order, created_at',
-        )
-        .eq('column_id', col.id)
-        .eq('status', 'published')
-        .order('featured', { ascending: false })
-        .order('sort_order')
-        .order('created_at', { ascending: false })
-        .limit(60)
+      const [listRes, annRes] = await Promise.all([
+        supabase
+          .from('showcase_listings')
+          .select(
+            'id, column_id, title, summary, description, location, price_label, deal_type, image_urls, available, availability_status, featured, owner_name, owner_phone, owner_email, sort_order, created_at',
+          )
+          .eq('column_id', col.id)
+          .eq('status', 'published')
+          .order('featured', { ascending: false })
+          .order('sort_order')
+          .order('created_at', { ascending: false })
+          .limit(60),
+        supabase
+          .from('showcase_announcements')
+          .select('*')
+          .or(`column_id.eq.${col.id},column_id.is.null`)
+          .eq('active', true)
+          .order('pinned', { ascending: false })
+          .order('sort_order')
+          .order('created_at', { ascending: false })
+          .limit(20),
+      ])
 
       if (cancelled) return
 
-      if (listError) {
-        console.error('[showcase] listings', listError)
+      if (listRes.error) {
+        console.error('[showcase] listings', listRes.error)
         setError('Could not load listings.')
         setColumn(col)
         setLoading(false)
@@ -846,7 +886,10 @@ export function ShowcaseColumnPage() {
       }
 
       setColumn(col)
-      setListings((rows || []) as unknown as ShowcaseListing[])
+      setListings((listRes.data || []) as unknown as ShowcaseListing[])
+      setAnnouncements(
+        ((annRes.data || []) as unknown as ShowcaseAnnouncement[]).filter(isAnnouncementActive),
+      )
       setNotFound(false)
       setError('')
       setLoading(false)
@@ -949,6 +992,13 @@ export function ShowcaseColumnPage() {
 
       <section id="live-listings" className="section showcase-listings-section">
         <div className="container">
+          {announcements.length > 0 ? (
+            <ShowcaseAnnouncementBanner
+              announcements={announcements}
+              title={`Announcements & Opportunities in ${column.title}`}
+            />
+          ) : null}
+
           {error ? (
             <p className="showcase-status showcase-status--error" role="alert">
               {error}

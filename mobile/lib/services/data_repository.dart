@@ -54,6 +54,9 @@ class DataRepository {
   static const _listingSelectSlim =
       'id, title, summary, description, location, price_label, deal_type, image_urls, available, availability_status, featured, column_id';
 
+  static const _announcementSelect =
+      'id, title, body, category, badge, image_url, link_url, link_label, contact_phone, contact_email, starts_at, expires_at, pinned, active, sort_order, created_at, column_id, showcase_columns(id, slug, title)';
+
   static const _providerSelect =
       'id, business_name, description, location, logo_url, cover_url, gallery_urls, contact_email, contact_phone';
 
@@ -255,6 +258,54 @@ class DataRepository {
       DiagnosticsLog.instance.record('listings-select', e);
       return run(_listingSelectSlim);
     }
+  }
+
+  Future<List<ShowcaseAnnouncement>> fetchAnnouncements({
+    int limit = 20,
+    String? columnId,
+  }) {
+    final capped = limit.clamp(1, 100);
+    final col = columnId?.trim() ?? '';
+    return _singleFlight('announcements:$capped:$col', () async {
+      final cached = await _cacheRead<List<ShowcaseAnnouncement>>(
+        () => _cache.catalogAnnouncements(columnId: col.isNotEmpty ? col : null),
+        const [],
+      );
+
+      try {
+        final list = await _queryAnnouncements(limit: capped, columnId: col);
+        if (list.isEmpty && cached.isNotEmpty) return cached;
+        if (list.isNotEmpty) {
+          await _cacheWrite(() => _cache.saveCatalogAnnouncements(list, columnId: col.isNotEmpty ? col : null));
+        }
+        return list;
+      } catch (e, s) {
+        DiagnosticsLog.instance.record('announcements', e, stack: s);
+        if (cached.isEmpty) throw DataFetchException('announcements', e);
+        return cached;
+      }
+    });
+  }
+
+  Future<List<ShowcaseAnnouncement>> _queryAnnouncements({
+    required int limit,
+    required String columnId,
+  }) async {
+    final filters = <String, String>{
+      'active': 'eq.true',
+      if (columnId.isNotEmpty) 'or': '(column_id.eq.$columnId,column_id.is.null)',
+    };
+    final rows = await _public.getRows(
+      'showcase_announcements',
+      select: _announcementSelect,
+      filters: filters,
+      order: 'pinned.desc,sort_order.asc,created_at.desc',
+      limit: limit,
+    );
+    return rows
+        .map(ShowcaseAnnouncement.fromJson)
+        .where((e) => isUuid(e.id) && e.hasStarted && !e.isExpired)
+        .toList();
   }
 
   bool _isSchemaError(Object error) {

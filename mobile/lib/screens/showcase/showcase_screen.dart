@@ -9,7 +9,15 @@ import '../../utils/page_transitions.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../widgets/brand_app_bar.dart';
 import '../../widgets/common.dart';
+import '../../widgets/showcase_announcement_card.dart';
 import 'column_listings_screen.dart';
+
+class _ShowcaseHubData {
+  const _ShowcaseHubData(this.columns, this.announcements);
+
+  final List<ShowcaseColumn> columns;
+  final List<ShowcaseAnnouncement> announcements;
+}
 
 /// Showcase hub — same field/column idea as the website.
 class ShowcaseScreen extends StatefulWidget {
@@ -20,17 +28,29 @@ class ShowcaseScreen extends StatefulWidget {
 }
 
 class _ShowcaseScreenState extends State<ShowcaseScreen> {
-  Future<List<ShowcaseColumn>>? _future;
+  Future<_ShowcaseHubData>? _future;
+
+  Future<_ShowcaseHubData> _load() async {
+    final repo = context.read<DataRepository>();
+    final results = await Future.wait([
+      repo.fetchColumns(),
+      repo.fetchAnnouncements(limit: 4),
+    ]);
+    return _ShowcaseHubData(
+      results[0] as List<ShowcaseColumn>,
+      (results[1] as List<ShowcaseAnnouncement>).where((item) => item.pinned).toList(),
+    );
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _future ??= context.read<DataRepository>().fetchColumns();
+    _future ??= _load();
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _future = context.read<DataRepository>().fetchColumns();
+      _future = _load();
     });
     await _future;
   }
@@ -49,7 +69,7 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
           ],
         ),
         Expanded(
-          child: FutureBuilder<List<ShowcaseColumn>>(
+          child: FutureBuilder<_ShowcaseHubData>(
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
@@ -67,7 +87,8 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                 );
               }
 
-              final columns = snapshot.data ?? [];
+              final data = snapshot.data!;
+              final columns = data.columns;
               if (columns.isEmpty) {
                 return const LiveEmptyState(
                   title: 'No showcase fields yet',
@@ -81,12 +102,34 @@ class _ShowcaseScreenState extends State<ShowcaseScreen> {
                 onRefresh: _refresh,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                  itemCount: columns.length,
+                  itemCount: columns.length + (data.announcements.isEmpty ? 0 : 1),
                   separatorBuilder: (_, __) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
-                    final column = columns[index];
+                    if (data.announcements.isNotEmpty && index == 0) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Featured announcements & opportunities',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 12),
+                          ...data.announcements.map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ShowcaseAnnouncementCard(
+                                announcement: item,
+                                showColumn: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    final columnIndex = index - (data.announcements.isEmpty ? 0 : 1);
+                    final column = columns[columnIndex];
                     final fieldLabel =
-                        'Field ${(index + 1).toString().padLeft(2, '0')} of ${columns.length.toString().padLeft(2, '0')}';
+                        'Field ${(columnIndex + 1).toString().padLeft(2, '0')} of ${columns.length.toString().padLeft(2, '0')}';
                     return PressableScale(
                       onTap: () => pushFade(
                         context,

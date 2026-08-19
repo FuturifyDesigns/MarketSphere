@@ -1,4 +1,6 @@
 import type {
+  ShowcaseAnnouncement,
+  ShowcaseAnnouncementCategory,
   ShowcaseAvailabilityStatus,
   ShowcaseDealType,
   ShowcaseListing,
@@ -212,4 +214,36 @@ export function showcaseWhatsAppLink(phone: string, listing: ShowcaseEnquiryList
     }),
   )
   return `https://wa.me/${digits}?text=${text}`
+}
+
+export const SHOWCASE_ANNOUNCEMENT_CATEGORY_LABELS: Record<ShowcaseAnnouncementCategory, string> = {
+  job: 'Job Opening',
+  advertisement: 'Advertisement',
+  event: 'Event',
+  notice: 'Notice',
+  general: 'Announcement',
+}
+
+export function isAnnouncementActive(announcement: ShowcaseAnnouncement): boolean {
+  if (!announcement.active) return false
+  const now = new Date().getTime()
+  if (announcement.starts_at && new Date(announcement.starts_at).getTime() > now) return false
+  if (announcement.expires_at && new Date(announcement.expires_at).getTime() <= now) return false
+  return true
+}
+
+export function announcementWhatsAppLink(phone: string, announcement: ShowcaseAnnouncement) {
+  const digits = phone.replace(/\D/g, '')
+  const text = encodeURIComponent(
+    `Hello, I am enquiring about the announcement "${announcement.title}" on Market Sphere Group.\n${typeof window !== 'undefined' ? window.location.href : ''}`,
+  )
+  return `https://wa.me/${digits}?text=${text}`
+}
+
+export function announcementMailto(email: string, announcement: ShowcaseAnnouncement) {
+  const subject = encodeURIComponent(`Enquiry: ${announcement.title}`)
+  const body = encodeURIComponent(
+    `Hello,\n\nI am contacting you regarding the announcement "${announcement.title}" on Market Sphere Group.\n\n${typeof window !== 'undefined' ? window.location.href : ''}\n\nPlease share more information.\n\nThank you.`,
+  )
+  return `mailto:${email.trim()}?subject=${subject}&body=${body}`
 }
