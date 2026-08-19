@@ -18,19 +18,19 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
   final bool showColumn;
 
   IconData get _categoryIcon => switch (announcement.category) {
-        'job' => Icons.work_outline_rounded,
-        'event' => Icons.event_outlined,
-        'notice' => Icons.notifications_active_outlined,
-        _ => Icons.campaign_outlined,
-      };
+    'job' => Icons.work_outline_rounded,
+    'event' => Icons.event_outlined,
+    'notice' => Icons.notifications_active_outlined,
+    _ => Icons.campaign_outlined,
+  };
 
   Color get _accent => switch (announcement.category) {
-        'job' => const Color(0xFF38BDF8),
-        'advertisement' => const Color(0xFFF59E0B),
-        'event' => const Color(0xFFA855F7),
-        'notice' => const Color(0xFFEF6A6A),
-        _ => const Color(AppConfig.colorGold),
-      };
+    'job' => const Color(0xFF38BDF8),
+    'advertisement' => const Color(0xFFF59E0B),
+    'event' => const Color(0xFFA855F7),
+    'notice' => const Color(0xFFEF6A6A),
+    _ => const Color(AppConfig.colorGold),
+  };
 
   String? get _deadlineLabel {
     final deadline = announcement.expiresAt;
@@ -42,13 +42,58 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
     return 'Deadline ${DateFormat('d MMM yyyy').format(deadline.toLocal())}';
   }
 
-  Future<void> _openLink() async {
-    final raw = announcement.linkUrl?.trim();
-    if (raw == null || raw.isEmpty) return;
+  String? _normalizeUrl(String? value) {
+    final raw = value?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    final cleaned = raw.replaceFirst(RegExp(r'[.,;:!?)\]]+$'), '');
     final normalized = raw.startsWith('http://') || raw.startsWith('https://')
-        ? raw
-        : 'https://$raw';
-    await launchUrl(Uri.parse(normalized), mode: LaunchMode.externalApplication);
+        ? cleaned
+        : cleaned.startsWith('www.') ||
+              RegExp(r'^[a-z0-9.-]+\.[a-z]{2,}').hasMatch(cleaned)
+        ? 'https://$cleaned'
+        : null;
+    final uri = normalized == null ? null : Uri.tryParse(normalized);
+    return uri != null && (uri.scheme == 'http' || uri.scheme == 'https')
+        ? uri.toString()
+        : null;
+  }
+
+  List<_AnnouncementLinkAction> get _linkActions {
+    final actions = <_AnnouncementLinkAction>[];
+    final seen = <String>{};
+    void add(String? url, String label) {
+      if (url == null || !seen.add(url)) return;
+      actions.add(_AnnouncementLinkAction(url, label));
+    }
+
+    final directUrl = _normalizeUrl(announcement.linkUrl);
+    final labelUrl = _normalizeUrl(announcement.linkLabel);
+    final textLabel = labelUrl == null ? announcement.linkLabel?.trim() : null;
+    add(
+      directUrl ?? labelUrl,
+      textLabel?.isNotEmpty == true
+          ? textLabel!
+          : announcement.category == 'job'
+          ? 'Apply now'
+          : 'Visit website',
+    );
+
+    final matches = RegExp(
+      r'''(?:https?://|www\.)[^\s<>"']+''',
+      caseSensitive: false,
+    ).allMatches(announcement.body);
+    for (final match in matches) {
+      final url = _normalizeUrl(match.group(0));
+      final host = url == null
+          ? ''
+          : Uri.tryParse(url)?.host.replaceFirst(RegExp(r'^www\.'), '') ?? '';
+      add(url, host.isEmpty ? 'Open link' : 'Open $host');
+    }
+    return actions;
+  }
+
+  Future<void> _openLink(String url) async {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   String get _enquiryMessage =>
@@ -57,6 +102,7 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deadline = _deadlineLabel;
+    final linkActions = _linkActions;
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF171B22),
@@ -100,7 +146,8 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (showColumn && announcement.columnTitle?.trim().isNotEmpty == true) ...[
+                if (showColumn &&
+                    announcement.columnTitle?.trim().isNotEmpty == true) ...[
                   const SizedBox(height: 10),
                   Text(
                     announcement.columnTitle!,
@@ -114,27 +161,41 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   announcement.title,
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, height: 1.2),
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
                 ),
                 const SizedBox(height: 7),
                 Text(
                   announcement.body,
-                  style: const TextStyle(color: Color(0xFFD4CCBC), height: 1.45),
+                  style: const TextStyle(
+                    color: Color(0xFFD4CCBC),
+                    height: 1.45,
+                  ),
                 ),
                 if (deadline != null) ...[
                   const SizedBox(height: 11),
                   Row(
                     children: [
-                      const Icon(Icons.schedule_rounded, size: 16, color: Color(0xFFFBBF24)),
+                      const Icon(
+                        Icons.schedule_rounded,
+                        size: 16,
+                        color: Color(0xFFFBBF24),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         deadline,
-                        style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          color: Color(0xFFFBBF24),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),
                 ],
-                if (announcement.linkUrl?.trim().isNotEmpty == true ||
+                if (linkActions.isNotEmpty ||
                     announcement.contactPhone?.trim().isNotEmpty == true ||
                     announcement.contactEmail?.trim().isNotEmpty == true) ...[
                   const SizedBox(height: 14),
@@ -142,18 +203,25 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (announcement.linkUrl?.trim().isNotEmpty == true)
-                        FilledButton.icon(
-                          onPressed: _openLink,
-                          icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                          label: Text(
-                            announcement.linkLabel?.trim().isNotEmpty == true
-                                ? announcement.linkLabel!.trim()
-                                : announcement.category == 'job'
-                                    ? 'Apply now'
-                                    : 'Learn more',
-                          ),
-                        ),
+                      ...linkActions.asMap().entries.map(
+                        (entry) => entry.key == 0
+                            ? FilledButton.icon(
+                                onPressed: () => _openLink(entry.value.url),
+                                icon: const Icon(
+                                  Icons.open_in_new_rounded,
+                                  size: 17,
+                                ),
+                                label: Text(entry.value.label),
+                              )
+                            : OutlinedButton.icon(
+                                onPressed: () => _openLink(entry.value.url),
+                                icon: const Icon(
+                                  Icons.open_in_new_rounded,
+                                  size: 17,
+                                ),
+                                label: Text(entry.value.label),
+                              ),
+                      ),
                       if (announcement.contactPhone?.trim().isNotEmpty == true)
                         OutlinedButton.icon(
                           onPressed: () => launchWhatsApp(
@@ -170,7 +238,10 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
                             subject: 'Enquiry: ${announcement.title}',
                             body: _enquiryMessage,
                           ),
-                          icon: const Icon(Icons.mail_outline_rounded, size: 17),
+                          icon: const Icon(
+                            Icons.mail_outline_rounded,
+                            size: 17,
+                          ),
                           label: const Text('Email'),
                         ),
                     ],
@@ -185,8 +256,19 @@ class ShowcaseAnnouncementCard extends StatelessWidget {
   }
 }
 
+class _AnnouncementLinkAction {
+  const _AnnouncementLinkAction(this.url, this.label);
+
+  final String url;
+  final String label;
+}
+
 class _AnnouncementBadge extends StatelessWidget {
-  const _AnnouncementBadge({required this.label, required this.color, this.icon});
+  const _AnnouncementBadge({
+    required this.label,
+    required this.color,
+    this.icon,
+  });
 
   final String label;
   final Color color;
@@ -210,7 +292,11 @@ class _AnnouncementBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 11),
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+            ),
           ),
         ],
       ),

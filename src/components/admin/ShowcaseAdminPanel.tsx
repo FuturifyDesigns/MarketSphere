@@ -26,6 +26,7 @@ import {
   SHOWCASE_AVAILABILITY_STATUS_LABELS,
   SHOWCASE_DEAL_LABELS,
   resolveShowcaseAvailabilityStatus,
+  normalizeShowcaseUrl,
   showcaseAvailabilityLabel,
   showcaseAvailabilityOptions,
 } from '../../lib/showcase'
@@ -726,11 +727,9 @@ export function ShowcaseAdminPanel() {
 
     setAnnSaving(true)
     const rawLink = annForm.link_url.trim()
-    const normalizedLink = rawLink
-      ? rawLink.startsWith('http://') || rawLink.startsWith('https://')
-        ? rawLink
-        : `https://${rawLink}`
-      : null
+    const labelAsUrl = normalizeShowcaseUrl(annForm.link_label)
+    const normalizedLink = normalizeShowcaseUrl(rawLink) || (!rawLink ? labelAsUrl : null)
+    const normalizedLabel = labelAsUrl && !rawLink ? null : annForm.link_label.trim() || null
     const expiresAt = annForm.expires_at
       ? new Date(`${annForm.expires_at}T23:59:59.999`).toISOString()
       : null
@@ -742,7 +741,7 @@ export function ShowcaseAdminPanel() {
       badge: annForm.badge.trim() || null,
       image_url: annForm.image_url.trim() || null,
       link_url: normalizedLink,
-      link_label: annForm.link_label.trim() || null,
+      link_label: normalizedLabel,
       contact_phone: annForm.contact_phone.trim() || null,
       contact_email: annForm.contact_email.trim() || null,
       expires_at: expiresAt,
@@ -1579,17 +1578,19 @@ export function ShowcaseAdminPanel() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <Input
-                  label="Link URL (optional)"
+                  label="Link URL (creates a button)"
                   value={annForm.link_url}
                   onChange={(e) => patchAnnForm('link_url', e.target.value)}
                   placeholder="https://example.com/apply"
                   error={annErrors.link_url}
+                  hint="Paste a website URL here. URLs included in the details also become buttons."
                 />
                 <Input
-                  label="Link Button Label"
+                  label="Button Text (optional)"
                   value={annForm.link_label}
                   onChange={(e) => patchAnnForm('link_label', e.target.value)}
                   placeholder="e.g. Apply Now or Visit Website"
+                  hint="If a URL is pasted here by mistake, it will still be used as the button link."
                 />
               </div>
 
@@ -1611,26 +1612,15 @@ export function ShowcaseAdminPanel() {
                 />
               </div>
 
-              <div className="input-group">
-                <label htmlFor="ann-expiry">Expiration Date (optional)</label>
-                <input
-                  id="ann-expiry"
-                  type="date"
-                  value={annForm.expires_at}
-                  onChange={(e) => patchAnnForm('expires_at', e.target.value)}
-                  style={{
-                    padding: '0.6rem 0.8rem',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    borderRadius: 8,
-                    color: '#fff',
-                    width: '100%',
-                  }}
-                />
-                <span className="input-hint">
-                  Announcement will automatically stop showing publicly after this date.
-                </span>
-              </div>
+              <Input
+                id="ann-expiry"
+                className="showcase-announcement-date"
+                label="Expiration Date (optional)"
+                type="date"
+                value={annForm.expires_at}
+                onChange={(e) => patchAnnForm('expires_at', e.target.value)}
+                hint="Announcement will automatically stop showing publicly at the end of this date."
+              />
 
               <div className="input-group">
                 <label>Banner Flyer / Image (optional)</label>

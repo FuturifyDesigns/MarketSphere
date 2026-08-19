@@ -1,7 +1,7 @@
 {
-  "version": "1.0.4",
-  "build": 6,
+  "version": "1.0.5",
+  "build": 7,
   "apkUrl": "https://marketspheregroup.com/app/market-sphere.apk",
-  "notes": "Featured announcements, job openings, advertisements, events, and notices now appear in Showcase and its relevant columns.",
+  "notes": "Announcement links now become action buttons automatically, with clearer Showcase headings and date controls.",
   "force": false
 }

@@ -224,6 +224,74 @@ export const SHOWCASE_ANNOUNCEMENT_CATEGORY_LABELS: Record<ShowcaseAnnouncementC
   general: 'Announcement',
 }
 
+export interface ShowcaseAnnouncementAction {
+  url: string
+  label: string
+}
+
+export function normalizeShowcaseUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim()
+  if (!trimmed) return null
+
+  const withoutTrailingPunctuation = trimmed.replace(/[.,;:!?)\]]+$/g, '')
+  const candidate = /^(?:https?:\/\/)/i.test(withoutTrailingPunctuation)
+    ? withoutTrailingPunctuation
+    : /^(?:www\.)/i.test(withoutTrailingPunctuation) ||
+        /^[a-z0-9.-]+\.[a-z]{2,}(?:[/:?#].*)?$/i.test(withoutTrailingPunctuation)
+      ? `https://${withoutTrailingPunctuation}`
+      : null
+
+  if (!candidate) return null
+  try {
+    const parsed = new URL(candidate)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : null
+  } catch {
+    return null
+  }
+}
+
+function announcementUrlLabel(url: string) {
+  try {
+    return `Open ${new URL(url).hostname.replace(/^www\./i, '')}`
+  } catch {
+    return 'Open link'
+  }
+}
+
+export function showcaseAnnouncementActions(
+  announcement: ShowcaseAnnouncement,
+): ShowcaseAnnouncementAction[] {
+  const actions: ShowcaseAnnouncementAction[] = []
+  const seen = new Set<string>()
+  const add = (url: string | null, label?: string | null) => {
+    if (!url || seen.has(url)) return
+    seen.add(url)
+    actions.push({
+      url,
+      label:
+        label?.trim() ||
+        (actions.length === 0
+          ? announcement.category === 'job'
+            ? 'Apply now'
+            : 'Visit website'
+          : announcementUrlLabel(url)),
+    })
+  }
+
+  const directUrl = normalizeShowcaseUrl(announcement.link_url)
+  const labelUrl = normalizeShowcaseUrl(announcement.link_label)
+  const textLabel = announcement.link_label && !labelUrl ? announcement.link_label : null
+  add(directUrl || labelUrl, textLabel)
+
+  const bodyUrls = announcement.body.match(/(?:https?:\/\/|www\.)[^\s<>"']+/gi) || []
+  for (const bodyUrl of bodyUrls) {
+    const normalized = normalizeShowcaseUrl(bodyUrl)
+    add(normalized, normalized ? announcementUrlLabel(normalized) : null)
+  }
+
+  return actions
+}
+
 export function isAnnouncementActive(announcement: ShowcaseAnnouncement): boolean {
   if (!announcement.active) return false
   const now = new Date().getTime()

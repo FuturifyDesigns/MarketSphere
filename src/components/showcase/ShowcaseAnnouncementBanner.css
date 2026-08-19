@@ -12,11 +12,20 @@
 .showcase-announcements-heading h3 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-gold-light, #e8d5a0);
+  color: var(--text-primary, #2e2720);
   margin: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-left: 3px solid var(--color-gold, #c9a24b);
+  border-radius: 8px;
+  background: rgba(201, 162, 75, 0.1);
+}
+
+.showcase-announcements-heading h3 svg {
+  color: var(--color-gold, #c9a24b);
+  flex-shrink: 0;
 }
 
 .showcase-announcements-grid {

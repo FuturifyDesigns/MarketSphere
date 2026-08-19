@@ -16,6 +16,7 @@ import {
   SHOWCASE_ANNOUNCEMENT_CATEGORY_LABELS,
   announcementMailto,
   announcementWhatsAppLink,
+  showcaseAnnouncementActions,
 } from '../../lib/showcase'
 import type { ShowcaseAnnouncement, ShowcaseAnnouncementCategory } from '../../lib/types'
 import './ShowcaseAnnouncementBanner.css'
@@ -66,6 +67,8 @@ export function ShowcaseAnnouncementCard({
   const tel = announcement.contact_phone
     ? `tel:${announcement.contact_phone.replace(/[^\d+]/g, '')}`
     : null
+  const linkActions = showcaseAnnouncementActions(announcement)
+  const hasActions = linkActions.length > 0 || whatsapp || tel || mailto
 
   return (
     <article
@@ -125,21 +128,22 @@ export function ShowcaseAnnouncementCard({
           </div>
         ) : null}
 
-        <div className="showcase-announcement-card__actions">
-          {announcement.link_url ? (
-            <a
-              href={announcement.link_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn--primary btn--sm"
-            >
-              <ExternalLink size={13} />
-              {announcement.link_label?.trim() ||
-                (announcement.category === 'job' ? 'Apply Now' : 'Learn More')}
-            </a>
-          ) : null}
+        {hasActions ? (
+          <div className="showcase-announcement-card__actions">
+            {linkActions.map((action, index) => (
+              <a
+                key={action.url}
+                href={action.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`btn ${index === 0 ? 'btn--primary' : 'btn--secondary'} btn--sm`}
+              >
+                <ExternalLink size={13} />
+                {action.label}
+              </a>
+            ))}
 
-          {whatsapp ? (
+            {whatsapp ? (
             <a
               href={whatsapp}
               target="_blank"
@@ -149,22 +153,23 @@ export function ShowcaseAnnouncementCard({
               <Phone size={13} />
               WhatsApp
             </a>
-          ) : null}
+            ) : null}
 
-          {tel && !whatsapp ? (
+            {tel && !whatsapp ? (
             <a href={tel} className="btn btn--secondary btn--sm">
               <Phone size={13} />
               Call
             </a>
-          ) : null}
+            ) : null}
 
-          {mailto ? (
+            {mailto ? (
             <a href={mailto} className="btn btn--ghost btn--sm">
               <Mail size={13} />
               Email
             </a>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {lightboxOpen && announcement.image_url ? (

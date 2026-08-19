@@ -1208,6 +1208,20 @@
   max-width: 52rem;
 }
 
+.showcase-announcement-date input[type='date'] {
+  min-height: 46px;
+  width: 100%;
+  color-scheme: light;
+  background: var(--color-day);
+  color: #2e2720;
+}
+
+.showcase-announcement-date input[type='date']::-webkit-calendar-picker-indicator {
+  display: block;
+  opacity: 1;
+  cursor: pointer;
+}
+
 .showcase-admin-list-panel {
   display: flex;
   flex-direction: column;
