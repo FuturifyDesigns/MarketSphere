@@ -237,7 +237,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
                       itemCount: items.length + (announcements.isEmpty ? 0 : 1),
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      separatorBuilder: (_, _) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
                         if (announcements.isNotEmpty && index == 0) {
                           return Column(

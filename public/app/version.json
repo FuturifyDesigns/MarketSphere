@@ -1,7 +1,7 @@
 {
-  "version": "1.0.3",
-  "build": 5,
+  "version": "1.0.4",
+  "build": 6,
   "apkUrl": "https://marketspheregroup.com/app/market-sphere.apk",
-  "notes": "Choose Available, Sold, or Tenanted on showcase listings (including sale & rent).",
+  "notes": "Featured announcements, job openings, advertisements, events, and notices now appear in Showcase and its relevant columns.",
   "force": false
 }

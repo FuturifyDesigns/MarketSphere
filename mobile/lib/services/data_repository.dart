@@ -337,7 +337,7 @@ class DataRepository {
             .eq('status', 'published')
             .maybeSingle(),
       );
-      if (row == null) return _cache.findListing(id);
+      if (row == null) return await _cache.findListing(id);
       final listing = ShowcaseListing.fromJson(Map<String, dynamic>.from(row));
       await _cache.recordListingView(listing);
       return listing;
@@ -408,7 +408,7 @@ class DataRepository {
             .eq('status', 'approved')
             .maybeSingle(),
       );
-      if (row == null) return _cache.findProvider(id);
+      if (row == null) return await _cache.findProvider(id);
       final provider = ProviderItem.fromJson(Map<String, dynamic>.from(row));
       final withStats = await _attachReviewStats([provider]).timeout(
         _statsTimeout,
@@ -759,7 +759,7 @@ class DataRepository {
       final list = (rows as List)
           .map((row) => ProviderItem.fromJson(Map<String, dynamic>.from(row as Map)))
           .toList();
-      return _attachReviewStats(list);
+      return await _attachReviewStats(list);
     } catch (_) {
       final out = <ProviderItem>[];
       for (final id in idList) {
@@ -946,7 +946,9 @@ class DataRepository {
     required String status,
   }) async {
     if (!isUuid(enquiryId)) return 'Invalid enquiry.';
-    if (!{'new', 'read', 'replied', 'closed'}.contains(status)) return 'Invalid status.';
+    if (!{'new', 'read', 'replied', 'closed'}.contains(status)) {
+      return 'Invalid status.';
+    }
     try {
       await _db.from('enquiries').update({'status': status}).eq('id', enquiryId);
       return null;
