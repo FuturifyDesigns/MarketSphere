@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../config.dart';
@@ -55,10 +56,28 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
   void _arm() {
     _timer?.cancel();
     if (!widget.autoplay || widget.urls.length <= 1) return;
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _precacheAround(_index),
+    );
     _timer = Timer.periodic(widget.dwell, (_) {
       if (!mounted) return;
-      setState(() => _index = (_index + 1) % widget.urls.length);
+      final next = (_index + 1) % widget.urls.length;
+      _precacheAround(next);
+      setState(() => _index = next);
     });
+  }
+
+  void _precacheAround(int index) {
+    if (!mounted || widget.urls.length <= 1) return;
+    final urls = widget.urls.where((u) => u.trim().isNotEmpty).toList();
+    if (urls.length <= 1) return;
+    final nextUrl = urls[(index + 1) % urls.length];
+    unawaited(
+      precacheImage(
+        CachedNetworkImageProvider(nextUrl),
+        context,
+      ).catchError((_) {}),
+    );
   }
 
   @override

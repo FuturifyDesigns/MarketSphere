@@ -90,6 +90,7 @@ function ShowcaseGallery({
 }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [loadableIndexes, setLoadableIndexes] = useState<Set<number>>(() => new Set([0, 1]))
   const touchX = useRef<number | null>(null)
   const count = images.length
 
@@ -113,6 +114,26 @@ function ShowcaseGallery({
     }, AUTOPLAY_MS)
     return () => window.clearInterval(timer)
   }, [count, paused])
+
+  useEffect(() => {
+    if (count <= 0) return
+    const nextIndexes = new Set<number>([
+      index,
+      (index + 1) % count,
+      (index - 1 + count) % count,
+    ])
+    setLoadableIndexes((current) => {
+      let changed = false
+      const merged = new Set(current)
+      nextIndexes.forEach((item) => {
+        if (!merged.has(item)) {
+          merged.add(item)
+          changed = true
+        }
+      })
+      return changed ? merged : current
+    })
+  }, [count, index])
 
   if (count === 0) {
     return (
@@ -152,7 +173,17 @@ function ShowcaseGallery({
             aria-label={`View photo ${i + 1} of ${count} for ${title}`}
             tabIndex={i === index ? 0 : -1}
           >
-            <img src={url} alt="" loading={i === 0 && eager ? 'eager' : 'lazy'} decoding="async" />
+            {loadableIndexes.has(i) ? (
+              <img
+                src={url}
+                alt=""
+                loading={i === 0 && eager ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchPriority={i === 0 && eager ? 'high' : 'auto'}
+              />
+            ) : (
+              <span className="showcase-gallery__lazy-placeholder" aria-hidden />
+            )}
             <span className="showcase-gallery__zoom" aria-hidden>
               <ZoomIn size={16} />
             </span>
