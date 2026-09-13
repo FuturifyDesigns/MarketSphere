@@ -24,6 +24,8 @@ class _ColumnContent {
   final List<ShowcaseAnnouncement> announcements;
 }
 
+const _listingBatchSize = 30;
+
 /// Listings inside one showcase field/column (website `/showcase/{slug}`).
 class ColumnListingsScreen extends StatefulWidget {
   const ColumnListingsScreen({super.key, required this.column});
@@ -39,6 +41,8 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   final _ambience = ShowcaseAmbienceController();
   Future<_ColumnContent>? _future;
   String? _dealFilter;
+  Timer? _searchDebounce;
+  var _visibleListingCount = _listingBatchSize;
 
   Future<_ColumnContent> _load() async {
     final repo = context.read<DataRepository>();
@@ -66,6 +70,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     unawaited(_ambience.dispose());
     _search.dispose();
     super.dispose();
@@ -74,8 +79,28 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   Future<void> _refresh() async {
     setState(() {
       _future = _load();
+      _visibleListingCount = _listingBatchSize;
     });
     await _future;
+  }
+
+  void _resetVisibleListings() {
+    _visibleListingCount = _listingBatchSize;
+  }
+
+  void _onSearchChanged(String _) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 220), () {
+      if (!mounted) return;
+      setState(_resetVisibleListings);
+    });
+  }
+
+  void _setDealFilter(String? value) {
+    setState(() {
+      _dealFilter = value;
+      _resetVisibleListings();
+    });
   }
 
   @override
@@ -97,7 +122,10 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                 icon: const Icon(Icons.arrow_back_rounded),
               ),
               actions: [
-                IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh_rounded)),
+                IconButton(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
               ],
             ),
             Padding(
@@ -110,7 +138,9 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      AppNetworkImage(url: showcaseColumnCoverUrl(widget.column.slug)),
+                      AppNetworkImage(
+                        url: showcaseColumnCoverUrl(widget.column.slug),
+                      ),
                       DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -145,7 +175,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
               child: TextField(
                 controller: _search,
-                onChanged: (_) => setState(() {}),
+                onChanged: _onSearchChanged,
                 decoration: const InputDecoration(
                   hintText: 'Search in this field…',
                   prefixIcon: Icon(Icons.search_rounded),
@@ -161,7 +191,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                   _FilterChip(
                     label: 'All',
                     selected: _dealFilter == null,
-                    onTap: () => setState(() => _dealFilter = null),
+                    onTap: () => _setDealFilter(null),
                   ),
                   ...dealTypeLabels.entries.map(
                     (e) => Padding(
@@ -169,7 +199,7 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                       child: _FilterChip(
                         label: e.value,
                         selected: _dealFilter == e.key,
-                        onTap: () => setState(() => _dealFilter = e.key),
+                        onTap: () => _setDealFilter(e.key),
                       ),
                     ),
                   ),
@@ -183,7 +213,9 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState != ConnectionState.done) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(AppConfig.colorGold)),
+                      child: CircularProgressIndicator(
+                        color: Color(AppConfig.colorGold),
+                      ),
                     );
                   }
                   if (snapshot.hasError) {
@@ -200,14 +232,17 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                   final announcements = snapshot.data!.announcements;
                   var items = snapshot.data!.listings;
                   if (_dealFilter != null) {
-                    items = items.where((l) => l.dealType == _dealFilter).toList();
+                    items = items
+                        .where((l) => l.dealType == _dealFilter)
+                        .toList();
                   }
                   if (q.isNotEmpty) {
                     items = items
                         .where(
                           (l) =>
                               l.title.toLowerCase().contains(q) ||
-                              (l.location?.toLowerCase().contains(q) ?? false) ||
+                              (l.location?.toLowerCase().contains(q) ??
+                                  false) ||
                               (l.summary?.toLowerCase().contains(q) ?? false),
                         )
                         .toList();
@@ -221,22 +256,34 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                   if (items.isEmpty && announcements.isEmpty) {
                     return LiveEmptyState(
                       title: 'No listings in this field',
-                      body: 'Try another filter, or check back when new listings go live.',
+                      body:
+                          'Try another filter, or check back when new listings go live.',
                       icon: Icons.filter_alt_outlined,
                       actionLabel: 'Clear filters',
                       onAction: () => setState(() {
                         _dealFilter = null;
                         _search.clear();
+                        _resetVisibleListings();
                       }),
                     );
                   }
+
+                  final visibleItems = items
+                      .take(_visibleListingCount)
+                      .toList();
+                  final hasMoreItems = visibleItems.length < items.length;
+                  final announcementOffset = announcements.isEmpty ? 0 : 1;
+                  final loadMoreOffset = hasMoreItems ? 1 : 0;
 
                   return RefreshIndicator(
                     color: const Color(AppConfig.colorGold),
                     onRefresh: _refresh,
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 6, 20, 28),
-                      itemCount: items.length + (announcements.isEmpty ? 0 : 1),
+                      itemCount:
+                          visibleItems.length +
+                          announcementOffset +
+                          loadMoreOffset,
                       separatorBuilder: (_, _) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
                         if (announcements.isNotEmpty && index == 0) {
@@ -245,25 +292,45 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
                             children: [
                               Text(
                                 'Announcements & opportunities in ${widget.column.title}',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                               const SizedBox(height: 12),
                               ...announcements.map(
                                 (item) => Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
-                                  child: ShowcaseAnnouncementCard(announcement: item),
+                                  child: ShowcaseAnnouncementCard(
+                                    announcement: item,
+                                  ),
                                 ),
                               ),
                             ],
                           );
                         }
-                        final listingIndex = index - (announcements.isEmpty ? 0 : 1);
-                        final listing = items[listingIndex];
+                        final listingIndex = index - announcementOffset;
+                        if (listingIndex >= visibleItems.length) {
+                          return _LoadMoreListingsButton(
+                            visibleCount: visibleItems.length,
+                            totalCount: items.length,
+                            onPressed: () => setState(() {
+                              _visibleListingCount =
+                                  (_visibleListingCount + _listingBatchSize)
+                                      .clamp(0, items.length)
+                                      .toInt();
+                            }),
+                          );
+                        }
+                        final listing = visibleItems[listingIndex];
                         return ShowcaseListingCard(
                           listing: listing,
                           onTap: () => pushFade(
                             context,
-                            ListingDetailScreen(listingId: listing.id, initial: listing),
+                            ListingDetailScreen(
+                              listingId: listing.id,
+                              initial: listing,
+                            ),
                           ),
                         );
                       },
@@ -280,8 +347,46 @@ class _ColumnListingsScreenState extends State<ColumnListingsScreen> {
   }
 }
 
+class _LoadMoreListingsButton extends StatelessWidget {
+  const _LoadMoreListingsButton({
+    required this.visibleCount,
+    required this.totalCount,
+    required this.onPressed,
+  });
+
+  final int visibleCount;
+  final int totalCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          Text(
+            'Showing $visibleCount of $totalCount listings',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 10),
+          FilledButton.tonalIcon(
+            onPressed: onPressed,
+            icon: const Icon(Icons.expand_more_rounded),
+            label: const Text('Load more listings'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -303,7 +408,9 @@ class _FilterChip extends StatelessWidget {
       elevation: 0,
       shape: const StadiumBorder(),
       labelStyle: TextStyle(
-        color: selected ? const Color(AppConfig.colorNight) : const Color(AppConfig.colorText),
+        color: selected
+            ? const Color(AppConfig.colorNight)
+            : const Color(AppConfig.colorText),
         fontWeight: FontWeight.w700,
         fontSize: 12,
       ),

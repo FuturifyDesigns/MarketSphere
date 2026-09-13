@@ -72,48 +72,23 @@ function ColumnIcon({ name }: { name: string | null }) {
   return <Icon size={22} aria-hidden />
 }
 
-/** Reveals an element with a fade/slide once it scrolls into view. */
-function useReveal<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null)
-  const [shown, setShown] = useState(false)
-
-  useEffect(() => {
-    const node = ref.current
-    if (!node) return
-    if (typeof IntersectionObserver === 'undefined') {
-      setShown(true)
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setShown(true)
-            observer.disconnect()
-            break
-          }
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return { ref, shown }
-}
-
 const AUTOPLAY_MS = 4000
+const COLUMN_LISTING_FETCH_LIMIT = 240
+const LISTINGS_BATCH_SIZE = 24
 
 /** Auto-advancing image slideshow with arrows, dots, swipe, and lightbox trigger. */
 function ShowcaseGallery({
   images,
   title,
   onZoom,
+  preview = false,
+  eager = true,
 }: {
   images: string[]
   title: string
   onZoom: (index: number) => void
+  preview?: boolean
+  eager?: boolean
 }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -149,6 +124,23 @@ function ShowcaseGallery({
     )
   }
 
+  if (preview) {
+    return (
+      <button
+        type="button"
+        className="showcase-gallery showcase-gallery--preview"
+        onClick={() => onZoom(0)}
+        aria-label={`View photos for ${title}`}
+      >
+        <img src={images[0]} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+        <span className="showcase-gallery__zoom" aria-hidden>
+          <ZoomIn size={16} />
+        </span>
+        {count > 1 ? <span className="showcase-gallery__count">1/{count}</span> : null}
+      </button>
+    )
+  }
+
   return (
     <div
       className="showcase-gallery"
@@ -179,7 +171,7 @@ function ShowcaseGallery({
             aria-label={`View photo ${i + 1} of ${count} for ${title}`}
             tabIndex={i === index ? 0 : -1}
           >
-            <img src={url} alt="" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+            <img src={url} alt="" loading={i === 0 && eager ? 'eager' : 'lazy'} decoding="async" />
             <span className="showcase-gallery__zoom" aria-hidden>
               <ZoomIn size={16} />
             </span>
@@ -307,7 +299,6 @@ function ListingCard({
   columnSlug: string
   order?: number
 }) {
-  const { ref, shown } = useReveal<HTMLElement>()
   const [lightbox, setLightbox] = useState<number | null>(null)
   const detailPath = `/showcase/${columnSlug}/${listing.id}`
   const enquiryListing = {
@@ -320,22 +311,20 @@ function ListingCard({
 
   return (
     <article
-      ref={ref}
       className={[
         'showcase-card',
         listing.featured ? 'showcase-card--featured' : '',
-        'showcase-reveal',
-        shown ? 'is-visible' : '',
       ]
         .filter(Boolean)
         .join(' ')}
-      style={{ transitionDelay: `${Math.min(order, 6) * 60}ms` }}
     >
       <div className="showcase-card__media">
         <ShowcaseGallery
           images={listing.image_urls}
           title={listing.title}
           onZoom={(i) => setLightbox(i)}
+          preview
+          eager={order < 6}
         />
         <span className="showcase-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
         <span
@@ -817,8 +806,13 @@ export function ShowcaseColumnPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
+  const [visibleListingCount, setVisibleListingCount] = useState(LISTINGS_BATCH_SIZE)
 
   useShowcaseAmbience(slug)
+
+  useEffect(() => {
+    setVisibleListingCount(LISTINGS_BATCH_SIZE)
+  }, [slug])
 
   useEffect(() => {
     let cancelled = false
@@ -863,7 +857,7 @@ export function ShowcaseColumnPage() {
           .order('featured', { ascending: false })
           .order('sort_order')
           .order('created_at', { ascending: false })
-          .limit(60),
+          .limit(COLUMN_LISTING_FETCH_LIMIT),
         supabase
           .from('showcase_announcements')
           .select('*')
@@ -958,6 +952,8 @@ export function ShowcaseColumnPage() {
     ...listings.filter((item) => item.featured),
     ...listings.filter((item) => !item.featured),
   ]
+  const visibleListings = orderedListings.slice(0, visibleListingCount)
+  const hasMoreListings = visibleListings.length < orderedListings.length
 
   return (
     <div ref={pageRef} className="page showcase-page showcase-column-page">
@@ -1042,7 +1038,7 @@ export function ShowcaseColumnPage() {
                 </h2>
               </EditableSection>
               <div className="showcase-listings">
-                {orderedListings.map((listing, i) => (
+                {visibleListings.map((listing, i) => (
                   <ListingCard
                     key={listing.id}
                     listing={listing}
@@ -1052,6 +1048,28 @@ export function ShowcaseColumnPage() {
                   />
                 ))}
               </div>
+              {hasMoreListings ? (
+                <div className="showcase-load-more">
+                  <p>
+                    Showing {visibleListings.length} of {orderedListings.length} listings.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setVisibleListingCount((count) =>
+                        Math.min(count + LISTINGS_BATCH_SIZE, orderedListings.length),
+                      )
+                    }
+                  >
+                    Load more listings
+                  </Button>
+                </div>
+              ) : orderedListings.length > LISTINGS_BATCH_SIZE ? (
+                <p className="showcase-load-more__complete">
+                  Showing all {orderedListings.length} listings.
+                </p>
+              ) : null}
             </div>
           )}
         </div>

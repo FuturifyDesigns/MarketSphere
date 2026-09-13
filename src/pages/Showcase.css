@@ -720,6 +720,8 @@
   border: 1px solid var(--card-border);
   border-radius: 14px;
   background: var(--bg-elevated);
+  content-visibility: auto;
+  contain-intrinsic-size: 460px;
 }
 
 .showcase-card--featured {
@@ -833,6 +835,28 @@
 .showcase-listings-heading-wrap .section-label {
   display: inline-block;
   margin-bottom: 0.35rem;
+}
+
+.showcase-load-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  color: var(--text-muted);
+}
+
+.showcase-load-more p,
+.showcase-load-more__complete {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.showcase-load-more__complete {
+  margin-top: 1.25rem;
+  text-align: center;
 }
 
 .showcase-listing-detail {
@@ -1043,6 +1067,23 @@
   overflow: hidden;
 }
 
+.showcase-gallery--preview {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.showcase-gallery--preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
 .showcase-gallery__track {
   display: flex;
   height: 100%;
@@ -1070,7 +1111,8 @@
   transition: transform 0.5s ease;
 }
 
-.showcase-card:hover .showcase-gallery__track .showcase-gallery__slide img {
+.showcase-card:hover .showcase-gallery__track .showcase-gallery__slide img,
+.showcase-card:hover .showcase-gallery--preview img {
   transform: scale(1.04);
 }
 

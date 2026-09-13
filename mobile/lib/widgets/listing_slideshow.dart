@@ -21,6 +21,7 @@ class PhotoSlideshow extends StatefulWidget {
   });
 
   final List<String> urls;
+
   /// Shown on the branded text cover when [urls] is empty.
   final String? title;
   final double height;
@@ -116,7 +117,9 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
                       height: 6,
                       margin: const EdgeInsets.symmetric(horizontal: 2.5),
                       decoration: BoxDecoration(
-                        color: active ? const Color(AppConfig.colorGold) : Colors.white70,
+                        color: active
+                            ? const Color(AppConfig.colorGold)
+                            : Colors.white70,
                         borderRadius: BorderRadius.circular(99),
                       ),
                     );
@@ -127,14 +130,21 @@ class _PhotoSlideshowState extends State<PhotoSlideshow> {
                 right: 10,
                 top: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     '${_index + 1}/${urls.length}',
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -172,7 +182,9 @@ class ListingSlideshowCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: scheme.surface,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.7),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.22),
@@ -211,7 +223,11 @@ class ListingSlideshowCard extends StatelessWidget {
                           listing.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, height: 1.25),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            height: 1.25,
+                          ),
                         ),
                         const Spacer(),
                         if (listing.location != null)
@@ -219,7 +235,10 @@ class ListingSlideshowCard extends StatelessWidget {
                             listing.location!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
                           ),
                         if (listing.priceLabel != null) ...[
                           const SizedBox(height: 4),
@@ -267,7 +286,9 @@ class ShowcaseListingCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surface,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+          border: Border.all(
+            color: scheme.outlineVariant.withValues(alpha: 0.7),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.22),
@@ -288,6 +309,7 @@ class ShowcaseListingCard extends StatelessWidget {
                     title: listing.title,
                     height: 210,
                     borderRadius: BorderRadius.zero,
+                    autoplay: false,
                   ),
                   Positioned(
                     left: 12,
@@ -302,7 +324,9 @@ class ShowcaseListingCard extends StatelessWidget {
                             available: listing.available,
                             availabilityStatus: listing.availabilityStatus,
                           ),
-                          tone: listing.available ? ChipTone.muted : ChipTone.danger,
+                          tone: listing.available
+                              ? ChipTone.muted
+                              : ChipTone.danger,
                         ),
                       ],
                     ),
@@ -327,7 +351,11 @@ class ShowcaseListingCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       listing.title,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17, height: 1.25),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                        height: 1.25,
+                      ),
                     ),
                     if (listing.summary != null) ...[
                       const SizedBox(height: 6),
@@ -335,7 +363,10 @@ class ShowcaseListingCard extends StatelessWidget {
                         listing.summary!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: scheme.onSurfaceVariant, height: 1.35),
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.35,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 10),
@@ -345,7 +376,10 @@ class ShowcaseListingCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               listing.location!,
-                              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+                              style: TextStyle(
+                                color: scheme.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                       ],
