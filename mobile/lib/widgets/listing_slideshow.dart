@@ -309,7 +309,6 @@ class ShowcaseListingCard extends StatelessWidget {
                     title: listing.title,
                     height: 210,
                     borderRadius: BorderRadius.zero,
-                    autoplay: false,
                   ),
                   Positioned(
                     left: 12,

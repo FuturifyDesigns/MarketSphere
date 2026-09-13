@@ -81,13 +81,11 @@ function ShowcaseGallery({
   images,
   title,
   onZoom,
-  preview = false,
   eager = true,
 }: {
   images: string[]
   title: string
   onZoom: (index: number) => void
-  preview?: boolean
   eager?: boolean
 }) {
   const [index, setIndex] = useState(0)
@@ -121,23 +119,6 @@ function ShowcaseGallery({
       <div className="showcase-card__media-empty">
         <ShowcaseTextCover title={title} />
       </div>
-    )
-  }
-
-  if (preview) {
-    return (
-      <button
-        type="button"
-        className="showcase-gallery showcase-gallery--preview"
-        onClick={() => onZoom(0)}
-        aria-label={`View photos for ${title}`}
-      >
-        <img src={images[0]} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" />
-        <span className="showcase-gallery__zoom" aria-hidden>
-          <ZoomIn size={16} />
-        </span>
-        {count > 1 ? <span className="showcase-gallery__count">1/{count}</span> : null}
-      </button>
     )
   }
 
@@ -323,7 +304,6 @@ function ListingCard({
           images={listing.image_urls}
           title={listing.title}
           onZoom={(i) => setLightbox(i)}
-          preview
           eager={order < 6}
         />
         <span className="showcase-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
