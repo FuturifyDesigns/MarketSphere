@@ -147,6 +147,16 @@ type MaterialForm = {
 
 type MaterialField = 'column_id' | 'title' | 'file_url'
 
+type MaterialBatchItem = {
+  localId: string
+  title: string
+  description: string
+  file_url: string
+  file_name: string
+  file_type: string
+  file_size: number | null
+}
+
 const emptyForm = (columnId = ''): ListingForm => ({
   column_id: columnId,
   title: '',
@@ -293,6 +303,7 @@ export function ShowcaseAdminPanel() {
   const [materialPage, setMaterialPage] = useState(1)
   const [materialEditingId, setMaterialEditingId] = useState<string | null>(null)
   const [materialForm, setMaterialForm] = useState<MaterialForm>(emptyMaterialForm())
+  const [materialBatch, setMaterialBatch] = useState<MaterialBatchItem[]>([])
   const [materialErrors, setMaterialErrors] = useState<FieldErrors<MaterialField>>({})
   const [materialSaving, setMaterialSaving] = useState(false)
   const [materialUploading, setMaterialUploading] = useState(false)
@@ -901,11 +912,13 @@ export function ShowcaseAdminPanel() {
     setMaterialEditingId(null)
     setMaterialErrors({})
     setMaterialForm(emptyMaterialForm(columnId || materialFilterColumn || columns[0]?.id || ''))
+    setMaterialBatch([])
   }
 
   const startEditMaterial = (item: ShowcaseLearningMaterial) => {
     setMaterialEditingId(item.id)
     setMaterialErrors({})
+    setMaterialBatch([])
     setMaterialForm({
       column_id: item.column_id,
       listing_id: item.listing_id || '',
@@ -936,27 +949,48 @@ export function ShowcaseAdminPanel() {
   }
 
   const handleMaterialFilePick = async (files: FileList | null) => {
-    const file = files?.[0]
+    const selected = Array.from(files || [])
     if (materialFileRef.current) materialFileRef.current.value = ''
-    if (!file) return
+    if (!selected.length) return
     setMaterialUploading(true)
     try {
-      const url = await uploadShowcaseMaterial(file, materialForm.column_id || 'showcase')
-      setMaterialForm((prev) => ({
-        ...prev,
-        file_url: url,
-        file_name: file.name,
-        file_type: showcaseMaterialType(file),
-        file_size: file.size,
-        title: prev.title.trim() ? prev.title : file.name.replace(/\.[^.]+$/, ''),
-      }))
+      const uploaded: MaterialBatchItem[] = []
+      for (const file of selected) {
+        const url = await uploadShowcaseMaterial(file, materialForm.column_id || 'showcase')
+        uploaded.push({
+          localId: `${Date.now()}-${file.name}-${uploaded.length}`,
+          title: file.name.replace(/\.[^.]+$/, ''),
+          description: '',
+          file_url: url,
+          file_name: file.name,
+          file_type: showcaseMaterialType(file),
+          file_size: file.size,
+        })
+      }
+      if (uploaded.length === 1 && materialBatch.length === 0 && !materialForm.file_url && !materialEditingId) {
+        const [file] = uploaded
+        setMaterialForm((prev) => ({
+          ...prev,
+          file_url: file.file_url,
+          file_name: file.file_name,
+          file_type: file.file_type,
+          file_size: file.file_size,
+          title: prev.title.trim() ? prev.title : file.title,
+        }))
+      } else {
+        setMaterialBatch((prev) => [...prev, ...uploaded])
+      }
       setMaterialErrors((prev) => {
         if (!prev.file_url) return prev
         const next = { ...prev }
         delete next.file_url
         return next
       })
-      showToast('Learning material uploaded.')
+      showToast(
+        uploaded.length === 1
+          ? 'Learning material uploaded.'
+          : `${uploaded.length} learning materials uploaded. Add titles and descriptions before publishing.`,
+      )
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not upload learning material.', 'error')
     } finally {
@@ -964,7 +998,62 @@ export function ShowcaseAdminPanel() {
     }
   }
 
+  const patchMaterialBatch = <K extends keyof MaterialBatchItem>(
+    localId: string,
+    key: K,
+    value: MaterialBatchItem[K],
+  ) => {
+    setMaterialBatch((prev) =>
+      prev.map((item) => (item.localId === localId ? { ...item, [key]: value } : item)),
+    )
+  }
+
+  const removeMaterialBatchItem = (localId: string) => {
+    setMaterialBatch((prev) => prev.filter((item) => item.localId !== localId))
+  }
+
   const saveMaterial = async () => {
+    if (!materialEditingId && materialBatch.length > 0) {
+      const nextErrors: FieldErrors<MaterialField> = {}
+      if (!materialForm.column_id) nextErrors.column_id = 'Choose the showcase section these materials belong to.'
+      const missingTitle = materialBatch.some((item) => !item.title.trim())
+      if (missingTitle) nextErrors.title = 'Every uploaded material needs its own title.'
+      setMaterialErrors(nextErrors)
+      if (Object.keys(nextErrors).length) {
+        showToast('Fix the highlighted material fields before saving.', 'error')
+        return
+      }
+
+      setMaterialSaving(true)
+      const now = new Date().toISOString()
+      const payload = materialBatch.map((item, index) => ({
+        column_id: materialForm.column_id,
+        listing_id: materialForm.listing_id || null,
+        title: item.title.trim(),
+        description: item.description.trim() || null,
+        file_url: item.file_url,
+        file_name: item.file_name || null,
+        file_type: item.file_type || null,
+        file_size: item.file_size,
+        active: materialForm.active,
+        sort_order: Number.isFinite(materialForm.sort_order)
+          ? materialForm.sort_order + index
+          : index,
+        updated_at: now,
+        created_by: user?.id || null,
+      }))
+      const result = await supabase.from('showcase_learning_materials').insert(payload)
+      setMaterialSaving(false)
+      if (result.error) {
+        showToast(result.error.message || 'Could not save learning materials.', 'error')
+        return
+      }
+      showToast(`${payload.length} learning material${payload.length === 1 ? '' : 's'} published.`)
+      resetMaterialForm(materialForm.column_id)
+      void load()
+      return
+    }
+
     const nextErrors = validateMaterialForm(materialForm)
     setMaterialErrors(nextErrors)
     if (Object.keys(nextErrors).length) {
@@ -2138,21 +2227,25 @@ export function ShowcaseAdminPanel() {
                 </span>
               </div>
 
-              <Input
-                label="Material title"
-                value={materialForm.title}
-                onChange={(e) => patchMaterialForm('title', e.target.value)}
-                placeholder="e.g. Basic IT Services Lesson 1 Notes"
-                error={materialErrors.title}
-                required
-              />
-              <Textarea
-                label="Description (optional)"
-                rows={3}
-                value={materialForm.description}
-                onChange={(e) => patchMaterialForm('description', e.target.value)}
-                placeholder="Briefly explain what learners will find in this file..."
-              />
+              {materialBatch.length === 0 ? (
+                <>
+                  <Input
+                    label="Material title"
+                    value={materialForm.title}
+                    onChange={(e) => patchMaterialForm('title', e.target.value)}
+                    placeholder="e.g. Basic IT Services Lesson 1 Notes"
+                    error={materialErrors.title}
+                    required
+                  />
+                  <Textarea
+                    label="Description (optional)"
+                    rows={3}
+                    value={materialForm.description}
+                    onChange={(e) => patchMaterialForm('description', e.target.value)}
+                    placeholder="Briefly explain what learners will find in this file..."
+                  />
+                </>
+              ) : null}
 
               <div className={`input-group ${materialErrors.file_url ? 'input-group--error' : ''}`}>
                 <label>Document file</label>
@@ -2165,6 +2258,7 @@ export function ShowcaseAdminPanel() {
                   ref={materialFileRef}
                   type="file"
                   accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  multiple
                   hidden
                   onChange={(e) => void handleMaterialFilePick(e.target.files)}
                 />
@@ -2175,19 +2269,68 @@ export function ShowcaseAdminPanel() {
                   disabled={materialUploading}
                   onClick={() => materialFileRef.current?.click()}
                 >
-                  <Upload size={14} /> {materialUploading ? 'Uploading…' : materialForm.file_url ? 'Replace file' : 'Upload PDF / Word file'}
+                  <Upload size={14} /> {materialUploading ? 'Uploading…' : materialForm.file_url || materialBatch.length ? 'Add more files' : 'Upload PDF / Word files'}
                 </Button>
-                <Input
-                  label="Or paste file URL"
-                  value={materialForm.file_url}
-                  onChange={(e) => patchMaterialForm('file_url', e.target.value)}
-                  placeholder="https://..."
-                  error={materialErrors.file_url}
-                />
+                {materialBatch.length === 0 ? (
+                  <Input
+                    label="Or paste file URL"
+                    value={materialForm.file_url}
+                    onChange={(e) => patchMaterialForm('file_url', e.target.value)}
+                    placeholder="https://..."
+                    error={materialErrors.file_url}
+                  />
+                ) : null}
                 <span className="input-hint">
-                  Supports PDF, Word, PowerPoint, Excel, and text documents up to 25MB.
+                  Supports multiple PDF, Word, PowerPoint, Excel, and text documents up to 25MB each.
                 </span>
               </div>
+
+              {materialBatch.length > 0 ? (
+                <div className="input-group">
+                  <label>Uploaded materials ({materialBatch.length})</label>
+                  <div style={{ display: 'grid', gap: '0.75rem' }}>
+                    {materialBatch.map((item, index) => (
+                      <div
+                        key={item.localId}
+                        style={{
+                          border: '1px solid rgba(201,162,75,0.24)',
+                          borderRadius: 12,
+                          padding: '0.85rem',
+                          background: 'rgba(15,23,42,0.28)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', marginBottom: '0.65rem' }}>
+                          <strong style={{ fontSize: '0.9rem' }}>
+                            File {index + 1}: {item.file_name}
+                          </strong>
+                          <button
+                            type="button"
+                            className="showcase-admin-row__icon-btn showcase-admin-row__icon-btn--danger"
+                            onClick={() => removeMaterialBatchItem(item.localId)}
+                            aria-label={`Remove ${item.file_name}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <Input
+                          label="Title for this material"
+                          value={item.title}
+                          onChange={(e) => patchMaterialBatch(item.localId, 'title', e.target.value)}
+                          required
+                        />
+                        <Textarea
+                          label="Description for this material"
+                          rows={2}
+                          value={item.description}
+                          onChange={(e) => patchMaterialBatch(item.localId, 'description', e.target.value)}
+                          placeholder="Briefly explain this specific PDF/document..."
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {materialErrors.title ? <span className="input-error">{materialErrors.title}</span> : null}
+                </div>
+              ) : null}
 
               <div style={{ display: 'flex', gap: '1.25rem', margin: '0.4rem 0 0.8rem', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
@@ -2202,7 +2345,13 @@ export function ShowcaseAdminPanel() {
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <Button onClick={() => void saveMaterial()} disabled={materialSaving || materialUploading}>
-                  {materialSaving ? 'Saving…' : materialEditingId ? 'Save changes' : 'Publish material'}
+                  {materialSaving
+                    ? 'Saving…'
+                    : materialEditingId
+                    ? 'Save changes'
+                    : materialBatch.length
+                    ? `Publish ${materialBatch.length} materials`
+                    : 'Publish material'}
                 </Button>
                 {materialEditingId ? (
                   <Button variant="ghost" onClick={() => resetMaterialForm(materialForm.column_id)}>
