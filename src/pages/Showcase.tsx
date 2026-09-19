@@ -9,6 +9,8 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileText,
   GraduationCap,
   Lightbulb,
   Mail,
@@ -31,7 +33,7 @@ import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { useShowcaseAmbience } from '../hooks/useShowcaseAmbience'
 import { supabase } from '../lib/supabase'
 import { cachedFetch, clearCached, onTabVisible } from '../lib/queryCache'
-import type { ShowcaseAnnouncement, ShowcaseColumn, ShowcaseListing } from '../lib/types'
+import type { ShowcaseAnnouncement, ShowcaseColumn, ShowcaseLearningMaterial, ShowcaseListing } from '../lib/types'
 import { ShowcaseOwnerContacts } from '../components/showcase/ShowcaseOwnerContacts'
 import { ShowcaseAnnouncementBanner } from '../components/showcase/ShowcaseAnnouncementBanner'
 import { EditableSection } from '../components/cms/EditableSection'
@@ -297,6 +299,52 @@ function ShowcaseLightbox({
         ) : null}
       </div>
     </div>
+  )
+}
+
+function formatMaterialSize(bytes: number | null | undefined) {
+  if (!bytes || bytes <= 0) return ''
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  return `${Math.ceil(bytes / 1024)} KB`
+}
+
+function ShowcaseMaterials({
+  materials,
+  title = 'Learning materials',
+}: {
+  materials: ShowcaseLearningMaterial[]
+  title?: string
+}) {
+  if (materials.length === 0) return null
+  return (
+    <section className="showcase-materials">
+      <div className="showcase-materials__heading">
+        <span className="section-label">
+          <FileText size={14} aria-hidden /> Resources
+        </span>
+        <h2>{title}</h2>
+      </div>
+      <div className="showcase-materials__grid">
+        {materials.map((material) => (
+          <article key={material.id} className="showcase-material-card">
+            <span className="showcase-material-card__icon" aria-hidden>
+              <FileText size={22} />
+            </span>
+            <div>
+              <h3>{material.title}</h3>
+              {material.description ? <p>{material.description}</p> : null}
+              <div className="showcase-material-card__meta">
+                {material.file_name ? <span>{material.file_name}</span> : null}
+                {formatMaterialSize(material.file_size) ? <span>{formatMaterialSize(material.file_size)}</span> : null}
+              </div>
+              <a href={material.file_url} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm">
+                <Download size={14} /> Open material
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -814,6 +862,7 @@ export function ShowcaseColumnPage() {
   const [column, setColumn] = useState<ShowcaseColumn | null>(null)
   const [listings, setListings] = useState<ShowcaseListing[]>([])
   const [announcements, setAnnouncements] = useState<ShowcaseAnnouncement[]>([])
+  const [materials, setMaterials] = useState<ShowcaseLearningMaterial[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notFound, setNotFound] = useState(false)
@@ -857,7 +906,7 @@ export function ShowcaseColumnPage() {
         return
       }
 
-      const [listRes, annRes] = await Promise.all([
+      const [listRes, annRes, materialRes] = await Promise.all([
         supabase
           .from('showcase_listings')
           .select(
@@ -878,6 +927,15 @@ export function ShowcaseColumnPage() {
           .order('sort_order')
           .order('created_at', { ascending: false })
           .limit(20),
+        supabase
+          .from('showcase_learning_materials')
+          .select('*')
+          .eq('column_id', col.id)
+          .eq('active', true)
+          .is('listing_id', null)
+          .order('sort_order')
+          .order('created_at', { ascending: false })
+          .limit(40),
       ])
 
       if (cancelled) return
@@ -895,6 +953,7 @@ export function ShowcaseColumnPage() {
       setAnnouncements(
         ((annRes.data || []) as unknown as ShowcaseAnnouncement[]).filter(isAnnouncementActive),
       )
+      setMaterials((materialRes.data || []) as unknown as ShowcaseLearningMaterial[])
       setNotFound(false)
       setError('')
       setLoading(false)
@@ -1006,6 +1065,11 @@ export function ShowcaseColumnPage() {
             />
           ) : null}
 
+          <ShowcaseMaterials
+            materials={materials}
+            title={`Learning materials in ${column.title}`}
+          />
+
           {error ? (
             <p className="showcase-status showcase-status--error" role="alert">
               {error}
@@ -1093,6 +1157,7 @@ export function ShowcaseListingPage() {
   const { slug, listingId } = useParams<{ slug: string; listingId: string }>()
   const [column, setColumn] = useState<ShowcaseColumn | null>(null)
   const [listing, setListing] = useState<ShowcaseListing | null>(null)
+  const [materials, setMaterials] = useState<ShowcaseLearningMaterial[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
@@ -1140,8 +1205,18 @@ export function ShowcaseListingPage() {
         return
       }
 
+      const { data: materialRows } = await supabase
+        .from('showcase_learning_materials')
+        .select('*')
+        .eq('listing_id', listingId)
+        .eq('active', true)
+        .order('sort_order')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
       setColumn(col)
       setListing(row)
+      setMaterials((materialRows || []) as unknown as ShowcaseLearningMaterial[])
       setNotFound(false)
       setLoading(false)
     }
@@ -1238,6 +1313,7 @@ export function ShowcaseListingPage() {
                 <p className="showcase-listing-detail__description">{listing.description}</p>
               ) : null}
               <ShowcaseOwnerContacts listing={enquiryListing} />
+              <ShowcaseMaterials materials={materials} title="Learning materials for this item" />
               <div className="showcase-card__actions showcase-listing-detail__actions">
                 <a className="btn btn--primary btn--md" href={mailto}>
                   <Mail size={16} />{' '}

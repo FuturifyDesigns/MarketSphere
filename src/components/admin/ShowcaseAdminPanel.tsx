@@ -6,6 +6,7 @@ import {
   Crop,
   Eye,
   EyeOff,
+  FileText,
   FolderOpen,
   ImagePlus,
   LocateFixed,
@@ -30,6 +31,7 @@ import {
   showcaseAvailabilityLabel,
   showcaseAvailabilityOptions,
 } from '../../lib/showcase'
+import { uploadShowcaseMaterial, showcaseMaterialType } from '../../lib/showcaseMaterialsUpload'
 import { uploadShowcaseImage } from '../../lib/showcaseUpload'
 import { supabase } from '../../lib/supabase'
 import type {
@@ -38,6 +40,7 @@ import type {
   ShowcaseAvailabilityStatus,
   ShowcaseColumn,
   ShowcaseDealType,
+  ShowcaseLearningMaterial,
   ShowcaseListing,
   ShowcaseListingStatus,
 } from '../../lib/types'
@@ -71,8 +74,9 @@ const ANNOUNCEMENT_CATEGORIES: ShowcaseAnnouncementCategory[] = [
 const MAX_IMAGES = UPLOAD_LIMITS.showcase.maxCount
 const LIST_PAGE_SIZE = 8
 const ANNOUNCEMENT_PAGE_SIZE = 6
+const MATERIAL_PAGE_SIZE = 8
 
-type ShowcaseSubTab = 'listings' | 'announcements' | 'columns'
+type ShowcaseSubTab = 'listings' | 'announcements' | 'materials' | 'columns'
 
 type ListingForm = {
   column_id: string
@@ -128,6 +132,21 @@ type AnnouncementField =
   | 'contact_email'
   | 'link_url'
 
+type MaterialForm = {
+  column_id: string
+  listing_id: string
+  title: string
+  description: string
+  file_url: string
+  file_name: string
+  file_type: string
+  file_size: number | null
+  active: boolean
+  sort_order: number
+}
+
+type MaterialField = 'column_id' | 'title' | 'file_url'
+
 const emptyForm = (columnId = ''): ListingForm => ({
   column_id: columnId,
   title: '',
@@ -159,6 +178,19 @@ const emptyAnnouncementForm = (columnId = ''): AnnouncementForm => ({
   contact_email: '',
   expires_at: '',
   pinned: false,
+  active: true,
+  sort_order: 0,
+})
+
+const emptyMaterialForm = (columnId = ''): MaterialForm => ({
+  column_id: columnId,
+  listing_id: '',
+  title: '',
+  description: '',
+  file_url: '',
+  file_name: '',
+  file_type: '',
+  file_size: null,
   active: true,
   sort_order: 0,
 })
@@ -213,6 +245,14 @@ function validateAnnouncementForm(form: AnnouncementForm): FieldErrors<Announcem
   return next
 }
 
+function validateMaterialForm(form: MaterialForm): FieldErrors<MaterialField> {
+  const next: FieldErrors<MaterialField> = {}
+  if (!form.column_id) next.column_id = 'Choose the showcase section this material belongs to.'
+  if (!form.title.trim()) next.title = 'Title is required.'
+  if (!form.file_url.trim()) next.file_url = 'Upload a PDF/Word document or paste a file URL.'
+  return next
+}
+
 export function ShowcaseAdminPanel() {
   const { user } = useAuth()
   const { showToast } = useToast()
@@ -220,6 +260,7 @@ export function ShowcaseAdminPanel() {
   const [columns, setColumns] = useState<ShowcaseColumn[]>([])
   const [listings, setListings] = useState<ShowcaseListing[]>([])
   const [announcements, setAnnouncements] = useState<ShowcaseAnnouncement[]>([])
+  const [materials, setMaterials] = useState<ShowcaseLearningMaterial[]>([])
 
   // Listings filtering & editing state
   const [filterColumn, setFilterColumn] = useState('')
@@ -246,6 +287,16 @@ export function ShowcaseAdminPanel() {
   const [annSaving, setAnnSaving] = useState(false)
   const [annUploading, setAnnUploading] = useState(false)
 
+  // Learning materials filtering & editing state
+  const [materialFilterColumn, setMaterialFilterColumn] = useState('')
+  const [materialSearch, setMaterialSearch] = useState('')
+  const [materialPage, setMaterialPage] = useState(1)
+  const [materialEditingId, setMaterialEditingId] = useState<string | null>(null)
+  const [materialForm, setMaterialForm] = useState<MaterialForm>(emptyMaterialForm())
+  const [materialErrors, setMaterialErrors] = useState<FieldErrors<MaterialField>>({})
+  const [materialSaving, setMaterialSaving] = useState(false)
+  const [materialUploading, setMaterialUploading] = useState(false)
+
   // Photo Crop Modal state
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
@@ -258,9 +309,10 @@ export function ShowcaseAdminPanel() {
   const [savingColumnId, setSavingColumnId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const annFileRef = useRef<HTMLInputElement>(null)
+  const materialFileRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
-    const [colsRes, listRes, annRes] = await Promise.all([
+    const [colsRes, listRes, annRes, materialRes] = await Promise.all([
       supabase.from('showcase_columns').select('*').order('sort_order'),
       supabase
         .from('showcase_listings')
@@ -274,6 +326,13 @@ export function ShowcaseAdminPanel() {
         .order('sort_order')
         .order('created_at', { ascending: false })
         .limit(200),
+      supabase
+        .from('showcase_learning_materials')
+        .select('*, showcase_columns(id, slug, title, icon), showcase_listings(id, title)')
+        .order('active', { ascending: false })
+        .order('sort_order')
+        .order('created_at', { ascending: false })
+        .limit(300),
     ])
 
     if (colsRes.error) {
@@ -285,13 +344,21 @@ export function ShowcaseAdminPanel() {
     if (annRes.error) {
       showToast(annRes.error.message || 'Could not load showcase announcements.', 'error')
     }
+    if (materialRes.error) {
+      showToast(materialRes.error.message || 'Could not load learning materials.', 'error')
+    }
 
     setColumns(colsRes.data || [])
     setListings(listRes.data || [])
     setAnnouncements((annRes.data || []) as unknown as ShowcaseAnnouncement[])
+    setMaterials((materialRes.data || []) as unknown as ShowcaseLearningMaterial[])
     setLoading(false)
 
     setForm((prev) => {
+      if (prev.column_id || !(colsRes.data && colsRes.data[0])) return prev
+      return { ...prev, column_id: colsRes.data[0].id }
+    })
+    setMaterialForm((prev) => {
       if (prev.column_id || !(colsRes.data && colsRes.data[0])) return prev
       return { ...prev, column_id: colsRes.data[0].id }
     })
@@ -314,6 +381,7 @@ export function ShowcaseAdminPanel() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_columns' }, schedule)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_listings' }, schedule)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_announcements' }, schedule)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'showcase_learning_materials' }, schedule)
       .subscribe()
 
     return () => {
@@ -385,6 +453,33 @@ export function ShowcaseAdminPanel() {
     return filteredAnnouncements.slice(start, start + ANNOUNCEMENT_PAGE_SIZE)
   }, [filteredAnnouncements, safeAnnPage])
 
+  // Filter learning materials
+  const filteredMaterials = useMemo(() => {
+    const query = materialSearch.trim().toLowerCase()
+    return materials.filter((item) => {
+      if (materialFilterColumn && item.column_id !== materialFilterColumn) return false
+      if (!query) return true
+      const haystack = [
+        item.title,
+        item.description,
+        item.file_name,
+        item.showcase_columns?.title,
+        item.showcase_listings?.title,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [materials, materialFilterColumn, materialSearch])
+
+  const materialPageCount = Math.max(1, Math.ceil(filteredMaterials.length / MATERIAL_PAGE_SIZE))
+  const safeMaterialPage = Math.min(materialPage, materialPageCount)
+  const pagedMaterials = useMemo(() => {
+    const start = (safeMaterialPage - 1) * MATERIAL_PAGE_SIZE
+    return filteredMaterials.slice(start, start + MATERIAL_PAGE_SIZE)
+  }, [filteredMaterials, safeMaterialPage])
+
   useEffect(() => {
     setListPage(1)
   }, [filterColumn, filterStatus, listSearch])
@@ -392,6 +487,10 @@ export function ShowcaseAdminPanel() {
   useEffect(() => {
     setAnnPage(1)
   }, [annFilterColumn, annFilterCategory, annFilterStatus, annSearch])
+
+  useEffect(() => {
+    setMaterialPage(1)
+  }, [materialFilterColumn, materialSearch])
 
   // --- Listing Handlers ---
   const resetForm = (columnId?: string) => {
@@ -797,6 +896,138 @@ export function ShowcaseAdminPanel() {
     void load()
   }
 
+  // --- Learning Material Handlers ---
+  const resetMaterialForm = (columnId?: string) => {
+    setMaterialEditingId(null)
+    setMaterialErrors({})
+    setMaterialForm(emptyMaterialForm(columnId || materialFilterColumn || columns[0]?.id || ''))
+  }
+
+  const startEditMaterial = (item: ShowcaseLearningMaterial) => {
+    setMaterialEditingId(item.id)
+    setMaterialErrors({})
+    setMaterialForm({
+      column_id: item.column_id,
+      listing_id: item.listing_id || '',
+      title: item.title,
+      description: item.description || '',
+      file_url: item.file_url,
+      file_name: item.file_name || '',
+      file_type: item.file_type || '',
+      file_size: item.file_size,
+      active: item.active,
+      sort_order: item.sort_order,
+    })
+  }
+
+  const patchMaterialForm = <K extends keyof MaterialForm>(key: K, value: MaterialForm[K]) => {
+    setMaterialForm((prev) => {
+      const next = { ...prev, [key]: value }
+      if (key === 'column_id' && prev.column_id !== value) next.listing_id = ''
+      return next
+    })
+    if (key in materialErrors) {
+      setMaterialErrors((prev) => {
+        const next = { ...prev }
+        delete next[key as MaterialField]
+        return next
+      })
+    }
+  }
+
+  const handleMaterialFilePick = async (files: FileList | null) => {
+    const file = files?.[0]
+    if (materialFileRef.current) materialFileRef.current.value = ''
+    if (!file) return
+    setMaterialUploading(true)
+    try {
+      const url = await uploadShowcaseMaterial(file, materialForm.column_id || 'showcase')
+      setMaterialForm((prev) => ({
+        ...prev,
+        file_url: url,
+        file_name: file.name,
+        file_type: showcaseMaterialType(file),
+        file_size: file.size,
+        title: prev.title.trim() ? prev.title : file.name.replace(/\.[^.]+$/, ''),
+      }))
+      setMaterialErrors((prev) => {
+        if (!prev.file_url) return prev
+        const next = { ...prev }
+        delete next.file_url
+        return next
+      })
+      showToast('Learning material uploaded.')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not upload learning material.', 'error')
+    } finally {
+      setMaterialUploading(false)
+    }
+  }
+
+  const saveMaterial = async () => {
+    const nextErrors = validateMaterialForm(materialForm)
+    setMaterialErrors(nextErrors)
+    if (Object.keys(nextErrors).length) {
+      showToast('Fix the highlighted material fields before saving.', 'error')
+      return
+    }
+
+    setMaterialSaving(true)
+    const payload = {
+      column_id: materialForm.column_id,
+      listing_id: materialForm.listing_id || null,
+      title: materialForm.title.trim(),
+      description: materialForm.description.trim() || null,
+      file_url: materialForm.file_url.trim(),
+      file_name: materialForm.file_name.trim() || null,
+      file_type: materialForm.file_type.trim() || null,
+      file_size: materialForm.file_size,
+      active: materialForm.active,
+      sort_order: Number.isFinite(materialForm.sort_order) ? materialForm.sort_order : 0,
+      updated_at: new Date().toISOString(),
+      ...(materialEditingId ? {} : { created_by: user?.id || null }),
+    }
+
+    const result = materialEditingId
+      ? await supabase.from('showcase_learning_materials').update(payload).eq('id', materialEditingId)
+      : await supabase.from('showcase_learning_materials').insert(payload)
+
+    setMaterialSaving(false)
+    if (result.error) {
+      showToast(result.error.message || 'Could not save learning material.', 'error')
+      return
+    }
+
+    showToast(materialEditingId ? 'Learning material updated.' : 'Learning material published.')
+    resetMaterialForm(materialForm.column_id)
+    void load()
+  }
+
+  const toggleMaterialActive = async (id: string, active: boolean) => {
+    const { error } = await supabase
+      .from('showcase_learning_materials')
+      .update({ active, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      showToast(error.message || 'Could not update material status.', 'error')
+      return
+    }
+    showToast(active ? 'Learning material published.' : 'Learning material hidden.')
+    void load()
+  }
+
+  const deleteMaterial = async (id: string) => {
+    if (!window.confirm('Delete this learning material permanently?')) return
+    const { error } = await supabase.from('showcase_learning_materials').delete().eq('id', id)
+    if (error) {
+      showToast(error.message || 'Could not delete learning material.', 'error')
+      return
+    }
+    showToast('Learning material deleted.')
+    if (materialEditingId === id) resetMaterialForm()
+    void load()
+  }
+
   // --- Column Settings Handlers ---
   const columnValue = (column: ShowcaseColumn, key: 'title' | 'tagline' | 'description') => {
     const draft = columnDrafts[column.id]
@@ -881,6 +1112,14 @@ export function ShowcaseAdminPanel() {
           onClick={() => setSubTab('announcements')}
         >
           <Megaphone size={15} /> Announcements &amp; Ads ({announcements.length})
+        </Button>
+        <Button
+          type="button"
+          variant={subTab === 'materials' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() => setSubTab('materials')}
+        >
+          <FileText size={15} /> Learning materials ({materials.length})
         </Button>
         <Button
           type="button"
@@ -1696,6 +1935,277 @@ export function ShowcaseAdminPanel() {
                 </Button>
                 {annEditingId ? (
                   <Button variant="ghost" onClick={() => resetAnnouncementForm(annForm.column_id)}>
+                    Cancel edit
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {subTab === 'materials' && (
+        <div className="showcase-admin-layout">
+          <section className="dashboard-panel admin-dashboard__panel showcase-admin-list-panel">
+            <div className="dashboard-panel__header">
+              <h2>
+                <FileText size={20} /> Learning materials
+              </h2>
+              <span className="admin-dashboard__count">{filteredMaterials.length} shown</span>
+            </div>
+            <p className="admin-dashboard__hint">
+              Publish lesson notes, PDFs, Word documents, and other learning resources under any showcase section.
+            </p>
+
+            <div className="showcase-admin-list__toolbar">
+              <label className="showcase-admin-list__search">
+                <Search size={15} aria-hidden />
+                <input
+                  type="search"
+                  value={materialSearch}
+                  onChange={(e) => setMaterialSearch(e.target.value)}
+                  placeholder="Search title, section, file…"
+                  aria-label="Search learning materials"
+                />
+              </label>
+              <select
+                value={materialFilterColumn}
+                onChange={(e) => setMaterialFilterColumn(e.target.value)}
+                aria-label="Filter learning materials by column"
+              >
+                <option value="">All columns</option>
+                {columns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="showcase-admin-list" data-lenis-prevent data-modal-scroll>
+              {pagedMaterials.map((item) => (
+                <article
+                  key={item.id}
+                  className={`showcase-admin-row${materialEditingId === item.id ? ' is-editing' : ''}`}
+                >
+                  <div className="showcase-admin-row__thumb showcase-admin-row__thumb--empty" aria-hidden>
+                    <FileText size={22} style={{ opacity: 0.65 }} />
+                  </div>
+                  <div className="showcase-admin-row__body">
+                    <div className="showcase-admin-row__top">
+                      <strong className="showcase-admin-row__title">{item.title}</strong>
+                      <div className="showcase-admin-row__actions">
+                        <a
+                          className="showcase-admin-row__icon-btn"
+                          href={item.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Open material"
+                          aria-label={`Open ${item.title}`}
+                        >
+                          <Eye size={14} />
+                        </a>
+                        <button
+                          type="button"
+                          className="showcase-admin-row__icon-btn"
+                          title="Edit"
+                          aria-label={`Edit ${item.title}`}
+                          onClick={() => startEditMaterial(item)}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className={`showcase-admin-row__icon-btn${item.active ? ' showcase-admin-row__icon-btn--accent' : ''}`}
+                          title={item.active ? 'Hide material' : 'Publish material'}
+                          aria-label={item.active ? `Hide ${item.title}` : `Publish ${item.title}`}
+                          onClick={() => void toggleMaterialActive(item.id, !item.active)}
+                        >
+                          {item.active ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                        <button
+                          type="button"
+                          className="showcase-admin-row__icon-btn showcase-admin-row__icon-btn--danger"
+                          title="Delete"
+                          aria-label={`Delete ${item.title}`}
+                          onClick={() => void deleteMaterial(item.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="showcase-admin-row__meta">
+                      {item.showcase_columns?.title || 'Showcase section'}
+                      {item.showcase_listings?.title ? ` · Item: ${item.showcase_listings.title}` : ''}
+                      {item.file_name ? ` · ${item.file_name}` : ''}
+                    </p>
+                    {item.description ? (
+                      <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0.25rem 0' }}>
+                        {item.description}
+                      </p>
+                    ) : null}
+                    <div className="showcase-admin-row__badges">
+                      <span className={`status-badge status-badge--${item.active ? 'approved' : 'rejected'}`}>
+                        {item.active ? 'Published' : 'Hidden'}
+                      </span>
+                      {item.file_type ? <span className="status-badge">{item.file_type.split('/').pop()}</span> : null}
+                      {item.file_size ? (
+                        <span className="status-badge">{(item.file_size / 1024 / 1024).toFixed(1)}MB</span>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {filteredMaterials.length === 0 ? (
+                <p className="admin-dashboard__empty">
+                  No learning materials yet. Upload notes, lessons, PDFs, or Word docs using the form.
+                </p>
+              ) : null}
+            </div>
+
+            {filteredMaterials.length > MATERIAL_PAGE_SIZE ? (
+              <div className="showcase-admin-list__pager">
+                <button
+                  type="button"
+                  className="showcase-admin-row__icon-btn"
+                  disabled={safeMaterialPage <= 1}
+                  onClick={() => setMaterialPage((page) => Math.max(1, page - 1))}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span>
+                  Page {safeMaterialPage} / {materialPageCount}
+                </span>
+                <button
+                  type="button"
+                  className="showcase-admin-row__icon-btn"
+                  disabled={safeMaterialPage >= materialPageCount}
+                  onClick={() => setMaterialPage((page) => Math.min(materialPageCount, page + 1))}
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="dashboard-panel admin-dashboard__panel showcase-admin-form-panel">
+            <div className="dashboard-panel__header">
+              <h2>{materialEditingId ? 'Edit learning material' : 'Add learning material'}</h2>
+            </div>
+            <p className="admin-dashboard__hint">
+              Choose a section like Basic IT Services, upload notes or lessons, then publish them for visitors.
+            </p>
+            <div className="dashboard-form dashboard-form--flush">
+              <div className={`input-group ${materialErrors.column_id ? 'input-group--error' : ''}`}>
+                <label htmlFor="material-column">Showcase section</label>
+                <select
+                  id="material-column"
+                  value={materialForm.column_id}
+                  onChange={(e) => patchMaterialForm('column_id', e.target.value)}
+                  aria-invalid={materialErrors.column_id ? true : undefined}
+                >
+                  <option value="">Choose section…</option>
+                  {columns.map((column) => (
+                    <option key={column.id} value={column.id}>
+                      {column.title} (/{column.slug})
+                    </option>
+                  ))}
+                </select>
+                {materialErrors.column_id ? <span className="input-error">{materialErrors.column_id}</span> : null}
+              </div>
+
+              <div className="input-group">
+                <label htmlFor="material-listing">Attach to specific item/listing (optional)</label>
+                <select
+                  id="material-listing"
+                  value={materialForm.listing_id}
+                  onChange={(e) => patchMaterialForm('listing_id', e.target.value)}
+                  disabled={!materialForm.column_id}
+                >
+                  <option value="">Whole section / no specific item</option>
+                  {listings
+                    .filter((listing) => listing.column_id === materialForm.column_id)
+                    .map((listing) => (
+                      <option key={listing.id} value={listing.id}>
+                        {listing.title}
+                      </option>
+                    ))}
+                </select>
+                <span className="input-hint">
+                  Use this when the lesson belongs to one showcase item. Leave blank for the whole section.
+                </span>
+              </div>
+
+              <Input
+                label="Material title"
+                value={materialForm.title}
+                onChange={(e) => patchMaterialForm('title', e.target.value)}
+                placeholder="e.g. Basic IT Services Lesson 1 Notes"
+                error={materialErrors.title}
+                required
+              />
+              <Textarea
+                label="Description (optional)"
+                rows={3}
+                value={materialForm.description}
+                onChange={(e) => patchMaterialForm('description', e.target.value)}
+                placeholder="Briefly explain what learners will find in this file..."
+              />
+
+              <div className={`input-group ${materialErrors.file_url ? 'input-group--error' : ''}`}>
+                <label>Document file</label>
+                {materialForm.file_url ? (
+                  <p className="admin-dashboard__hint" style={{ margin: '0 0 0.45rem' }}>
+                    Attached: <a href={materialForm.file_url} target="_blank" rel="noreferrer">{materialForm.file_name || 'Open file'}</a>
+                  </p>
+                ) : null}
+                <input
+                  ref={materialFileRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  hidden
+                  onChange={(e) => void handleMaterialFilePick(e.target.files)}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={materialUploading}
+                  onClick={() => materialFileRef.current?.click()}
+                >
+                  <Upload size={14} /> {materialUploading ? 'Uploading…' : materialForm.file_url ? 'Replace file' : 'Upload PDF / Word file'}
+                </Button>
+                <Input
+                  label="Or paste file URL"
+                  value={materialForm.file_url}
+                  onChange={(e) => patchMaterialForm('file_url', e.target.value)}
+                  placeholder="https://..."
+                  error={materialErrors.file_url}
+                />
+                <span className="input-hint">
+                  Supports PDF, Word, PowerPoint, Excel, and text documents up to 25MB.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1.25rem', margin: '0.4rem 0 0.8rem', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={materialForm.active}
+                    onChange={(e) => patchMaterialForm('active', e.target.checked)}
+                  />
+                  <span>Published / visible to visitors</span>
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <Button onClick={() => void saveMaterial()} disabled={materialSaving || materialUploading}>
+                  {materialSaving ? 'Saving…' : materialEditingId ? 'Save changes' : 'Publish material'}
+                </Button>
+                {materialEditingId ? (
+                  <Button variant="ghost" onClick={() => resetMaterialForm(materialForm.column_id)}>
                     Cancel edit
                   </Button>
                 ) : null}

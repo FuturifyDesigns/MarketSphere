@@ -198,3 +198,22 @@ export interface ShowcaseAnnouncement {
   updated_at: string
   showcase_columns?: Pick<ShowcaseColumn, 'id' | 'slug' | 'title' | 'icon'> | null
 }
+
+export interface ShowcaseLearningMaterial {
+  id: string
+  column_id: string
+  listing_id: string | null
+  title: string
+  description: string | null
+  file_url: string
+  file_name: string | null
+  file_type: string | null
+  file_size: number | null
+  active: boolean
+  sort_order: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  showcase_columns?: Pick<ShowcaseColumn, 'id' | 'slug' | 'title' | 'icon'> | null
+  showcase_listings?: Pick<ShowcaseListing, 'id' | 'title'> | null
+}
