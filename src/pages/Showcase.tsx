@@ -27,7 +27,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { COMPANY } from '../lib/constants'
-import { SHOWCASE_DEAL_LABELS, isAnnouncementActive, showcaseAvailabilityLabel, showcaseContactMailto, showcaseIsClosed, showcaseWhatsAppLink } from '../lib/showcase'
+import { SHOWCASE_DEAL_LABELS, isAnnouncementActive, showcaseAvailabilityLabel, showcaseContactMailto, showcaseIsClosed, showcaseIsOnOffer, showcaseWhatsAppLink } from '../lib/showcase'
 import { ShowcaseTextCover } from '../components/showcase/ShowcaseTextCover'
 import { flushScrollRefresh } from '../lib/scrollRefresh'
 import { useShowcaseAmbience } from '../hooks/useShowcaseAmbience'
@@ -387,7 +387,13 @@ function ListingCard({
         />
         <span className="showcase-card__deal">{SHOWCASE_DEAL_LABELS[listing.deal_type]}</span>
         <span
-          className={`showcase-card__availability${showcaseIsClosed(listing) ? ' showcase-card__availability--closed' : ''}`}
+          className={`showcase-card__availability${
+            showcaseIsOnOffer(listing)
+              ? ' showcase-card__availability--offer'
+              : showcaseIsClosed(listing)
+                ? ' showcase-card__availability--closed'
+                : ''
+          }`}
         >
           {showcaseAvailabilityLabel(listing)}
         </span>
@@ -1297,7 +1303,13 @@ export function ShowcaseListingPage() {
                   {SHOWCASE_DEAL_LABELS[listing.deal_type]}
                 </p>
                 <span
-                  className={`showcase-card__availability showcase-card__availability--inline${showcaseIsClosed(listing) ? ' showcase-card__availability--closed' : ''}`}
+                  className={`showcase-card__availability showcase-card__availability--inline${
+                    showcaseIsOnOffer(listing)
+                      ? ' showcase-card__availability--offer'
+                      : showcaseIsClosed(listing)
+                        ? ' showcase-card__availability--closed'
+                        : ''
+                  }`}
                 >
                   {showcaseAvailabilityLabel(listing)}
                 </span>

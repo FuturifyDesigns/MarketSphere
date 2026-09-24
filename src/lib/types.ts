@@ -124,6 +124,7 @@ export type ShowcaseDealType =
 export type ShowcaseListingStatus = 'draft' | 'published' | 'archived'
 export type ShowcaseAvailabilityStatus =
   | 'available'
+  | 'on_offer'
   | 'sold'
   | 'tenanted'
   | 'closed'

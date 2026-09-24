@@ -713,7 +713,8 @@ export function ShowcaseAdminPanel() {
       deal_type: form.deal_type,
       status: form.status,
       availability_status: form.availability_status,
-      available: form.availability_status === 'available',
+      available:
+        form.availability_status === 'available' || form.availability_status === 'on_offer',
       featured: form.featured,
       sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
       owner_name: form.owner_name.trim() || null,
@@ -761,7 +762,8 @@ export function ShowcaseAdminPanel() {
       .from('showcase_listings')
       .update({
         availability_status,
-        available: availability_status === 'available',
+        available:
+          availability_status === 'available' || availability_status === 'on_offer',
         updated_at: new Date().toISOString(),
       })
       .eq('id', listing.id)
@@ -1303,7 +1305,11 @@ export function ShowcaseAdminPanel() {
                                 key={option}
                                 type="button"
                                 className={`showcase-admin-row__text-btn${status === option ? ' is-active' : ''}${
-                                  option !== 'available' ? ' is-closed' : ''
+                                  option === 'on_offer'
+                                    ? ' is-offer'
+                                    : option !== 'available'
+                                      ? ' is-closed'
+                                      : ''
                                 }`}
                                 title={`Mark ${SHOWCASE_AVAILABILITY_STATUS_LABELS[option]}`}
                                 aria-pressed={status === option}
@@ -1357,7 +1363,15 @@ export function ShowcaseAdminPanel() {
                         >
                           {listing.status}
                         </span>
-                        <span className={`status-badge status-badge--${status === 'available' ? 'approved' : 'rejected'}`}>
+                        <span
+                          className={`status-badge status-badge--${
+                            status === 'available'
+                              ? 'approved'
+                              : status === 'on_offer'
+                                ? 'pending'
+                                : 'rejected'
+                          }`}
+                        >
                           {showcaseAvailabilityLabel(listing)}
                         </span>
                         {listing.featured ? <span className="status-badge">Featured</span> : null}
@@ -1515,7 +1529,7 @@ export function ShowcaseAdminPanel() {
                   ))}
                 </select>
                 <span className="input-hint">
-                  For sale &amp; rent listings, choose Available, Sold, or Tenanted yourself.
+                  For sale &amp; rent listings, choose Available, Currently on offer, Sold, or Tenanted.
                 </span>
               </div>
 

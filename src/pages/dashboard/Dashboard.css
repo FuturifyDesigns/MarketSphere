@@ -1400,6 +1400,12 @@
   color: #8b3a2f;
 }
 
+.showcase-admin-row__text-btn.is-offer.is-active {
+  border-color: color-mix(in srgb, var(--color-gold) 70%, var(--card-border));
+  background: color-mix(in srgb, var(--color-gold) 22%, var(--card-bg));
+  color: var(--text-primary);
+}
+
 .showcase-admin-row__icon-btn {
   display: inline-grid;
   place-items: center;

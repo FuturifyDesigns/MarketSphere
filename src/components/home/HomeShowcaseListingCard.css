@@ -90,6 +90,11 @@
   background: color-mix(in srgb, #8b3a2f 88%, transparent);
 }
 
+.home-showcase-listing-card__availability.is-offer {
+  background: color-mix(in srgb, #c9a24b 92%, transparent);
+  color: #0e1116;
+}
+
 .home-showcase-listing-card__column {
   right: 0.85rem;
   bottom: 0.85rem;

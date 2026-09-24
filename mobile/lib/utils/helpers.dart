@@ -29,6 +29,7 @@ String availabilityLabel({
       'closed' => 'Closed',
       'completed' => 'Completed',
       'unavailable' => 'Unavailable',
+      'on_offer' => 'Currently on offer',
       'available' =>
         dealType == 'opportunity' || dealType == 'project' ? 'Open' : 'Available',
       _ => status.replaceAll('_', ' '),

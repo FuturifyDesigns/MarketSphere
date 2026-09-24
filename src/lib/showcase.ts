@@ -18,6 +18,7 @@ export const SHOWCASE_DEAL_LABELS: Record<ShowcaseDealType, string> = {
 
 export const SHOWCASE_AVAILABILITY_STATUS_LABELS: Record<ShowcaseAvailabilityStatus, string> = {
   available: 'Available',
+  on_offer: 'Currently on offer',
   sold: 'Sold',
   tenanted: 'Tenanted',
   closed: 'Closed',
@@ -25,14 +26,19 @@ export const SHOWCASE_AVAILABILITY_STATUS_LABELS: Record<ShowcaseAvailabilitySta
   unavailable: 'Unavailable',
 }
 
+/** Open statuses that still accept interest (not sold / tenanted / closed). */
+export function showcaseAvailabilityIsOpen(status: ShowcaseAvailabilityStatus) {
+  return status === 'available' || status === 'on_offer'
+}
+
 /** Which availability choices admins get for a deal type. */
 export function showcaseAvailabilityOptions(dealType: ShowcaseDealType): ShowcaseAvailabilityStatus[] {
   if (dealType === 'sale' || dealType === 'rent' || dealType === 'sale_rent') {
-    return ['available', 'sold', 'tenanted']
+    return ['available', 'on_offer', 'sold', 'tenanted']
   }
-  if (dealType === 'opportunity') return ['available', 'closed']
-  if (dealType === 'project') return ['available', 'completed']
-  return ['available', 'unavailable']
+  if (dealType === 'opportunity') return ['available', 'on_offer', 'closed']
+  if (dealType === 'project') return ['available', 'on_offer', 'completed']
+  return ['available', 'on_offer', 'unavailable']
 }
 
 export function resolveShowcaseAvailabilityStatus(listing: {
@@ -84,7 +90,15 @@ export function showcaseIsClosed(listing: {
   available?: boolean | null
   deal_type?: ShowcaseDealType | string | null
 }) {
-  return resolveShowcaseAvailabilityStatus(listing) !== 'available'
+  return !showcaseAvailabilityIsOpen(resolveShowcaseAvailabilityStatus(listing))
+}
+
+export function showcaseIsOnOffer(listing: {
+  availability_status?: string | null
+  available?: boolean | null
+  deal_type?: ShowcaseDealType | string | null
+}) {
+  return resolveShowcaseAvailabilityStatus(listing) === 'on_offer'
 }
 
 export function showcaseHasOwnerContacts(listing: {

@@ -774,6 +774,11 @@
   background: color-mix(in srgb, #8b3a2f 88%, #1a1510);
 }
 
+.showcase-card__availability--offer {
+  background: color-mix(in srgb, #c9a24b 92%, #1a1510);
+  color: #0e1116;
+}
+
 .showcase-card__availability--inline {
   position: static;
   display: inline-flex;

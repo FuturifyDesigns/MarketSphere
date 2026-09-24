@@ -1,7 +1,7 @@
 {
-  "version": "1.0.5",
-  "build": 7,
+  "version": "1.0.6",
+  "build": 8,
   "apkUrl": "https://marketspheregroup.com/app/market-sphere.apk",
-  "notes": "Announcement links now become action buttons automatically, with clearer Showcase headings and date controls.",
+  "notes": "Showcase can mark listings Currently on offer, alongside Available, Sold, and Tenanted.",
   "force": false
 }
